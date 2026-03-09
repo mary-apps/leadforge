@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/theme.dart';
 import '../../providers/businesses_provider.dart';
+import '../../widgets/stat_card_animated.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -28,34 +29,38 @@ class DashboardScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               
-              // Stats cards
+              // Stats cards (animated)
               Wrap(
                 spacing: 12,
                 runSpacing: 12,
                 children: [
-                  _StatCard(
+                  StatCardAnimated(
                     label: 'Total Leads',
-                    value: stats['total'].toString(),
+                    value: stats['total'] as int,
                     icon: Icons.people,
                     color: AppColors.primary,
+                    index: 0,
                   ),
-                  _StatCard(
+                  StatCardAnimated(
                     label: 'Audited',
-                    value: stats['audited'].toString(),
+                    value: stats['audited'] as int,
                     icon: Icons.analytics,
                     color: AppColors.info,
+                    index: 1,
                   ),
-                  _StatCard(
+                  StatCardAnimated(
                     label: 'Demos Sent',
-                    value: stats['demos'].toString(),
+                    value: stats['demos'] as int,
                     icon: Icons.web,
                     color: AppColors.warning,
+                    index: 2,
                   ),
-                  _StatCard(
+                  StatCardAnimated(
                     label: 'Closed Deals',
-                    value: stats['closed'].toString(),
+                    value: stats['closed'] as int,
                     icon: Icons.check_circle,
                     color: AppColors.success,
+                    index: 3,
                   ),
                 ],
               ),
@@ -86,12 +91,7 @@ class DashboardScreen extends ConsumerWidget {
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
-                                  '\$${stats['mrr'].toStringAsFixed(0)}',
-                                  style: AppTypography.displayLarge.copyWith(
-                                    color: AppColors.success,
-                                  ),
-                                ),
+                                _AnimatedMRR(mrr: stats['mrr'] as double),
                               ],
                             ),
                           ),
@@ -123,49 +123,61 @@ class DashboardScreen extends ConsumerWidget {
   }
 }
 
-class _StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
+/// Widget para revenue con contador animado
+class _AnimatedMRR extends StatefulWidget {
+  final double mrr;
   
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
+  const _AnimatedMRR({required this.mrr});
 
   @override
-  Widget build(BuildContext context) {
-    final width = (MediaQuery.of(context).size.width - 44) / 2;
+  State<_AnimatedMRR> createState() => _AnimatedMRRState();
+}
+
+class _AnimatedMRRState extends State<_AnimatedMRR>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _mrrAnimation;
+  
+  @override
+  void initState() {
+    super.initState();
     
-    return Container(
-      width: width,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 32),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: AppTypography.headlineLarge.copyWith(color: color),
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    
+    _mrrAnimation = Tween<double>(
+      begin: 0,
+      end: widget.mrr,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    ));
+    
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if (mounted) _controller.forward();
+    });
+  }
+  
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _mrrAnimation,
+      builder: (context, child) {
+        return Text(
+          '\$${_mrrAnimation.value.toStringAsFixed(0)}',
+          style: AppTypography.displayLarge.copyWith(
+            color: AppColors.success,
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

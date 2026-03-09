@@ -6,7 +6,9 @@ import '../../models/business.dart';
 import '../../models/audit_result.dart';
 import '../../services/audit_service.dart';
 import '../../providers/businesses_provider.dart';
-import '../../widgets/score_gauge.dart';
+import '../../widgets/animated_score_gauge.dart';
+import '../../widgets/animated_button.dart';
+import '../../utils/haptics.dart';
 
 class BusinessDetailScreen extends ConsumerStatefulWidget {
   final String businessId;
@@ -119,33 +121,27 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                 // Audit section
                 if (!business.isAudited && !_isAuditing)
                   Center(
-                    child: ElevatedButton.icon(
+                    child: AnimatedButton.primary(
                       onPressed: () => _runAudit(business),
-                      icon: const Icon(Icons.analytics),
-                      label: const Text('Analyze Business'),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.analytics),
+                          SizedBox(width: 8),
+                          Text('Analyze Business'),
+                        ],
+                      ),
                     ),
                   ),
                 
                 if (_isAuditing)
-                  Center(
-                    child: Column(
-                      children: [
-                        const CircularProgressIndicator(),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Analyzing with AI...',
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _AnalyzingAnimation(),
                 
                 if (business.isAudited || _auditResult != null) ...[
-                  // Score gauge
-                  ScoreGauge(
+                  // Score gauge (animated)
+                  AnimatedScoreGauge(
                     score: _auditResult?.score ?? business.auditScore ?? 0,
+                    onComplete: () => Haptics.medium(),
                   ),
                   const SizedBox(height: 24),
                   
@@ -175,7 +171,7 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: ElevatedButton(
+                        child: AnimatedButton.primary(
                           onPressed: () {
                             // TODO: Navigate to Build Demo screen
                           },
@@ -184,13 +180,11 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: ElevatedButton(
+                        child: AnimatedButton(
                           onPressed: () {
                             // TODO: Navigate to Outreach screen
                           },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.success,
-                          ),
+                          backgroundColor: AppColors.success,
                           child: const Text('Create Message'),
                         ),
                       ),
@@ -203,6 +197,84 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text('Error: $error')),
+      ),
+    );
+  }
+}
+
+/// Widget que muestra animación de análisis paso a paso
+class _AnalyzingAnimation extends StatefulWidget {
+  @override
+  State<_AnalyzingAnimation> createState() => _AnalyzingAnimationState();
+}
+
+class _AnalyzingAnimationState extends State<_AnalyzingAnimation> {
+  int _currentStep = 0;
+  
+  final List<String> _steps = [
+    'Checking website...',
+    'Analyzing reviews...',
+    'Calculating score...',
+  ];
+  
+  @override
+  void initState() {
+    super.initState();
+    _animateSteps();
+  }
+  
+  Future<void> _animateSteps() async {
+    for (int i = 0; i < _steps.length; i++) {
+      await Future.delayed(const Duration(milliseconds: 700));
+      if (mounted) {
+        setState(() => _currentStep = i);
+        Haptics.light();
+      }
+    }
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        children: [
+          const CircularProgressIndicator(),
+          const SizedBox(height: 24),
+          ...List.generate(_steps.length, (index) {
+            final isActive = index == _currentStep;
+            final isDone = index < _currentStep;
+            
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    isDone ? Icons.check_circle : Icons.circle_outlined,
+                    size: 16,
+                    color: isActive
+                        ? AppColors.primary
+                        : isDone
+                            ? AppColors.success
+                            : AppColors.textTertiary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _steps[index],
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: isActive
+                          ? AppColors.textPrimary
+                          : isDone
+                              ? AppColors.textSecondary
+                              : AppColors.textTertiary,
+                      fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
       ),
     );
   }

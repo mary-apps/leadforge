@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/animated_button.dart';
+import '../../utils/haptics.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -15,6 +18,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isSignUp = false;
+  String? _errorMessage;
+  bool _isLoading = false;
   
   @override
   void dispose() {
@@ -32,32 +37,53 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return;
     }
     
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    Haptics.light();
+    
     try {
       if (_isSignUp) {
         await ref.read(authProvider.notifier).signUpWithEmail(email, password);
       } else {
         await ref.read(authProvider.notifier).signInWithEmail(email, password);
       }
+      Haptics.medium();
     } catch (e) {
+      Haptics.heavy();
       _showError(e.toString());
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
   
   Future<void> _handleAppleSignIn() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    Haptics.light();
+    
     try {
       await ref.read(authProvider.notifier).signInWithApple();
+      Haptics.medium();
     } catch (e) {
+      Haptics.heavy();
       _showError(e.toString());
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
   
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.danger,
-      ),
-    );
+    if (mounted) {
+      setState(() => _errorMessage = message);
+    }
   }
   
   @override
@@ -72,12 +98,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Logo / Icon
+              // Logo / Icon (animated)
               Icon(
                 Icons.bolt,
                 size: 80,
                 color: AppColors.primary,
-              ),
+              )
+                  .animate(onPlay: (controller) => controller.repeat())
+                  .shimmer(
+                    duration: 2000.ms,
+                    color: AppColors.primary.withOpacity(0.3),
+                  ),
               const SizedBox(height: 16),
               
               // Title
@@ -118,16 +149,50 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   prefixIcon: Icon(Icons.lock_outline),
                 ),
               ),
+              const SizedBox(height: 12),
+              
+              // Error message (animated)
+              if (_errorMessage != null)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.danger.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.danger),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline, color: AppColors.danger, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _errorMessage!,
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: AppColors.danger,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+                    .animate()
+                    .slideX(begin: -0.1, duration: 200.ms, curve: Curves.easeOut)
+                    .fadeIn(duration: 200.ms)
+                    .shake(hz: 4, curve: Curves.easeInOut),
               const SizedBox(height: 24),
               
               // Email auth button
-              ElevatedButton(
-                onPressed: authState.isLoading ? null : _handleEmailAuth,
-                child: authState.isLoading
+              AnimatedButton.primary(
+                onPressed: _isLoading ? null : _handleEmailAuth,
+                enabled: !_isLoading,
+                child: _isLoading
                     ? const SizedBox(
                         height: 20,
                         width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
                       )
                     : Text(_isSignUp ? 'Sign Up' : 'Sign In'),
               ),
@@ -167,12 +232,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SizedBox(height: 32),
               
               // Apple Sign In
-              OutlinedButton.icon(
-                onPressed: authState.isLoading ? null : _handleAppleSignIn,
-                icon: const Icon(Icons.apple),
-                label: const Text('Continue with Apple'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+              AnimatedButton(
+                onPressed: _isLoading ? null : _handleAppleSignIn,
+                enabled: !_isLoading,
+                backgroundColor: Colors.transparent,
+                foregroundColor: AppColors.textPrimary,
+                borderRadius: BorderRadius.circular(12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.apple),
+                    SizedBox(width: 8),
+                    Text('Continue with Apple'),
+                  ],
                 ),
               ),
             ],
