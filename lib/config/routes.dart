@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/auth_provider.dart';
 import '../screens/auth/login_screen.dart';
-import '../screens/onboarding/onboarding_screen.dart';
+import '../screens/onboarding/onboarding_screen_enhanced.dart';
 import '../screens/scout/scout_screen.dart';
 import '../screens/audit/business_detail_screen.dart';
 import '../screens/pipeline/pipeline_screen_enhanced.dart';
@@ -51,7 +51,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Onboarding
       GoRoute(
         path: '/onboarding',
-        builder: (context, state) => const OnboardingScreen(),
+        builder: (context, state) => const OnboardingScreenEnhanced(),
       ),
       
       // Main Shell with Bottom Nav
