@@ -1,0 +1,25 @@
+targets:
+  $default:
+    builders:
+      freezed:
+        options:
+          # Generate copyWith methods
+          copyWith: true
+          # Generate ==
+          equal: true
+          # Generate toString
+          toString: true
+          # Generate map/maybeMap
+          map: true
+          # Generate when/maybeWhen
+          when: true
+      json_serializable:
+        options:
+          # Throw error if JSON key doesn't exist
+          disallowUnrecognizedKeys: false
+          # Include null fields in toJson
+          includeIfNull: false
+          # Use checked conversions
+          checked: true
+          # Explicit toJson
+          explicit_to_json: true
