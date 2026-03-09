@@ -7,9 +7,11 @@ import '../screens/auth/login_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/scout/scout_screen.dart';
 import '../screens/audit/business_detail_screen.dart';
-import '../screens/pipeline/pipeline_screen.dart';
+import '../screens/pipeline/pipeline_screen_enhanced.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/settings/settings_screen.dart';
+import '../screens/build/build_demo_screen.dart';
+import '../screens/outreach/outreach_screen.dart';
 import '../widgets/app_bottom_nav.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -65,7 +67,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           // Pipeline
           GoRoute(
             path: '/pipeline',
-            builder: (context, state) => const PipelineScreen(),
+            builder: (context, state) => const PipelineScreenEnhanced(),
           ),
           
           // Dashboard
@@ -88,6 +90,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final businessId = state.pathParameters['id']!;
           return BusinessDetailScreen(businessId: businessId);
+        },
+      ),
+      
+      // Build Demo (full screen, no bottom nav)
+      GoRoute(
+        path: '/business/:id/build-demo',
+        builder: (context, state) {
+          final businessId = state.pathParameters['id']!;
+          return BuildDemoScreen(businessId: businessId);
+        },
+      ),
+      
+      // Outreach (full screen, no bottom nav)
+      GoRoute(
+        path: '/business/:id/outreach',
+        builder: (context, state) {
+          final businessId = state.pathParameters['id']!;
+          return OutreachScreen(businessId: businessId);
         },
       ),
     ],

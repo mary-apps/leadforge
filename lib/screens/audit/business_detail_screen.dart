@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../config/theme.dart';
 import '../../models/business.dart';
@@ -173,7 +174,7 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                       Expanded(
                         child: AnimatedButton.primary(
                           onPressed: () {
-                            // TODO: Navigate to Build Demo screen
+                            context.push('/business/${business.id}/build-demo');
                           },
                           child: const Text('Generate Demo'),
                         ),
@@ -182,7 +183,7 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                       Expanded(
                         child: AnimatedButton(
                           onPressed: () {
-                            // TODO: Navigate to Outreach screen
+                            context.push('/business/${business.id}/outreach');
                           },
                           backgroundColor: AppColors.success,
                           child: const Text('Create Message'),

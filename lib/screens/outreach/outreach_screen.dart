@@ -1,0 +1,564 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+
+import '../../config/theme.dart';
+import '../../models/business.dart';
+import '../../models/message.dart';
+import '../../services/outreach_service.dart';
+import '../../providers/businesses_provider.dart';
+import '../../providers/subscription_provider.dart';
+import '../../widgets/animated_button.dart';
+import '../../utils/haptics.dart';
+
+class OutreachScreen extends ConsumerStatefulWidget {
+  final String businessId;
+  
+  const OutreachScreen({
+    super.key,
+    required this.businessId,
+  });
+
+  @override
+  ConsumerState<OutreachScreen> createState() => _OutreachScreenState();
+}
+
+class _OutreachScreenState extends ConsumerState<OutreachScreen> {
+  OutreachChannel _selectedChannel = OutreachChannel.email;
+  String _selectedTone = 'professional';
+  bool _isGenerating = false;
+  Message? _generatedMessage;
+  
+  final List<String> _tones = ['professional', 'casual', 'direct'];
+  
+  Future<void> _generateMessage(Business business) async {
+    // Check Pro status
+    final isPro = await ref.read(subscriptionProvider.future);
+    if (!isPro) {
+      Haptics.heavy();
+      _showPaywall();
+      return;
+    }
+    
+    setState(() {
+      _isGenerating = true;
+      _generatedMessage = null;
+    });
+    Haptics.medium();
+    
+    try {
+      final message = await OutreachService.generateMessage(
+        businessId: business.id,
+        channel: _selectedChannel,
+        tone: _selectedTone,
+      );
+      
+      if (mounted) {
+        setState(() {
+          _generatedMessage = message;
+          _isGenerating = false;
+        });
+        Haptics.medium();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isGenerating = false);
+        Haptics.heavy();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    }
+  }
+  
+  void _showPaywall() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Row(
+          children: [
+            Icon(Icons.lock, color: AppColors.warning),
+            const SizedBox(width: 8),
+            const Text('Pro Feature'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('AI message generation is a Pro feature.'),
+            const SizedBox(height: 16),
+            Text(
+              'Upgrade to Pro for:',
+              style: AppTypography.bodyMedium.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _buildBenefit('Unlimited AI messages'),
+            _buildBenefit('4 outreach channels'),
+            _buildBenefit('3 tone options'),
+            _buildBenefit('Bilingual (EN/ES)'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Maybe Later'),
+          ),
+          AnimatedButton.primary(
+            onPressed: () {
+              Navigator.pop(context);
+              // Navigate to settings
+            },
+            child: const Text('Upgrade to Pro'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildBenefit(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Icon(Icons.check_circle, color: AppColors.success, size: 16),
+          const SizedBox(width: 8),
+          Text(text, style: AppTypography.bodyMedium),
+        ],
+      ),
+    );
+  }
+  
+  void _copyMessage(String content) {
+    Clipboard.setData(ClipboardData(text: content));
+    Haptics.medium();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: const [
+            Icon(Icons.check_circle, color: Colors.white),
+            SizedBox(width: 8),
+            Text('Message copied to clipboard'),
+          ],
+        ),
+        backgroundColor: AppColors.success,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+  
+  void _regenerate(Business business) {
+    Haptics.light();
+    _generateMessage(business);
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    final businessAsync = ref.watch(businessProvider(widget.businessId));
+    
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Create Outreach Message'),
+      ),
+      body: businessAsync.when(
+        data: (business) {
+          if (business == null) {
+            return const Center(child: Text('Business not found'));
+          }
+          
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header
+                Text(
+                  'Generate message for',
+                  style: AppTypography.bodyLarge.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  business.name,
+                  style: AppTypography.headlineLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                
+                // Channel selector
+                Text(
+                  'Outreach Channel',
+                  style: AppTypography.titleLarge,
+                ),
+                const SizedBox(height: 12),
+                
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: OutreachChannel.values.map((channel) {
+                    final isSelected = channel == _selectedChannel;
+                    return _ChannelChip(
+                      channel: channel,
+                      isSelected: isSelected,
+                      onTap: () {
+                        setState(() => _selectedChannel = channel);
+                        Haptics.light();
+                      },
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 24),
+                
+                // Tone selector
+                Text(
+                  'Tone',
+                  style: AppTypography.titleLarge,
+                ),
+                const SizedBox(height: 12),
+                
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: _tones.map((tone) {
+                    final isSelected = tone == _selectedTone;
+                    return _ToneChip(
+                      tone: tone,
+                      isSelected: isSelected,
+                      onTap: () {
+                        setState(() => _selectedTone = tone);
+                        Haptics.light();
+                      },
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 32),
+                
+                // Generate button or result
+                if (_generatedMessage == null && !_isGenerating)
+                  AnimatedButton.primary(
+                    onPressed: () => _generateMessage(business),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.auto_awesome, color: Colors.white),
+                        SizedBox(width: 8),
+                        Text('Generate Message'),
+                      ],
+                    ),
+                  ),
+                
+                if (_isGenerating)
+                  _GeneratingAnimation(),
+                
+                if (_generatedMessage != null)
+                  _MessageResult(
+                    message: _generatedMessage!,
+                    onCopy: _copyMessage,
+                    onRegenerate: () => _regenerate(business),
+                  ),
+              ],
+            ),
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => Center(child: Text('Error: $error')),
+      ),
+    );
+  }
+}
+
+/// Channel selection chip
+class _ChannelChip extends StatelessWidget {
+  final OutreachChannel channel;
+  final bool isSelected;
+  final VoidCallback onTap;
+  
+  const _ChannelChip({
+    required this.channel,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final info = _getChannelInfo(channel);
+    
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : AppColors.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.border,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              info['icon'] as IconData,
+              color: isSelected ? Colors.white : AppColors.textSecondary,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              info['name'] as String,
+              style: AppTypography.bodyMedium.copyWith(
+                color: isSelected ? Colors.white : AppColors.textPrimary,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Map<String, dynamic> _getChannelInfo(OutreachChannel channel) {
+    switch (channel) {
+      case OutreachChannel.email:
+        return {'name': 'Email', 'icon': Icons.email_outlined};
+      case OutreachChannel.whatsapp:
+        return {'name': 'WhatsApp', 'icon': Icons.chat_bubble_outline};
+      case OutreachChannel.instagram:
+        return {'name': 'Instagram', 'icon': Icons.photo_camera_outlined};
+      case OutreachChannel.phone:
+        return {'name': 'Phone', 'icon': Icons.phone_outlined};
+    }
+  }
+}
+
+/// Tone selection chip
+class _ToneChip extends StatelessWidget {
+  final String tone;
+  final bool isSelected;
+  final VoidCallback onTap;
+  
+  const _ToneChip({
+    required this.tone,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : AppColors.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.border,
+          ),
+        ),
+        child: Text(
+          tone[0].toUpperCase() + tone.substring(1),
+          style: AppTypography.bodyMedium.copyWith(
+            color: isSelected ? Colors.white : AppColors.textPrimary,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Generating animation
+class _GeneratingAnimation extends StatefulWidget {
+  @override
+  State<_GeneratingAnimation> createState() => _GeneratingAnimationState();
+}
+
+class _GeneratingAnimationState extends State<_GeneratingAnimation> {
+  int _currentStep = 0;
+  
+  final List<String> _steps = [
+    'Analyzing business...',
+    'Crafting message...',
+    'Optimizing tone...',
+  ];
+  
+  @override
+  void initState() {
+    super.initState();
+    _animateSteps();
+  }
+  
+  Future<void> _animateSteps() async {
+    for (int i = 0; i < _steps.length; i++) {
+      await Future.delayed(const Duration(milliseconds: 700));
+      if (mounted) {
+        setState(() => _currentStep = i);
+        Haptics.light();
+      }
+    }
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          const CircularProgressIndicator(),
+          const SizedBox(height: 24),
+          ...List.generate(_steps.length, (index) {
+            final isActive = index == _currentStep;
+            final isDone = index < _currentStep;
+            
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                children: [
+                  Icon(
+                    isDone ? Icons.check_circle : Icons.circle_outlined,
+                    size: 18,
+                    color: isActive
+                        ? AppColors.primary
+                        : isDone
+                            ? AppColors.success
+                            : AppColors.textTertiary,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _steps[index],
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: isActive
+                            ? AppColors.textPrimary
+                            : isDone
+                                ? AppColors.textSecondary
+                                : AppColors.textTertiary,
+                        fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(duration: 300.ms)
+        .scale(begin: const Offset(0.95, 0.95), duration: 300.ms);
+  }
+}
+
+/// Message result widget
+class _MessageResult extends StatelessWidget {
+  final Message message;
+  final Function(String) onCopy;
+  final VoidCallback onRegenerate;
+  
+  const _MessageResult({
+    required this.message,
+    required this.onCopy,
+    required this.onRegenerate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.success),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.auto_awesome, color: AppColors.success),
+              const SizedBox(width: 8),
+              Text(
+                'Message Generated',
+                style: AppTypography.titleLarge.copyWith(
+                  color: AppColors.success,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          // Message content
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: SelectableText(
+              message.content,
+              style: AppTypography.bodyLarge.copyWith(
+                height: 1.6,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Action buttons
+          Row(
+            children: [
+              Expanded(
+                child: AnimatedButton(
+                  onPressed: onRegenerate,
+                  backgroundColor: AppColors.surface,
+                  foregroundColor: AppColors.textPrimary,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.refresh),
+                      SizedBox(width: 8),
+                      Text('Regenerate'),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: AnimatedButton.primary(
+                  onPressed: () => onCopy(message.content),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.copy, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text('Copy'),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(duration: 400.ms)
+        .slideY(begin: 0.1, duration: 400.ms, curve: Curves.easeOut);
+  }
+}
