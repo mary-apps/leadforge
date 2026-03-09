@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/theme.dart';
 import '../../providers/businesses_provider.dart';
 import '../../widgets/stat_card_animated.dart';
+import '../../widgets/weekly_activity_graph.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -101,6 +102,12 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 24),
+              
+              // Weekly activity graph
+              WeeklyActivityGraph(
+                data: _getMockWeeklyData(), // TODO: Real data from provider
+              ),
             ],
           );
         },
@@ -119,6 +126,19 @@ class DashboardScreen extends ConsumerWidget {
       'mrr': businesses
           .where((b) => b.dealValue != null)
           .fold<double>(0, (sum, b) => sum + (b.dealValue ?? 0)),
+    };
+  }
+  
+  Map<String, List<int>> _getMockWeeklyData() {
+    // TODO: Replace with real data from analytics provider
+    return {
+      'Mon': [3, 2, 1],
+      'Tue': [5, 3, 2],
+      'Wed': [4, 4, 3],
+      'Thu': [6, 2, 1],
+      'Fri': [8, 5, 4],
+      'Sat': [2, 1, 0],
+      'Sun': [1, 0, 0],
     };
   }
 }

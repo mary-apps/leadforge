@@ -86,6 +86,61 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
   
+  Future<void> _forgotPassword() async {
+    final email = _emailController.text.trim();
+    
+    if (email.isEmpty) {
+      Haptics.light();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter your email address'),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      return;
+    }
+    
+    Haptics.medium();
+    try {
+      await ref.read(authProvider.notifier).resetPassword(email);
+      
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: AppColors.surface,
+            title: Row(
+              children: [
+                Icon(Icons.check_circle, color: AppColors.success),
+                const SizedBox(width: 8),
+                const Text('Email Sent'),
+              ],
+            ),
+            content: Text(
+              'Password reset link sent to $email. Check your inbox.',
+            ),
+            actions: [
+              AnimatedButton.primary(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      Haptics.heavy();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    }
+  }
+  
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -149,6 +204,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   prefixIcon: Icon(Icons.lock_outline),
                 ),
               ),
+              const SizedBox(height: 8),
+              
+              // Forgot password link
+              if (!_isSignUp)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _forgotPassword,
+                    child: Text(
+                      'Forgot Password?',
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ),
               const SizedBox(height: 12),
               
               // Error message (animated)

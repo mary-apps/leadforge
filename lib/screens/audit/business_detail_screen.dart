@@ -9,6 +9,7 @@ import '../../services/audit_service.dart';
 import '../../providers/businesses_provider.dart';
 import '../../widgets/animated_score_gauge.dart';
 import '../../widgets/animated_button.dart';
+import '../../widgets/share_business_sheet.dart';
 import '../../utils/haptics.dart';
 
 class BusinessDetailScreen extends ConsumerStatefulWidget {
@@ -60,6 +61,15 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Business Detail'),
+        actions: [
+          if (businessAsync.value != null)
+            IconButton(
+              icon: const Icon(Icons.share),
+              onPressed: () {
+                ShareBusinessSheet.show(context, businessAsync.value!);
+              },
+            ),
+        ],
       ),
       body: businessAsync.when(
         data: (business) {
