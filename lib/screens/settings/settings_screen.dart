@@ -3,9 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../models/profile.dart';
 import '../../providers/profile_provider.dart';
 import '../../providers/subscription_provider.dart';
-import '../../widgets/animated_button.dart';
+import '../../widgets/brutal_button.dart';
 import '../../utils/haptics.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -15,7 +16,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(profileNotifierProvider);
     final isProAsync = ref.watch(subscriptionProvider);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
@@ -26,7 +27,7 @@ class SettingsScreen extends ConsumerWidget {
           profileAsync.when(
             data: (profile) {
               if (profile == null) return const SizedBox();
-              
+
               return ListTile(
                 leading: const CircleAvatar(
                   child: Icon(Icons.person),
@@ -41,10 +42,11 @@ class SettingsScreen extends ConsumerWidget {
             ),
             error: (_, __) => const SizedBox(),
           ),
-          
+
           const Divider(),
-          
+
           // Subscription section
+          _sectionLabel('Account'),
           ListTile(
             leading: const Icon(Icons.workspace_premium),
             title: const Text('Subscription'),
@@ -58,21 +60,37 @@ class SettingsScreen extends ConsumerWidget {
               // TODO: Show subscription management
             },
           ),
-          
+
+          // Upgrade CTA for free users
+          isProAsync.when(
+            data: (isPro) {
+              if (isPro) return const SizedBox();
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: BrutalButton(
+                  label: 'Upgrade to Pro',
+                  icon: Icons.workspace_premium,
+                  onPressed: () {
+                    // TODO: Show subscription management
+                  },
+                ),
+              );
+            },
+            loading: () => const SizedBox(),
+            error: (_, __) => const SizedBox(),
+          ),
+
           // Usage section
           profileAsync.when(
             data: (profile) {
               if (profile == null) return const SizedBox();
-              
+
               return Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Usage This Month',
-                      style: AppTypography.titleLarge,
-                    ),
+                    _sectionLabel('Usage'),
                     const SizedBox(height: 16),
                     _UsageMeter(
                       label: 'Searches',
@@ -104,10 +122,11 @@ class SettingsScreen extends ConsumerWidget {
             loading: () => const SizedBox(),
             error: (_, __) => const SizedBox(),
           ),
-          
+
           const Divider(),
-          
+
           // Language
+          _sectionLabel('Preferences'),
           ListTile(
             leading: const Icon(Icons.language),
             title: const Text('Language'),
@@ -117,10 +136,11 @@ class SettingsScreen extends ConsumerWidget {
               // TODO: Show language picker
             },
           ),
-          
+
           const Divider(),
-          
+
           // About
+          _sectionLabel('Info'),
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('About'),
@@ -132,11 +152,14 @@ class SettingsScreen extends ConsumerWidget {
               );
             },
           ),
-          
+
           // Sign out
           Padding(
             padding: const EdgeInsets.all(16),
-            child: AnimatedButton(
+            child: BrutalButton(
+              label: 'Sign Out',
+              icon: Icons.logout,
+              color: AppColors.danger,
               onPressed: () {
                 Haptics.medium();
                 showDialog(
@@ -150,32 +173,37 @@ class SettingsScreen extends ConsumerWidget {
                         onPressed: () => Navigator.pop(context),
                         child: const Text('Cancel'),
                       ),
-                      AnimatedButton(
+                      BrutalButton(
+                        label: 'Sign Out',
+                        color: AppColors.danger,
                         onPressed: () async {
                           Navigator.pop(context);
                           Haptics.heavy();
                           await ref.read(authProvider.notifier).signOut();
                         },
-                        backgroundColor: AppColors.danger,
-                        child: const Text('Sign Out'),
                       ),
                     ],
                   ),
                 );
               },
-              backgroundColor: AppColors.danger.withOpacity(0.1),
-              foregroundColor: AppColors.danger,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.logout),
-                  SizedBox(width: 8),
-                  Text('Sign Out'),
-                ],
-              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  static Widget _sectionLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, top: 12, bottom: 4),
+      child: Text(
+        text.toUpperCase(),
+        style: const TextStyle(
+          fontWeight: FontWeight.w700,
+          fontSize: 11,
+          letterSpacing: 1.0,
+          color: AppColors.textSecondary,
+        ),
       ),
     );
   }
@@ -188,7 +216,7 @@ class _UsageMeter extends StatelessWidget {
   final int? limit; // null = unlimited (Pro)
   final IconData icon;
   final Color color;
-  
+
   const _UsageMeter({
     required this.label,
     required this.used,
@@ -201,9 +229,25 @@ class _UsageMeter extends StatelessWidget {
   Widget build(BuildContext context) {
     final isUnlimited = limit == null;
     final progress = isUnlimited ? 1.0 : (used / limit!).clamp(0.0, 1.0);
-    final isNearLimit = !isUnlimited && used >= (limit! * 0.8);
+    final isHighUsage = !isUnlimited && used > (limit! * 0.8);
     final isAtLimit = !isUnlimited && used >= limit!;
-    
+
+    final progressBarWidget = ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: LinearProgressIndicator(
+        value: progress,
+        backgroundColor: AppColors.surfaceLight,
+        valueColor: AlwaysStoppedAnimation<Color>(
+          isAtLimit
+              ? AppColors.danger
+              : isHighUsage
+                  ? AppColors.warning
+                  : color,
+        ),
+        minHeight: 6,
+      ),
+    );
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -211,6 +255,7 @@ class _UsageMeter extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isAtLimit ? AppColors.danger : AppColors.border,
+          width: isAtLimit ? 2 : 1,
         ),
       ),
       child: Column(
@@ -229,7 +274,7 @@ class _UsageMeter extends StatelessWidget {
                 ),
               ),
               Text(
-                isUnlimited ? '∞' : '$used/$limit',
+                isUnlimited ? '\u221e' : '$used/$limit',
                 style: AppTypography.bodyLarge.copyWith(
                   color: isAtLimit ? AppColors.danger : color,
                   fontFamily: 'SF Mono',
@@ -238,21 +283,17 @@ class _UsageMeter extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: AppColors.surfaceLight,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                isAtLimit
-                    ? AppColors.danger
-                    : isNearLimit
-                        ? AppColors.warning
-                        : color,
+          if (isHighUsage && !isAtLimit)
+            Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: AppColors.danger, width: 1.5),
               ),
-              minHeight: 6,
-            ),
-          ),
+              child: progressBarWidget,
+            )
+          else
+            progressBarWidget,
           if (isAtLimit) ...[
             const SizedBox(height: 8),
             Row(

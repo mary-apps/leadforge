@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../config/theme.dart';
 import '../../models/business.dart';
@@ -9,12 +10,12 @@ import '../../models/message.dart';
 import '../../services/outreach_service.dart';
 import '../../providers/businesses_provider.dart';
 import '../../providers/subscription_provider.dart';
-import '../../widgets/animated_button.dart';
+import '../../widgets/brutal_button.dart';
 import '../../utils/haptics.dart';
 
 class OutreachScreen extends ConsumerStatefulWidget {
   final String businessId;
-  
+
   const OutreachScreen({
     super.key,
     required this.businessId,
@@ -29,31 +30,32 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
   String _selectedTone = 'professional';
   bool _isGenerating = false;
   Message? _generatedMessage;
-  
+
   final List<String> _tones = ['professional', 'casual', 'direct'];
-  
+
   Future<void> _generateMessage(Business business) async {
     // Check Pro status
-    final isPro = await ref.read(subscriptionProvider.future);
+    final isPro = await ref.read(isProProvider.future);
     if (!isPro) {
       Haptics.heavy();
       _showPaywall();
       return;
     }
-    
+
     setState(() {
       _isGenerating = true;
       _generatedMessage = null;
     });
     Haptics.medium();
-    
+
     try {
       final message = await OutreachService.generateMessage(
         businessId: business.id,
         channel: _selectedChannel,
         tone: _selectedTone,
+        language: 'en',
       );
-      
+
       if (mounted) {
         setState(() {
           _generatedMessage = message;
@@ -74,7 +76,7 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
       }
     }
   }
-  
+
   void _showPaywall() {
     showDialog(
       context: context,
@@ -111,18 +113,19 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
             onPressed: () => Navigator.pop(context),
             child: const Text('Maybe Later'),
           ),
-          AnimatedButton.primary(
+          BrutalButton(
+            label: 'Upgrade to Pro',
+            icon: Icons.workspace_premium,
             onPressed: () {
               Navigator.pop(context);
-              // Navigate to settings
+              context.push('/settings');
             },
-            child: const Text('Upgrade to Pro'),
           ),
         ],
       ),
     );
   }
-  
+
   Widget _buildBenefit(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
@@ -135,7 +138,7 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
       ),
     );
   }
-  
+
   void _copyMessage(String content) {
     Clipboard.setData(ClipboardData(text: content));
     Haptics.medium();
@@ -153,16 +156,16 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
       ),
     );
   }
-  
+
   void _regenerate(Business business) {
     Haptics.light();
     _generateMessage(business);
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final businessAsync = ref.watch(businessProvider(widget.businessId));
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create Outreach Message'),
@@ -172,7 +175,7 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
           if (business == null) {
             return const Center(child: Text('Business not found'));
           }
-          
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -193,14 +196,14 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Channel selector
                 Text(
                   'Outreach Channel',
                   style: AppTypography.titleLarge,
                 ),
                 const SizedBox(height: 12),
-                
+
                 Wrap(
                   spacing: 12,
                   runSpacing: 12,
@@ -217,14 +220,14 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
                   }).toList(),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Tone selector
                 Text(
                   'Tone',
                   style: AppTypography.titleLarge,
                 ),
                 const SizedBox(height: 12),
-                
+
                 Wrap(
                   spacing: 12,
                   runSpacing: 12,
@@ -241,24 +244,18 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
                   }).toList(),
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Generate button or result
                 if (_generatedMessage == null && !_isGenerating)
-                  AnimatedButton.primary(
+                  BrutalButton(
+                    label: 'Generate Message',
+                    icon: Icons.auto_awesome,
                     onPressed: () => _generateMessage(business),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.auto_awesome, color: Colors.white),
-                        SizedBox(width: 8),
-                        Text('Generate Message'),
-                      ],
-                    ),
                   ),
-                
+
                 if (_isGenerating)
                   _GeneratingAnimation(),
-                
+
                 if (_generatedMessage != null)
                   _MessageResult(
                     message: _generatedMessage!,
@@ -281,7 +278,7 @@ class _ChannelChip extends StatelessWidget {
   final OutreachChannel channel;
   final bool isSelected;
   final VoidCallback onTap;
-  
+
   const _ChannelChip({
     required this.channel,
     required this.isSelected,
@@ -291,7 +288,7 @@ class _ChannelChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final info = _getChannelInfo(channel);
-    
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -302,7 +299,16 @@ class _ChannelChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.border,
+            width: isSelected ? 2 : 1,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    offset: const Offset(2, 2),
+                  ),
+                ]
+              : [],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -325,7 +331,7 @@ class _ChannelChip extends StatelessWidget {
       ),
     );
   }
-  
+
   Map<String, dynamic> _getChannelInfo(OutreachChannel channel) {
     switch (channel) {
       case OutreachChannel.email:
@@ -336,6 +342,8 @@ class _ChannelChip extends StatelessWidget {
         return {'name': 'Instagram', 'icon': Icons.photo_camera_outlined};
       case OutreachChannel.phone:
         return {'name': 'Phone', 'icon': Icons.phone_outlined};
+      case OutreachChannel.other:
+        return {'name': 'Other', 'icon': Icons.more_horiz};
     }
   }
 }
@@ -345,7 +353,7 @@ class _ToneChip extends StatelessWidget {
   final String tone;
   final bool isSelected;
   final VoidCallback onTap;
-  
+
   const _ToneChip({
     required this.tone,
     required this.isSelected,
@@ -364,7 +372,16 @@ class _ToneChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.border,
+            width: isSelected ? 2 : 1,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    offset: const Offset(2, 2),
+                  ),
+                ]
+              : [],
         ),
         child: Text(
           tone[0].toUpperCase() + tone.substring(1),
@@ -386,19 +403,19 @@ class _GeneratingAnimation extends StatefulWidget {
 
 class _GeneratingAnimationState extends State<_GeneratingAnimation> {
   int _currentStep = 0;
-  
+
   final List<String> _steps = [
     'Analyzing business...',
     'Crafting message...',
     'Optimizing tone...',
   ];
-  
+
   @override
   void initState() {
     super.initState();
     _animateSteps();
   }
-  
+
   Future<void> _animateSteps() async {
     for (int i = 0; i < _steps.length; i++) {
       await Future.delayed(const Duration(milliseconds: 700));
@@ -408,7 +425,7 @@ class _GeneratingAnimationState extends State<_GeneratingAnimation> {
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -425,7 +442,7 @@ class _GeneratingAnimationState extends State<_GeneratingAnimation> {
           ...List.generate(_steps.length, (index) {
             final isActive = index == _currentStep;
             final isDone = index < _currentStep;
-            
+
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Row(
@@ -471,7 +488,7 @@ class _MessageResult extends StatelessWidget {
   final Message message;
   final Function(String) onCopy;
   final VoidCallback onRegenerate;
-  
+
   const _MessageResult({
     required this.message,
     required this.onCopy,
@@ -503,7 +520,7 @@ class _MessageResult extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // Message content
           Container(
             padding: const EdgeInsets.all(16),
@@ -519,37 +536,23 @@ class _MessageResult extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Action buttons
           Row(
             children: [
               Expanded(
-                child: AnimatedButton(
+                child: BrutalButton.secondary(
+                  label: 'Regenerate',
+                  icon: Icons.refresh,
                   onPressed: onRegenerate,
-                  backgroundColor: AppColors.surface,
-                  foregroundColor: AppColors.textPrimary,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.refresh),
-                      SizedBox(width: 8),
-                      Text('Regenerate'),
-                    ],
-                  ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: AnimatedButton.primary(
+                child: BrutalButton(
+                  label: 'Copy',
+                  icon: Icons.copy,
                   onPressed: () => onCopy(message.content),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.copy, color: Colors.white),
-                      SizedBox(width: 8),
-                      Text('Copy'),
-                    ],
-                  ),
                 ),
               ),
             ],

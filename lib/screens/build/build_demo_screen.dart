@@ -2,19 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
+
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../config/theme.dart';
 import '../../models/business.dart';
 import '../../models/demo.dart';
 import '../../services/build_service.dart';
 import '../../providers/businesses_provider.dart';
+import '../../models/profile.dart';
 import '../../providers/profile_provider.dart';
-import '../../widgets/animated_button.dart';
+import '../../widgets/brutal_button.dart';
+import '../../widgets/brutal_card.dart';
 import '../../utils/haptics.dart';
 
 class BuildDemoScreen extends ConsumerStatefulWidget {
   final String businessId;
-  
+
   const BuildDemoScreen({
     super.key,
     required this.businessId,
@@ -28,28 +34,28 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
   DemoTemplate _selectedTemplate = DemoTemplate.restaurant;
   bool _isBuilding = false;
   Demo? _generatedDemo;
-  
+
   Future<void> _buildDemo(Business business) async {
     // Check limit
     final profile = ref.read(profileNotifierProvider).value;
-    if (profile != null && !profile.canBuildDemo) {
+    if (profile != null && !profile.canCreateDemo) {
       Haptics.heavy();
       _showPaywall();
       return;
     }
-    
+
     setState(() {
       _isBuilding = true;
       _generatedDemo = null;
     });
     Haptics.medium();
-    
+
     try {
-      final demo = await BuildService.buildDemo(
-        business.id,
-        _selectedTemplate,
+      final demo = await BuildService.generateDemo(
+        businessId: business.id,
+        template: _selectedTemplate,
       );
-      
+
       if (mounted) {
         setState(() {
           _generatedDemo = demo;
@@ -70,7 +76,7 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
       }
     }
   }
-  
+
   void _showPaywall() {
     showDialog(
       context: context,
@@ -91,18 +97,19 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
             onPressed: () => Navigator.pop(context),
             child: const Text('Maybe Later'),
           ),
-          AnimatedButton.primary(
+          BrutalButton(
+            label: 'Upgrade to Pro',
+            icon: Icons.workspace_premium,
             onPressed: () {
               Navigator.pop(context);
-              // Navigate to settings
+              context.push('/settings');
             },
-            child: const Text('Upgrade to Pro'),
           ),
         ],
       ),
     );
   }
-  
+
   void _copyLink(String url) {
     Clipboard.setData(ClipboardData(text: url));
     Haptics.medium();
@@ -120,16 +127,20 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
       ),
     );
   }
-  
+
   void _shareDemo() {
-    // TODO: Implement native share sheet
+    if (_generatedDemo == null) return;
     Haptics.light();
+    Share.share(
+      'Check out this demo website I built for you: ${_generatedDemo!.publicUrl}',
+      subject: 'Demo Website',
+    );
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final businessAsync = ref.watch(businessProvider(widget.businessId));
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Build Demo Site'),
@@ -139,7 +150,7 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
           if (business == null) {
             return const Center(child: Text('Business not found'));
           }
-          
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -160,14 +171,14 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Template selector
                 Text(
                   'Choose Template',
                   style: AppTypography.titleLarge,
                 ),
                 const SizedBox(height: 16),
-                
+
                 _TemplateCard(
                   template: DemoTemplate.restaurant,
                   isSelected: _selectedTemplate == DemoTemplate.restaurant,
@@ -177,7 +188,7 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
                   },
                 ),
                 const SizedBox(height: 12),
-                
+
                 _TemplateCard(
                   template: DemoTemplate.professional,
                   isSelected: _selectedTemplate == DemoTemplate.professional,
@@ -187,7 +198,7 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
                   },
                 ),
                 const SizedBox(height: 12),
-                
+
                 _TemplateCard(
                   template: DemoTemplate.healthBeauty,
                   isSelected: _selectedTemplate == DemoTemplate.healthBeauty,
@@ -197,24 +208,18 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
                   },
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Build button or demo result
                 if (_generatedDemo == null && !_isBuilding)
-                  AnimatedButton.primary(
+                  BrutalButton(
+                    label: 'Generate Demo Site',
+                    icon: Icons.web,
                     onPressed: () => _buildDemo(business),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.web, color: Colors.white),
-                        SizedBox(width: 8),
-                        Text('Generate Demo Site'),
-                      ],
-                    ),
                   ),
-                
+
                 if (_isBuilding)
                   _BuildingAnimation(),
-                
+
                 if (_generatedDemo != null)
                   _DemoResult(
                     demo: _generatedDemo!,
@@ -237,7 +242,7 @@ class _TemplateCard extends StatelessWidget {
   final DemoTemplate template;
   final bool isSelected;
   final VoidCallback onTap;
-  
+
   const _TemplateCard({
     required this.template,
     required this.isSelected,
@@ -247,19 +252,27 @@ class _TemplateCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final info = _getTemplateInfo(template);
-    
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withOpacity(0.1) : AppColors.surface,
+          color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : AppColors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.border,
             width: isSelected ? 2 : 1,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    offset: const Offset(3, 3),
+                  ),
+                ]
+              : [],
         ),
         child: Row(
           children: [
@@ -297,7 +310,7 @@ class _TemplateCard extends StatelessWidget {
       ),
     );
   }
-  
+
   Map<String, dynamic> _getTemplateInfo(DemoTemplate template) {
     switch (template) {
       case DemoTemplate.restaurant:
@@ -330,20 +343,20 @@ class _BuildingAnimation extends StatefulWidget {
 
 class _BuildingAnimationState extends State<_BuildingAnimation> {
   int _currentStep = 0;
-  
+
   final List<String> _steps = [
     'Creating HTML structure...',
     'Applying styles...',
     'Adding business info...',
     'Generating unique URL...',
   ];
-  
+
   @override
   void initState() {
     super.initState();
     _animateSteps();
   }
-  
+
   Future<void> _animateSteps() async {
     for (int i = 0; i < _steps.length; i++) {
       await Future.delayed(const Duration(milliseconds: 800));
@@ -353,7 +366,7 @@ class _BuildingAnimationState extends State<_BuildingAnimation> {
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -370,7 +383,7 @@ class _BuildingAnimationState extends State<_BuildingAnimation> {
           ...List.generate(_steps.length, (index) {
             final isActive = index == _currentStep;
             final isDone = index < _currentStep;
-            
+
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Row(
@@ -416,7 +429,7 @@ class _DemoResult extends StatelessWidget {
   final Demo demo;
   final Function(String) onCopyLink;
   final VoidCallback onShare;
-  
+
   const _DemoResult({
     required this.demo,
     required this.onCopyLink,
@@ -425,13 +438,8 @@ class _DemoResult extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.success),
-      ),
+    return BrutalCard(
+      borderColor: AppColors.success,
       child: Column(
         children: [
           Icon(
@@ -460,15 +468,11 @@ class _DemoResult extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          
+
           // URL display
-          Container(
+          BrutalCard(
+            borderColor: AppColors.success,
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.border),
-            ),
             child: Row(
               children: [
                 Expanded(
@@ -490,39 +494,25 @@ class _DemoResult extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Action buttons
           Row(
             children: [
               Expanded(
-                child: AnimatedButton(
+                child: BrutalButton.secondary(
+                  label: 'Share',
+                  icon: Icons.share,
                   onPressed: onShare,
-                  backgroundColor: AppColors.primary.withOpacity(0.1),
-                  foregroundColor: AppColors.primary,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.share),
-                      SizedBox(width: 8),
-                      Text('Share'),
-                    ],
-                  ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: AnimatedButton.primary(
+                child: BrutalButton(
+                  label: 'Open',
+                  icon: Icons.open_in_new,
                   onPressed: () {
-                    // Open in browser
+                    launchUrl(Uri.parse(demo.publicUrl), mode: LaunchMode.externalApplication);
                   },
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.open_in_new, color: Colors.white),
-                      SizedBox(width: 8),
-                      Text('Open'),
-                    ],
-                  ),
                 ),
               ),
             ],

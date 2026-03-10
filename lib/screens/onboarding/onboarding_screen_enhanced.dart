@@ -6,7 +6,7 @@ import 'package:confetti/confetti.dart';
 
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
-import '../../widgets/animated_button.dart';
+import '../../widgets/brutal_button.dart';
 import '../../utils/haptics.dart';
 
 class OnboardingScreenEnhanced extends ConsumerStatefulWidget {
@@ -23,7 +23,7 @@ class _OnboardingScreenEnhancedState
   final _nameController = TextEditingController();
   final _businessController = TextEditingController();
   final _confettiController = ConfettiController();
-  
+
   int _currentPage = 0;
   bool _isLoading = false;
   bool _nameValid = false;
@@ -158,7 +158,7 @@ class _OnboardingScreenEnhancedState
                       ),
                       _OnboardingPage(
                         icon: Icons.analytics,
-                        iconColor: AppColors.info,
+                        iconColor: AppColors.primary,
                         title: 'AI-Powered Analysis',
                         description:
                             'Get instant insights on website quality, SEO gaps, and online reputation.',
@@ -166,7 +166,7 @@ class _OnboardingScreenEnhancedState
                       ),
                       _OnboardingPage(
                         icon: Icons.web,
-                        iconColor: AppColors.warning,
+                        iconColor: AppColors.primary,
                         title: 'Generate Demo Sites',
                         description:
                             'Create professional demo websites in seconds to showcase your work.',
@@ -174,7 +174,7 @@ class _OnboardingScreenEnhancedState
                       ),
                       _OnboardingPage(
                         icon: Icons.message,
-                        iconColor: AppColors.success,
+                        iconColor: AppColors.primary,
                         title: 'Personalized Outreach',
                         description:
                             'AI writes custom messages for email, WhatsApp, Instagram, or phone.',
@@ -223,33 +223,25 @@ class _OnboardingScreenEnhancedState
                               onPressed: _skipConfirmation,
                               child: const Text('Skip'),
                             ),
-                            AnimatedButton.primary(
+                            BrutalButton(
+                              label: 'Next',
+                              icon: Icons.arrow_forward,
                               onPressed: () {
                                 _pageController.nextPage(
                                   duration: const Duration(milliseconds: 400),
                                   curve: Curves.easeInOutCubic,
                                 );
                               },
-                              child: const Text('Next'),
                             ),
                           ],
                         )
-                      : AnimatedButton.primary(
+                      : BrutalButton(
+                          label: 'Get Started',
+                          icon: Icons.rocket_launch,
+                          isLoading: _isLoading,
                           onPressed: (_nameValid && _businessValid && !_isLoading)
                               ? _complete
                               : null,
-                          enabled: _nameValid && _businessValid && !_isLoading,
-                          child: _isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white),
-                                  ),
-                                )
-                              : const Text('Get Started'),
                         ),
                 ),
               ],
@@ -268,7 +260,7 @@ class _OnboardingScreenEnhancedState
               gravity: 0.2,
               shouldLoop: false,
               colors: const [
-                Color(0xFF6C5CE7),
+                Color(0xFFFF9F43),
                 Color(0xFF00D68F),
                 Color(0xFFFDCB6E),
                 Color(0xFFFF6B6B),
@@ -345,7 +337,7 @@ class _OnboardingPageState extends State<_OnboardingPage>
               .then(delay: 200.ms)
               .shimmer(
                 duration: 1500.ms,
-                color: widget.iconColor.withOpacity(0.3),
+                color: widget.iconColor.withValues(alpha: 0.3),
               ),
           const SizedBox(height: 32),
 
