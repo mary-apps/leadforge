@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../config/theme.dart';
 import '../../models/business.dart';
@@ -27,6 +28,77 @@ class _PipelineScreenEnhancedState
     BusinessStatus.lost: false,
   };
 
+  BusinessStatus? _filterStatus;
+
+  void _showFilterSheet() {
+    Haptics.light();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Filter by Status', style: AppTypography.titleLarge),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.all_inclusive),
+              title: const Text('All Stages'),
+              selected: _filterStatus == null,
+              onTap: () {
+                setState(() => _filterStatus = null);
+                Navigator.pop(context);
+              },
+            ),
+            ...BusinessStatus.values.map((status) => ListTile(
+              leading: Text(_getStatusEmoji(status), style: const TextStyle(fontSize: 20)),
+              title: Text(_getStatusTitle(status)),
+              selected: _filterStatus == status,
+              onTap: () {
+                setState(() => _filterStatus = status);
+                Navigator.pop(context);
+              },
+            )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _exportPipeline(Map<BusinessStatus, List<Business>> pipeline) {
+    Haptics.medium();
+    final buffer = StringBuffer();
+    buffer.writeln('Name,Status,Address,Rating,Audit Score,Deal Value');
+
+    for (final entry in pipeline.entries) {
+      for (final b in entry.value) {
+        final name = b.name.replaceAll(',', ' ');
+        final address = (b.address ?? '').replaceAll(',', ' ');
+        buffer.writeln('$name,${_getStatusTitle(entry.key)},$address,${b.rating ?? ''},${b.auditScore ?? ''},${b.dealValue ?? ''}');
+      }
+    }
+
+    final csv = buffer.toString();
+    Share.share(csv, subject: 'LeadForge Pipeline Export');
+  }
+
+  String _getStatusEmoji(BusinessStatus status) {
+    switch (status) {
+      case BusinessStatus.found: return '🔍';
+      case BusinessStatus.audited: return '📊';
+      case BusinessStatus.demoCreated: return '🌐';
+      case BusinessStatus.contacted: return '📧';
+      case BusinessStatus.interested: return '⭐';
+      case BusinessStatus.closed: return '✅';
+      case BusinessStatus.lost: return '❌';
+    }
+  }
+
   Future<void> _moveBusinessToStatus(
     Business business,
     BusinessStatus newStatus,
@@ -35,7 +107,7 @@ class _PipelineScreenEnhancedState
     try {
       await ref
           .read(businessesProvider.notifier)
-          .updateBusinessStatus(business.id, newStatus);
+          .updateStatus(business.id, newStatus);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -116,10 +188,28 @@ class _PipelineScreenEnhancedState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pipeline'),
+        title: Text(_filterStatus != null
+            ? 'Pipeline — ${_getStatusTitle(_filterStatus!)}'
+            : 'Pipeline'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(
+              _filterStatus != null ? Icons.filter_alt : Icons.filter_alt_outlined,
+              color: _filterStatus != null ? AppColors.primary : null,
+            ),
+            onPressed: _showFilterSheet,
+            tooltip: 'Filter',
+          ),
+          IconButton(
+            icon: Icon(Icons.ios_share, color: AppColors.primary),
+            onPressed: () {
+              final data = ref.read(pipelineProvider).valueOrNull;
+              if (data != null) _exportPipeline(data);
+            },
+            tooltip: 'Export CSV',
+          ),
+          IconButton(
+            icon: Icon(Icons.refresh, color: AppColors.primary),
             onPressed: () {
               Haptics.light();
               ref.read(businessesProvider.notifier).load();
@@ -138,48 +228,55 @@ class _PipelineScreenEnhancedState
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _buildSection(
-                  '🔍 Found',
-                  BusinessStatus.found,
-                  pipeline[BusinessStatus.found] ?? [],
-                  AppColors.primary,
-                ),
-                _buildSection(
-                  '📊 Audited',
-                  BusinessStatus.audited,
-                  pipeline[BusinessStatus.audited] ?? [],
-                  AppColors.info,
-                ),
-                _buildSection(
-                  '🌐 Demo Created',
-                  BusinessStatus.demoCreated,
-                  pipeline[BusinessStatus.demoCreated] ?? [],
-                  AppColors.warning,
-                ),
-                _buildSection(
-                  '📧 Contacted',
-                  BusinessStatus.contacted,
-                  pipeline[BusinessStatus.contacted] ?? [],
-                  AppColors.primary,
-                ),
-                _buildSection(
-                  '⭐ Interested',
-                  BusinessStatus.interested,
-                  pipeline[BusinessStatus.interested] ?? [],
-                  AppColors.warning,
-                ),
-                _buildSection(
-                  '✅ Closed',
-                  BusinessStatus.closed,
-                  pipeline[BusinessStatus.closed] ?? [],
-                  AppColors.success,
-                ),
-                _buildSection(
-                  '❌ Lost',
-                  BusinessStatus.lost,
-                  pipeline[BusinessStatus.lost] ?? [],
-                  AppColors.danger,
-                ),
+                if (_filterStatus == null || _filterStatus == BusinessStatus.found)
+                  _buildSection(
+                    'FOUND',
+                    BusinessStatus.found,
+                    pipeline[BusinessStatus.found] ?? [],
+                    AppColors.textTertiary,
+                  ),
+                if (_filterStatus == null || _filterStatus == BusinessStatus.audited)
+                  _buildSection(
+                    'AUDITED',
+                    BusinessStatus.audited,
+                    pipeline[BusinessStatus.audited] ?? [],
+                    AppColors.secondary,
+                  ),
+                if (_filterStatus == null || _filterStatus == BusinessStatus.demoCreated)
+                  _buildSection(
+                    'DEMO CREATED',
+                    BusinessStatus.demoCreated,
+                    pipeline[BusinessStatus.demoCreated] ?? [],
+                    AppColors.primary,
+                  ),
+                if (_filterStatus == null || _filterStatus == BusinessStatus.contacted)
+                  _buildSection(
+                    'CONTACTED',
+                    BusinessStatus.contacted,
+                    pipeline[BusinessStatus.contacted] ?? [],
+                    AppColors.success,
+                  ),
+                if (_filterStatus == null || _filterStatus == BusinessStatus.interested)
+                  _buildSection(
+                    'INTERESTED',
+                    BusinessStatus.interested,
+                    pipeline[BusinessStatus.interested] ?? [],
+                    AppColors.info,
+                  ),
+                if (_filterStatus == null || _filterStatus == BusinessStatus.closed)
+                  _buildSection(
+                    'CLOSED',
+                    BusinessStatus.closed,
+                    pipeline[BusinessStatus.closed] ?? [],
+                    AppColors.success,
+                  ),
+                if (_filterStatus == null || _filterStatus == BusinessStatus.lost)
+                  _buildSection(
+                    'LOST',
+                    BusinessStatus.lost,
+                    pipeline[BusinessStatus.lost] ?? [],
+                    AppColors.danger,
+                  ),
               ],
             ),
           );
@@ -216,22 +313,38 @@ class _PipelineScreenEnhancedState
                   Expanded(
                     child: Row(
                       children: [
-                        Text(title, style: AppTypography.titleLarge),
+                        Text(
+                          title.toUpperCase(),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11,
+                            letterSpacing: 1.0,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
+                            horizontal: 8,
+                            vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: color.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: color, width: 2),
+                            borderRadius: BorderRadius.circular(6),
+                            boxShadow: [
+                              BoxShadow(
+                                color: color.withValues(alpha: 0.3),
+                                offset: const Offset(2, 2),
+                                blurRadius: 0,
+                              ),
+                            ],
                           ),
                           child: Text(
                             businesses.length.toString(),
-                            style: AppTypography.labelLarge.copyWith(
+                            style: TextStyle(
                               color: color,
-                              fontFamily: 'SF Mono',
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
                             ),
                           ),
                         ),
@@ -271,13 +384,21 @@ class _PipelineScreenEnhancedState
                 ),
               )
             else
-              ...businesses.map((business) => _DraggableBusinessCard(
-                    business: business,
-                    currentStatus: status,
-                    onMoveToStatus: (newStatus) =>
-                        _moveBusinessToStatus(business, newStatus),
-                    onDelete: () => _deleteBusiness(business),
-                    onTap: () => context.push('/business/${business.id}'),
+              ...businesses.map((business) => Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        left: BorderSide(color: color, width: 3),
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: _DraggableBusinessCard(
+                      business: business,
+                      currentStatus: status,
+                      onMoveToStatus: (newStatus) =>
+                          _moveBusinessToStatus(business, newStatus),
+                      onDelete: () => _deleteBusiness(business),
+                      onTap: () => context.push('/business/${business.id}'),
+                    ),
                   )),
           ],
         ],
