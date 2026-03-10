@@ -2,70 +2,149 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../config/theme.dart';
+import '../utils/haptics.dart';
 
 class AppBottomNav extends StatelessWidget {
-  final Widget child;
-  
+  final StatefulNavigationShell navigationShell;
+
   const AppBottomNav({
     super.key,
-    required this.child,
+    required this.navigationShell,
   });
-
-  int _getCurrentIndex(BuildContext context) {
-    final location = GoRouterState.of(context).matchedLocation;
-    
-    if (location.startsWith('/scout')) return 0;
-    if (location.startsWith('/pipeline')) return 1;
-    if (location.startsWith('/dashboard')) return 2;
-    if (location.startsWith('/settings')) return 3;
-    
-    return 0;
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: child,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          border: Border(
-            top: BorderSide(color: AppColors.border),
+      extendBody: true,
+      body: navigationShell,
+      floatingActionButton: _ScoutFAB(
+        isSelected: navigationShell.currentIndex == 2,
+        onTap: () {
+          Haptics.medium();
+          navigationShell.goBranch(2);
+        },
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: _BottomBar(
+        currentIndex: navigationShell.currentIndex,
+        onTap: (index) {
+          Haptics.light();
+          navigationShell.goBranch(index);
+        },
+      ),
+    );
+  }
+}
+
+class _ScoutFAB extends StatefulWidget {
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ScoutFAB({
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  State<_ScoutFAB> createState() => _ScoutFABState();
+}
+
+class _ScoutFABState extends State<_ScoutFAB> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.9 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.background,
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.4),
+                offset: const Offset(3, 3),
+                blurRadius: 0,
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.search_rounded,
+            color: AppColors.background,
+            size: 26,
           ),
         ),
-        child: SafeArea(
-          child: SizedBox(
-            height: 60,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _NavItem(
-                  icon: Icons.search,
-                  label: 'Scout',
-                  isSelected: _getCurrentIndex(context) == 0,
-                  onTap: () => context.go('/scout'),
-                ),
-                _NavItem(
-                  icon: Icons.dashboard,
-                  label: 'Pipeline',
-                  isSelected: _getCurrentIndex(context) == 1,
-                  onTap: () => context.go('/pipeline'),
-                ),
-                _NavItem(
-                  icon: Icons.analytics,
-                  label: 'Dashboard',
-                  isSelected: _getCurrentIndex(context) == 2,
-                  onTap: () => context.go('/dashboard'),
-                ),
-                _NavItem(
-                  icon: Icons.settings,
-                  label: 'Settings',
-                  isSelected: _getCurrentIndex(context) == 3,
-                  onTap: () => context.go('/settings'),
-                ),
-              ],
+      ),
+    );
+  }
+}
+
+class _BottomBar extends StatelessWidget {
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+
+  const _BottomBar({
+    required this.currentIndex,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+      height: 64,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppColors.border,
+          width: 1,
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            _NavItem(
+              icon: Icons.home_rounded,
+              label: 'HOME',
+              isSelected: currentIndex == 0,
+              onTap: () => onTap(0),
             ),
-          ),
+            _NavItem(
+              icon: Icons.view_kanban_rounded,
+              label: 'PIPELINE',
+              isSelected: currentIndex == 1,
+              onTap: () => onTap(1),
+            ),
+            const SizedBox(width: 64), // Gap for FAB
+            _NavItem(
+              icon: Icons.chat_bubble_outline_rounded,
+              label: 'MESSAGES',
+              isSelected: currentIndex == 3,
+              onTap: () => onTap(3),
+            ),
+            _NavItem(
+              icon: Icons.settings_rounded,
+              label: 'SETTINGS',
+              isSelected: currentIndex == 4,
+              onTap: () => onTap(4),
+            ),
+          ],
         ),
       ),
     );
@@ -77,7 +156,7 @@ class _NavItem extends StatelessWidget {
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
-  
+
   const _NavItem({
     required this.icon,
     required this.label,
@@ -87,24 +166,28 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    final color = isSelected ? AppColors.primary : AppColors.textTertiary;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
-              size: 24,
+              size: 22,
+              color: color,
             ),
             const SizedBox(height: 4),
             Text(
               label,
-              style: AppTypography.labelLarge.copyWith(
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
-                fontSize: 11,
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+                color: color,
               ),
             ),
           ],
