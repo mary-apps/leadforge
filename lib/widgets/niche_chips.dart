@@ -5,10 +5,12 @@ import '../config/constants.dart';
 
 class NicheChips extends StatelessWidget {
   final Function(String) onSelected;
-  
+  final String? selectedNiche;
+
   const NicheChips({
     super.key,
     required this.onSelected,
+    this.selectedNiche,
   });
 
   @override
@@ -22,14 +24,18 @@ class NicheChips extends StatelessWidget {
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final niche = AppConstants.suggestedNiches[index];
-          
+          final isSelected = selectedNiche == niche;
+
           return ActionChip(
             label: Text(niche),
             onPressed: () => onSelected(niche),
-            backgroundColor: AppColors.surface,
-            side: BorderSide(color: AppColors.border),
+            backgroundColor: isSelected ? AppColors.primary : AppColors.surface,
+            side: BorderSide(
+              color: isSelected ? AppColors.primary : AppColors.border,
+              width: isSelected ? 2 : 1,
+            ),
             labelStyle: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textPrimary,
+              color: isSelected ? AppColors.background : AppColors.textSecondary,
             ),
           );
         },

@@ -5,10 +5,12 @@ import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
 import '../../config/constants.dart';
 import '../../providers/businesses_provider.dart';
+import '../../models/profile.dart';
 import '../../providers/profile_provider.dart';
 import '../../widgets/business_card.dart';
 import '../../widgets/niche_chips.dart';
-import '../../widgets/loading_shimmer.dart';
+import '../../widgets/empty_state.dart';
+import '../../widgets/skeleton_loaders.dart';
 import '../../widgets/search_suggestions.dart';
 import '../../widgets/animated_button.dart';
 import '../../utils/haptics.dart';
@@ -177,7 +179,14 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
                   focusNode: _focusNode,
                   decoration: InputDecoration(
                     hintText: 'Search businesses (e.g., "dentists Austin")',
-                    prefixIcon: const Icon(Icons.search),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: _focusNode.hasFocus ? AppColors.primary : null,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.primary, width: 2),
+                    ),
                     suffixIcon: _isSearching
                         ? const Padding(
                             padding: EdgeInsets.all(12),
@@ -227,29 +236,8 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
             child: businessesAsync.when(
               data: (businesses) {
                 if (businesses.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.search_off,
-                          size: 80,
-                          color: AppColors.textTertiary,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No businesses found',
-                          style: AppTypography.titleLarge,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Try searching for a different niche or location',
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
+                  return EmptyState.noResults(
+                    onRetry: () => _handleSearch(_searchController.text),
                   );
                 }
                 
@@ -275,7 +263,7 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
                   ),
                 );
               },
-              loading: () => const LoadingShimmer(),
+              loading: () => const SearchSkeleton(),
               error: (error, _) => Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
