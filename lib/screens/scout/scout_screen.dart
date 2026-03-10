@@ -12,7 +12,7 @@ import '../../widgets/niche_chips.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/skeleton_loaders.dart';
 import '../../widgets/search_suggestions.dart';
-import '../../widgets/animated_button.dart';
+import '../../widgets/brutal_button.dart';
 import '../../utils/haptics.dart';
 
 class ScoutScreen extends ConsumerStatefulWidget {
@@ -128,12 +128,12 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
             onPressed: () => Navigator.pop(context),
             child: const Text('Maybe Later'),
           ),
-          AnimatedButton.primary(
+          BrutalButton(
+            label: 'Upgrade to Pro',
             onPressed: () {
               Navigator.pop(context);
               context.push('/settings');
             },
-            child: const Text('Upgrade to Pro'),
           ),
         ],
       ),
@@ -287,9 +287,9 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 24),
-                    AnimatedButton.primary(
+                    BrutalButton(
+                      label: 'Retry',
                       onPressed: () => ref.read(businessesProvider.notifier).load(),
-                      child: const Text('Retry'),
                     ),
                   ],
                 ),

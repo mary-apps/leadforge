@@ -35,7 +35,7 @@ class SupabaseService {
   }
   
   /// Sign in with Apple
-  static Future<AuthResponse> signInWithApple() async {
+  static Future<bool> signInWithApple() async {
     return await client.auth.signInWithOAuth(
       OAuthProvider.apple,
       redirectTo: 'io.leadforge.app://login-callback',

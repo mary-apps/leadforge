@@ -7,7 +7,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
-import '../../widgets/animated_button.dart';
 import '../../widgets/brutal_button.dart';
 import '../../utils/haptics.dart';
 
@@ -144,9 +143,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               'Password reset link sent to $email. Check your inbox.',
             ),
             actions: [
-              AnimatedButton.primary(
+              BrutalButton(
+                label: 'OK',
                 onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
               ),
             ],
           ),
@@ -432,19 +431,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SizedBox(height: 32),
 
               // Apple Sign In
-              AnimatedButton(
-                onPressed: _isLoading ? null : _handleAppleSignIn,
-                enabled: !_isLoading,
-                backgroundColor: Colors.transparent,
-                foregroundColor: AppColors.textPrimary,
-                borderRadius: BorderRadius.circular(12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.apple),
-                    SizedBox(width: 8),
-                    Text('Continue with Apple'),
-                  ],
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _isLoading ? null : _handleAppleSignIn,
+                  icon: const Icon(Icons.apple, color: AppColors.textPrimary),
+                  label: const Text('Continue with Apple'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.textPrimary,
+                    side: const BorderSide(color: AppColors.textTertiary),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ),
               ],

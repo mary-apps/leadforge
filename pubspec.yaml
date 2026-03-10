@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   
   # State Management
   flutter_riverpod: ^2.4.0
@@ -31,7 +33,7 @@ dependencies:
   url_launcher: ^6.2.0
   
   # Monetization
-  purchases_flutter: ^6.0.0
+  purchases_flutter: ^9.0.0
   
   # Utilities
   share_plus: ^7.0.0
@@ -42,7 +44,7 @@ dependencies:
   freezed_annotation: ^2.4.0
   
   # Internationalization
-  intl: ^0.18.0
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
@@ -53,26 +55,12 @@ dev_dependencies:
   freezed: ^2.4.0
 
 flutter:
+  generate: true
   uses-material-design: true
   
   assets:
     - assets/images/
     - assets/icons/
   
-  fonts:
-    - family: SF Pro Display
-      fonts:
-        - asset: assets/fonts/SFProDisplay-Bold.otf
-          weight: 700
-        - asset: assets/fonts/SFProDisplay-Semibold.otf
-          weight: 600
-    - family: SF Pro Text
-      fonts:
-        - asset: assets/fonts/SFProText-Regular.otf
-          weight: 400
-        - asset: assets/fonts/SFProText-Semibold.otf
-          weight: 600
-    - family: SF Mono
-      fonts:
-        - asset: assets/fonts/SFMono-Medium.otf
-          weight: 500
+  # Fonts: Using system fonts (SF Pro on iOS, Roboto on Android)
+  # Add custom font files here if needed

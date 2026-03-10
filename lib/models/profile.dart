@@ -31,7 +31,7 @@ extension ProfileX on Profile {
   bool get canCreateDemo => isPro || demosThisMonth < 1;
   bool get canUseOutreach => isPro; // Pro only
   
-  int get searchesRemaining => isPro ? 999 : (5 - searchesThisMonth).clamp(0, 5);
-  int get auditsRemaining => isPro ? 999 : (3 - auditsThisMonth).clamp(0, 3);
-  int get demosRemaining => isPro ? 999 : (1 - demosThisMonth).clamp(0, 1);
+  int get searchesRemaining => isPro ? 999 : (5 - searchesThisMonth).clamp(0, 5) as int;
+  int get auditsRemaining => isPro ? 999 : (3 - auditsThisMonth).clamp(0, 3) as int;
+  int get demosRemaining => isPro ? 999 : (1 - demosThisMonth).clamp(0, 1) as int;
 }

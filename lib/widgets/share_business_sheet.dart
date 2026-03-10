@@ -5,7 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import '../config/theme.dart';
 import '../models/business.dart';
 import '../utils/haptics.dart';
-import 'animated_button.dart';
+import 'brutal_button.dart';
 
 /// Bottom sheet for sharing business details
 class ShareBusinessSheet extends StatelessWidget {
@@ -67,56 +67,32 @@ class ShareBusinessSheet extends StatelessWidget {
           const SizedBox(height: 24),
           
           // Copy link
-          AnimatedButton(
+          BrutalButton(
+            label: 'Copy Business Info',
+            icon: Icons.copy,
             onPressed: () {
               _copyBusinessText(context);
             },
-            backgroundColor: AppColors.primary.withOpacity(0.1),
-            foregroundColor: AppColors.primary,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.copy),
-                SizedBox(width: 12),
-                Text('Copy Business Info'),
-              ],
-            ),
           ),
           const SizedBox(height: 12),
-          
+
           // Share via system share sheet
-          AnimatedButton(
+          BrutalButton.success(
+            label: 'Share via...',
+            icon: Icons.share,
             onPressed: () {
               _shareViaSystem(context);
             },
-            backgroundColor: AppColors.success.withOpacity(0.1),
-            foregroundColor: AppColors.success,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.share),
-                SizedBox(width: 12),
-                Text('Share via...'),
-              ],
-            ),
           ),
           const SizedBox(height: 12),
-          
+
           // Export as card (TODO: screenshot feature)
-          AnimatedButton(
+          BrutalButton.secondary(
+            label: 'Export as Image',
+            icon: Icons.image,
             onPressed: () {
               _showComingSoon(context);
             },
-            backgroundColor: AppColors.warning.withOpacity(0.1),
-            foregroundColor: AppColors.warning,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.image),
-                SizedBox(width: 12),
-                Text('Export as Image'),
-              ],
-            ),
           ),
           const SizedBox(height: 24),
           

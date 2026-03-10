@@ -1,0 +1,101 @@
+<h2>¿Qué dirección visual te atrae más?</h2>
+<p class="subtitle">Esto define el "feeling" de toda la app. Haz click en la que prefieras.</p>
+
+<div class="cards">
+  <!-- Option A: Glassmorphism Premium -->
+  <div class="card" data-choice="glassmorphism" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: linear-gradient(135deg, #0A0A0F 0%, #1a1a2e 100%); padding: 24px; min-height: 280px;">
+      <!-- Glassmorphism card mockup -->
+      <div style="position: relative;">
+        <div style="position: absolute; top: 0; right: 0; width: 120px; height: 120px; background: radial-gradient(circle, rgba(108,92,231,0.4) 0%, transparent 70%); border-radius: 50%; filter: blur(20px);"></div>
+        <div style="position: absolute; bottom: -20px; left: -20px; width: 80px; height: 80px; background: radial-gradient(circle, rgba(0,214,143,0.3) 0%, transparent 70%); border-radius: 50%; filter: blur(15px);"></div>
+
+        <div style="background: rgba(255,255,255,0.06); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #6C5CE7, #a29bfe); display: flex; align-items: center; justify-content: center; font-size: 18px;">📊</div>
+            <div>
+              <div style="color: rgba(255,255,255,0.5); font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Score</div>
+              <div style="color: #fff; font-size: 24px; font-weight: 700;">87</div>
+            </div>
+          </div>
+          <div style="height: 4px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden;">
+            <div style="height: 100%; width: 87%; background: linear-gradient(90deg, #6C5CE7, #00D68F); border-radius: 4px;"></div>
+          </div>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="color: rgba(255,255,255,0.7); font-size: 13px;">Leads this week</div>
+            <div style="color: #00D68F; font-size: 13px; font-weight: 600;">+12%</div>
+          </div>
+          <div style="color: #fff; font-size: 28px; font-weight: 700; margin-top: 4px;">24</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Glassmorphism Premium</h3>
+      <p>Cards translúcidos con blur, orbes de color de fondo, gradientes sutiles. Estilo Apple Vision Pro / Spotify. Elegante y moderno.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Neo-Brutalism -->
+  <div class="card" data-choice="neo-brutal" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: #0A0A0F; padding: 24px; min-height: 280px;">
+      <div style="background: #141420; border: 2px solid #6C5CE7; border-radius: 12px; padding: 20px; margin-bottom: 12px; box-shadow: 4px 4px 0px #6C5CE7;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+          <div style="width: 40px; height: 40px; border-radius: 8px; background: #6C5CE7; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #fff;">87</div>
+          <div>
+            <div style="color: #fff; font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">SCORE</div>
+          </div>
+        </div>
+        <div style="height: 8px; background: #1a1a2e; border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+          <div style="height: 100%; width: 87%; background: #6C5CE7; border-radius: 4px;"></div>
+        </div>
+      </div>
+
+      <div style="background: #141420; border: 2px solid #00D68F; border-radius: 12px; padding: 16px; box-shadow: 4px 4px 0px #00D68F;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 700; text-transform: uppercase;">Leads</div>
+          <div style="background: #00D68F; color: #0A0A0F; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 800;">+12%</div>
+        </div>
+        <div style="color: #fff; font-size: 32px; font-weight: 900; margin-top: 4px;">24</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Neo-Brutalism Dark</h3>
+      <p>Bordes sólidos, sombras offset, tipografía bold agresiva. Estilo Gumroad / Figma. Directo y con personalidad fuerte.</p>
+    </div>
+  </div>
+
+  <!-- Option C: Minimal Gradient -->
+  <div class="card" data-choice="minimal-gradient" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: linear-gradient(180deg, #0A0A0F 0%, #0f0f1a 100%); padding: 24px; min-height: 280px;">
+      <div style="background: linear-gradient(135deg, rgba(108,92,231,0.12) 0%, rgba(0,214,143,0.08) 100%); border: 1px solid rgba(108,92,231,0.15); border-radius: 20px; padding: 20px; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+          <div style="width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, rgba(108,92,231,0.2), rgba(108,92,231,0.05)); display: flex; align-items: center; justify-content: center;">
+            <div style="font-size: 20px;">📊</div>
+          </div>
+          <div>
+            <div style="color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 500;">Score</div>
+            <div style="color: #fff; font-size: 26px; font-weight: 600; letter-spacing: -0.5px;">87</div>
+          </div>
+        </div>
+        <div style="height: 3px; background: rgba(255,255,255,0.04); border-radius: 3px; overflow: hidden;">
+          <div style="height: 100%; width: 87%; background: linear-gradient(90deg, #6C5CE7, #a29bfe); border-radius: 3px;"></div>
+        </div>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 20px; padding: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="color: rgba(255,255,255,0.45); font-size: 13px; font-weight: 500;">Leads this week</div>
+          <div style="color: #00D68F; font-size: 13px; font-weight: 500;">+12%</div>
+        </div>
+        <div style="color: #fff; font-size: 28px; font-weight: 600; margin-top: 6px; letter-spacing: -0.5px;">24</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Minimal Gradient</h3>
+      <p>Ultra limpio con gradientes muy sutiles, bordes redondeados grandes (20px), mucho espacio negativo. Estilo Linear / Vercel. Sofisticado y sereno.</p>
+    </div>
+  </div>
+</div>

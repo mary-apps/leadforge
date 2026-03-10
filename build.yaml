@@ -16,9 +16,9 @@ targets:
       json_serializable:
         options:
           # Throw error if JSON key doesn't exist
-          disallowUnrecognizedKeys: false
+          disallow_unrecognized_keys: false
           # Include null fields in toJson
-          includeIfNull: false
+          include_if_null: false
           # Use checked conversions
           checked: true
           # Explicit toJson

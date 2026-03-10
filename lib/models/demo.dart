@@ -1,5 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../config/constants.dart';
+
 part 'demo.freezed.dart';
 part 'demo.g.dart';
 
@@ -29,7 +31,7 @@ class Demo with _$Demo {
 }
 
 extension DemoX on Demo {
-  String get publicUrl => 'https://YOUR_SUPABASE_URL/functions/v1/demo/$publicSlug';
+  String get publicUrl => '${AppConstants.supabaseUrl}/functions/v1/demo/$publicSlug';
   
   String get templateLabel {
     switch (template) {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -31,13 +33,15 @@ class AuthState {
 
 /// Auth provider
 class AuthNotifier extends StateNotifier<AuthState> {
+  StreamSubscription? _authSubscription;
+
   AuthNotifier() : super(AuthState(isLoading: true)) {
     _init();
   }
-  
+
   void _init() {
     // Listen to auth state changes
-    SupabaseService.authStateChanges.listen((data) {
+    _authSubscription = SupabaseService.authStateChanges.listen((data) {
       final event = data.event;
       if (event == AuthChangeEvent.signedIn) {
         state = state.copyWith(user: data.session?.user, isLoading: false);
@@ -79,6 +83,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(needsOnboarding: needsOnboarding);
   }
   
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
+  }
+
   Future<void> signInWithEmail(String email, String password) async {
     state = state.copyWith(isLoading: true);
     try {
@@ -111,6 +121,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   
   Future<void> signOut() async {
     await SupabaseService.signOut();
+  }
+
+  Future<void> resetPassword(String email) async {
+    await SupabaseService.client.auth.resetPasswordForEmail(email);
   }
   
   Future<void> completeOnboarding({

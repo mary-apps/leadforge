@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../utils/haptics.dart';
 
 /// Button with scale animation and haptic feedback
+@Deprecated('Use BrutalButton instead')
 class AnimatedButton extends StatefulWidget {
   final Widget child;
   final VoidCallback? onPressed;

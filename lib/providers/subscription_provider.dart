@@ -35,20 +35,20 @@ class SubscriptionNotifier extends StateNotifier<AsyncValue<bool>> {
     }
   }
   
-  Future<bool> purchase(Package package) async {
-    final success = await RevenueCatService.purchasePackage(package);
-    
-    if (success) {
+  Future<({bool success, String? error})> purchase(Package package) async {
+    final result = await RevenueCatService.purchasePackage(package);
+
+    if (result.success) {
       await _load();
     }
-    
-    return success;
+
+    return result;
   }
-  
-  Future<bool> restore() async {
-    final isPro = await RevenueCatService.restorePurchases();
+
+  Future<({bool isPro, String? error})> restore() async {
+    final result = await RevenueCatService.restorePurchases();
     await _load();
-    return isPro;
+    return result;
   }
   
   Future<void> reload() => _load();

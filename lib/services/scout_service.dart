@@ -52,15 +52,15 @@ class ScoutService {
     var query = SupabaseService.client
         .from('businesses')
         .select()
-        .eq('user_id', userId)
-        .order('created_at', ascending: false)
-        .limit(limit);
-    
+        .eq('user_id', userId);
+
     if (status != null) {
       query = query.eq('status', status.toString().split('.').last);
     }
-    
-    final response = await query;
+
+    final response = await query
+        .order('created_at', ascending: false)
+        .limit(limit);
     
     return (response as List)
         .map((json) => Business.fromJson(json as Map<String, dynamic>))
