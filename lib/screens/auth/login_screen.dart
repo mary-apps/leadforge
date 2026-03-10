@@ -1,3 +1,6 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -5,6 +8,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/animated_button.dart';
+import '../../widgets/brutal_button.dart';
 import '../../utils/haptics.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -15,34 +19,54 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isSignUp = false;
   String? _errorMessage;
   bool _isLoading = false;
-  
+  bool _obscurePassword = true;
+
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
-  
+
+  String? _validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Email is required';
+    }
+    final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+    if (!emailRegex.hasMatch(value.trim())) {
+      return 'Enter a valid email address';
+    }
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Password is required';
+    }
+    if (_isSignUp && value.length < 6) {
+      return 'Password must be at least 6 characters';
+    }
+    return null;
+  }
+
   Future<void> _handleEmailAuth() async {
+    if (!_formKey.currentState!.validate()) return;
+
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    
-    if (email.isEmpty || password.isEmpty) {
-      _showError('Please enter email and password');
-      return;
-    }
-    
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
     Haptics.light();
-    
+
     try {
       if (_isSignUp) {
         await ref.read(authProvider.notifier).signUpWithEmail(email, password);
@@ -59,14 +83,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     }
   }
-  
+
   Future<void> _handleAppleSignIn() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
     Haptics.light();
-    
+
     try {
       await ref.read(authProvider.notifier).signInWithApple();
       Haptics.medium();
@@ -79,16 +103,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     }
   }
-  
+
   void _showError(String message) {
     if (mounted) {
       setState(() => _errorMessage = message);
     }
   }
-  
+
   Future<void> _forgotPassword() async {
     final email = _emailController.text.trim();
-    
+
     if (email.isEmpty) {
       Haptics.light();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -99,11 +123,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       );
       return;
     }
-    
+
     Haptics.medium();
     try {
       await ref.read(authProvider.notifier).resetPassword(email);
-      
+
       if (mounted) {
         showDialog(
           context: context,
@@ -140,72 +164,197 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     }
   }
-  
+
+  Widget _buildPillToggle() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                if (_isSignUp) {
+                  Haptics.light();
+                  setState(() => _isSignUp = false);
+                }
+              },
+              child: AnimatedContainer(
+                duration: 200.ms,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: !_isSignUp ? AppColors.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  border: !_isSignUp
+                      ? Border.all(color: AppColors.primary, width: 2)
+                      : null,
+                  boxShadow: !_isSignUp
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.4),
+                            offset: const Offset(2, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Text(
+                  'Sign In',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: !_isSignUp
+                        ? AppColors.background
+                        : AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                if (!_isSignUp) {
+                  Haptics.light();
+                  setState(() => _isSignUp = true);
+                }
+              },
+              child: AnimatedContainer(
+                duration: 200.ms,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: _isSignUp ? AppColors.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  border: _isSignUp
+                      ? Border.all(color: AppColors.primary, width: 2)
+                      : null,
+                  boxShadow: _isSignUp
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.4),
+                            offset: const Offset(2, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Text(
+                  'Sign Up',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: _isSignUp
+                        ? AppColors.background
+                        : AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
+          child: Form(
+          key: _formKey,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Logo / Icon (animated)
-              Icon(
-                Icons.bolt,
-                size: 80,
-                color: AppColors.primary,
-              )
-                  .animate(onPlay: (controller) => controller.repeat())
-                  .shimmer(
-                    duration: 2000.ms,
-                    color: AppColors.primary.withOpacity(0.3),
+              // Logo area with animated gradient container
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.primary.withValues(alpha: 0.15),
+                      AppColors.secondary.withValues(alpha: 0.1),
+                    ],
                   ),
-              const SizedBox(height: 16),
-              
-              // Title
-              Text(
-                'LeadForge',
-                style: AppTypography.displayLarge,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              
-              Text(
-                'AI-powered lead generation',
-                style: AppTypography.bodyLarge.copyWith(
-                  color: AppColors.textSecondary,
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 48),
-              
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.bolt,
+                      size: 80,
+                      color: AppColors.primary,
+                    )
+                        .animate(onPlay: (controller) => controller.repeat())
+                        .shimmer(
+                          duration: 2000.ms,
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                        ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'LeadForge',
+                      style: AppTypography.displayLarge,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'AI-powered lead generation',
+                      style: AppTypography.bodyLarge.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              )
+                  .animate(onPlay: (controller) => controller.repeat(reverse: true))
+                  .fade(begin: 0.85, end: 1.0, duration: 3000.ms, curve: Curves.easeInOut),
+              const SizedBox(height: 32),
+
+              // Brutal pill toggle for Sign In / Sign Up
+              _buildPillToggle(),
+              const SizedBox(height: 24),
+
               // Email field
-              TextField(
+              TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 autocorrect: false,
+                validator: _validateEmail,
                 decoration: const InputDecoration(
                   labelText: 'Email',
                   prefixIcon: Icon(Icons.email_outlined),
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Password field
-              TextField(
+              TextFormField(
                 controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
+                obscureText: _obscurePassword,
+                validator: _validatePassword,
+                decoration: InputDecoration(
                   labelText: 'Password',
-                  prefixIcon: Icon(Icons.lock_outline),
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() => _obscurePassword = !_obscurePassword);
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
-              
+
               // Forgot password link
               if (!_isSignUp)
                 Align(
@@ -221,13 +370,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
               const SizedBox(height: 12),
-              
+
               // Error message (animated)
               if (_errorMessage != null)
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.danger.withOpacity(0.1),
+                    color: AppColors.danger.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: AppColors.danger),
                   ),
@@ -251,40 +400,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     .fadeIn(duration: 200.ms)
                     .shake(hz: 4, curve: Curves.easeInOut),
               const SizedBox(height: 24),
-              
-              // Email auth button
-              AnimatedButton.primary(
-                onPressed: _isLoading ? null : _handleEmailAuth,
-                enabled: !_isLoading,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : Text(_isSignUp ? 'Sign Up' : 'Sign In'),
-              ),
-              const SizedBox(height: 16),
-              
-              // Toggle sign in / sign up
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    _isSignUp = !_isSignUp;
-                  });
-                },
-                child: Text(
-                  _isSignUp
-                      ? 'Already have an account? Sign In'
-                      : 'Don\'t have an account? Sign Up',
+
+              // Submit button — BrutalButton, full width
+              SizedBox(
+                width: double.infinity,
+                child: BrutalButton(
+                  label: _isSignUp ? 'Sign Up' : 'Sign In',
+                  onPressed: _isLoading ? null : _handleEmailAuth,
+                  isLoading: _isLoading,
                 ),
               ),
-              const SizedBox(height: 32),
-              
-              // Divider
+              const SizedBox(height: 24),
+
+              // Divider + Apple Sign In (only on Apple platforms)
+              if (!kIsWeb && (Platform.isIOS || Platform.isMacOS)) ...[
               Row(
                 children: [
                   const Expanded(child: Divider()),
@@ -301,7 +430,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ],
               ),
               const SizedBox(height: 32),
-              
+
               // Apple Sign In
               AnimatedButton(
                 onPressed: _isLoading ? null : _handleAppleSignIn,
@@ -318,7 +447,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ],
                 ),
               ),
+              ],
             ],
+          ),
           ),
         ),
       ),
