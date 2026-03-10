@@ -10,7 +10,9 @@ class StatCardAnimated extends StatefulWidget {
   final IconData icon;
   final Color color;
   final int index; // For stagger animation
-  
+  final bool isBrutal;
+  final String? trend;
+
   const StatCardAnimated({
     super.key,
     required this.label,
@@ -18,6 +20,8 @@ class StatCardAnimated extends StatefulWidget {
     required this.icon,
     required this.color,
     this.index = 0,
+    this.isBrutal = false,
+    this.trend,
   });
 
   @override
@@ -28,16 +32,16 @@ class _StatCardAnimatedState extends State<StatCardAnimated>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<int> _counterAnimation;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    
+
     _counterAnimation = IntTween(
       begin: 0,
       end: widget.value,
@@ -45,7 +49,7 @@ class _StatCardAnimatedState extends State<StatCardAnimated>
       parent: _controller,
       curve: Curves.easeOut,
     ));
-    
+
     // Start after stagger delay
     Future.delayed(
       Duration(milliseconds: 100 * widget.index),
@@ -56,45 +60,72 @@ class _StatCardAnimatedState extends State<StatCardAnimated>
       },
     );
   }
-  
+
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
-    final width = (MediaQuery.of(context).size.width - 44) / 2;
-    
     return Container(
-      width: width,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: widget.isBrutal ? widget.color : AppColors.border,
+          width: widget.isBrutal ? 2 : 1,
+        ),
+        boxShadow: widget.isBrutal
+            ? [
+                BoxShadow(
+                  color: widget.color.withValues(alpha: 0.4),
+                  offset: const Offset(3, 3),
+                  blurRadius: 0,
+                ),
+              ]
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(widget.icon, color: widget.color, size: 32),
-          const SizedBox(height: 12),
+          Icon(widget.icon, color: widget.color, size: 24),
+          const SizedBox(height: 8),
           AnimatedBuilder(
             animation: _counterAnimation,
             builder: (context, child) {
               return Text(
                 _counterAnimation.value.toString(),
-                style: AppTypography.headlineLarge.copyWith(
-                  color: widget.color,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textPrimary,
                 ),
               );
             },
           ),
+          if (widget.trend != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              widget.trend!,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: widget.trend!.startsWith('-')
+                    ? AppColors.danger
+                    : AppColors.success,
+              ),
+            ),
+          ],
           const SizedBox(height: 4),
           Text(
-            widget.label,
-            style: AppTypography.bodyMedium.copyWith(
+            widget.label.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
               color: AppColors.textSecondary,
             ),
           ),
