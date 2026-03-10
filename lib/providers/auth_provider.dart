@@ -76,7 +76,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       return;
     }
     
-    final profile = response as Map<String, dynamic>;
+    final profile = response;
     final needsOnboarding = profile['display_name'] == null || 
                             profile['business_name'] == null;
     

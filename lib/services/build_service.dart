@@ -58,7 +58,7 @@ class BuildService {
     
     if (response == null) return null;
     
-    return Demo.fromJson(response as Map<String, dynamic>);
+    return Demo.fromJson(response);
   }
   
   /// Fetch all demos for current user

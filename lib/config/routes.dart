@@ -38,12 +38,23 @@ CustomTransitionPage<void> _buildPageTransition({
   );
 }
 
+/// Notifier that bridges Riverpod state changes to GoRouter's refreshListenable.
+class _AuthChangeNotifier extends ChangeNotifier {
+  _AuthChangeNotifier(Ref ref) {
+    ref.listen(authProvider, (_, __) {
+      notifyListeners();
+    });
+  }
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
+  final authNotifier = _AuthChangeNotifier(ref);
 
   return GoRouter(
     initialLocation: '/dashboard',
+    refreshListenable: authNotifier,
     redirect: (context, state) {
+      final authState = ref.read(authProvider);
       final isLoggedIn = authState.user != null;
       final isLoggingIn = state.matchedLocation == '/login';
       final isOnboarding = state.matchedLocation == '/onboarding';
@@ -110,7 +121,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // 3 - Messages
+          // 3 - Activity
           StatefulShellBranch(
             routes: [
               GoRoute(

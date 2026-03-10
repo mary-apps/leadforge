@@ -63,6 +63,9 @@ class _OnboardingScreenEnhancedState
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppColors.radiusXL),
+        ),
         title: const Text('Skip Tutorial?'),
         content: const Text(
           'This quick tour helps you understand LeadForge\'s features. Are you sure you want to skip?',
@@ -148,7 +151,7 @@ class _OnboardingScreenEnhancedState
                       Haptics.light();
                     },
                     children: [
-                      _OnboardingPage(
+                      const _OnboardingPage(
                         icon: Icons.search,
                         iconColor: AppColors.primary,
                         title: 'Find Hidden Opportunities',
@@ -156,7 +159,7 @@ class _OnboardingScreenEnhancedState
                             'Search for businesses with poor or no web presence in any niche.',
                         pageIndex: 0,
                       ),
-                      _OnboardingPage(
+                      const _OnboardingPage(
                         icon: Icons.analytics,
                         iconColor: AppColors.primary,
                         title: 'AI-Powered Analysis',
@@ -164,7 +167,7 @@ class _OnboardingScreenEnhancedState
                             'Get instant insights on website quality, SEO gaps, and online reputation.',
                         pageIndex: 1,
                       ),
-                      _OnboardingPage(
+                      const _OnboardingPage(
                         icon: Icons.web,
                         iconColor: AppColors.primary,
                         title: 'Generate Demo Sites',
@@ -172,7 +175,7 @@ class _OnboardingScreenEnhancedState
                             'Create professional demo websites in seconds to showcase your work.',
                         pageIndex: 2,
                       ),
-                      _OnboardingPage(
+                      const _OnboardingPage(
                         icon: Icons.message,
                         iconColor: AppColors.primary,
                         title: 'Personalized Outreach',
@@ -197,15 +200,16 @@ class _OnboardingScreenEnhancedState
                     children: List.generate(
                       4,
                       (index) => AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: index == _currentPage ? 24 : 8,
-                        height: 8,
+                        duration: const Duration(milliseconds: 350),
+                        curve: Curves.easeOutCubic,
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        width: index == _currentPage ? 28 : 8,
+                        height: 5,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(2.5),
                           color: index == _currentPage
                               ? AppColors.primary
-                              : AppColors.border,
+                              : AppColors.primary.withValues(alpha: 0.15),
                         ),
                       ),
                     ),
@@ -214,34 +218,45 @@ class _OnboardingScreenEnhancedState
 
                 // Navigation buttons
                 Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                   child: _currentPage < 4
                       ? Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment:
+                              MainAxisAlignment.spaceBetween,
                           children: [
                             TextButton(
                               onPressed: _skipConfirmation,
-                              child: const Text('Skip'),
+                              child: Text(
+                                'Skip',
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppColors.textTertiary,
+                                ),
+                              ),
                             ),
                             BrutalButton(
                               label: 'Next',
                               icon: Icons.arrow_forward,
                               onPressed: () {
                                 _pageController.nextPage(
-                                  duration: const Duration(milliseconds: 400),
+                                  duration:
+                                      const Duration(milliseconds: 400),
                                   curve: Curves.easeInOutCubic,
                                 );
                               },
                             ),
                           ],
                         )
-                      : BrutalButton(
-                          label: 'Get Started',
-                          icon: Icons.rocket_launch,
-                          isLoading: _isLoading,
-                          onPressed: (_nameValid && _businessValid && !_isLoading)
-                              ? _complete
-                              : null,
+                      : SizedBox(
+                          width: double.infinity,
+                          child: BrutalButton(
+                            label: 'Get Started',
+                            icon: Icons.rocket_launch,
+                            isLoading: _isLoading,
+                            onPressed:
+                                (_nameValid && _businessValid && !_isLoading)
+                                    ? _complete
+                                    : null,
+                          ),
                         ),
                 ),
               ],
@@ -260,11 +275,11 @@ class _OnboardingScreenEnhancedState
               gravity: 0.2,
               shouldLoop: false,
               colors: const [
-                Color(0xFFFF9F43),
-                Color(0xFF00D68F),
-                Color(0xFFFDCB6E),
-                Color(0xFFFF6B6B),
-                Color(0xFF5DADE2),
+                AppColors.primary,
+                AppColors.primaryLight,
+                AppColors.success,
+                Color(0xFF818CF8),
+                Color(0xFFF0ABFC),
               ],
             ),
           ),
@@ -321,48 +336,56 @@ class _OnboardingPageState extends State<_OnboardingPage>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Animated icon
-          Icon(
-            widget.icon,
-            size: 100,
-            color: widget.iconColor,
+          // Icon with subtle background
+          Container(
+            width: 96,
+            height: 96,
+            decoration: BoxDecoration(
+              color: widget.iconColor.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              widget.icon,
+              size: 48,
+              color: widget.iconColor,
+            ),
           )
               .animate(controller: _controller)
               .scale(
-                begin: const Offset(0.5, 0.5),
-                duration: 600.ms,
-                curve: Curves.elasticOut,
+                begin: const Offset(0.7, 0.7),
+                duration: 500.ms,
+                curve: Curves.easeOutBack,
               )
-              .fadeIn(duration: 400.ms)
-              .then(delay: 200.ms)
-              .shimmer(
-                duration: 1500.ms,
-                color: widget.iconColor.withValues(alpha: 0.3),
-              ),
-          const SizedBox(height: 32),
+              .fadeIn(duration: 400.ms),
+          const SizedBox(height: 36),
 
           // Title
           Text(
             widget.title,
-            style: AppTypography.headlineLarge,
+            style: AppTypography.headlineLarge.copyWith(
+              fontSize: 24,
+              letterSpacing: -0.5,
+            ),
             textAlign: TextAlign.center,
           )
               .animate()
               .fadeIn(delay: 200.ms, duration: 400.ms)
-              .slideY(begin: 0.2, delay: 200.ms, duration: 400.ms),
-          const SizedBox(height: 16),
+              .slideY(begin: 0.15, delay: 200.ms, duration: 400.ms),
+          const SizedBox(height: 12),
 
           // Description
           Text(
             widget.description,
             style: AppTypography.bodyLarge.copyWith(
               color: AppColors.textSecondary,
+              height: 1.5,
             ),
             textAlign: TextAlign.center,
           )
               .animate()
               .fadeIn(delay: 400.ms, duration: 400.ms)
-              .slideY(begin: 0.2, delay: 400.ms, duration: 400.ms),
+              .slideY(begin: 0.15, delay: 400.ms, duration: 400.ms),
         ],
       ),
     );
@@ -392,23 +415,26 @@ class _ProfileSetupPage extends StatelessWidget {
         children: [
           Text(
             'Set Up Your Profile',
-            style: AppTypography.headlineLarge,
+            style: AppTypography.headlineLarge.copyWith(
+              fontSize: 24,
+              letterSpacing: -0.5,
+            ),
             textAlign: TextAlign.center,
           )
               .animate()
               .fadeIn(duration: 400.ms)
-              .slideY(begin: -0.2, duration: 400.ms),
+              .slideY(begin: -0.15, duration: 400.ms),
           const SizedBox(height: 8),
           Text(
             'This helps us personalize your experience',
             style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+              color: AppColors.textTertiary,
             ),
             textAlign: TextAlign.center,
           )
               .animate()
               .fadeIn(delay: 100.ms, duration: 400.ms)
-              .slideY(begin: -0.2, delay: 100.ms, duration: 400.ms),
+              .slideY(begin: -0.15, delay: 100.ms, duration: 400.ms),
           const SizedBox(height: 32),
 
           // Name field
@@ -418,14 +444,15 @@ class _ProfileSetupPage extends StatelessWidget {
               labelText: 'Your Name',
               prefixIcon: const Icon(Icons.person_outline),
               suffixIcon: nameValid
-                  ? Icon(Icons.check_circle, color: AppColors.success)
+                  ? const Icon(Icons.check_circle,
+                      color: AppColors.success, size: 20)
                   : null,
             ),
             onTap: () => Haptics.light(),
           )
               .animate()
               .fadeIn(delay: 300.ms, duration: 400.ms)
-              .slideX(begin: -0.2, delay: 300.ms, duration: 400.ms),
+              .slideX(begin: -0.1, delay: 300.ms, duration: 400.ms),
           const SizedBox(height: 16),
 
           // Business field
@@ -435,14 +462,15 @@ class _ProfileSetupPage extends StatelessWidget {
               labelText: 'Business / Agency Name',
               prefixIcon: const Icon(Icons.business_outlined),
               suffixIcon: businessValid
-                  ? Icon(Icons.check_circle, color: AppColors.success)
+                  ? const Icon(Icons.check_circle,
+                      color: AppColors.success, size: 20)
                   : null,
             ),
             onTap: () => Haptics.light(),
           )
               .animate()
               .fadeIn(delay: 400.ms, duration: 400.ms)
-              .slideX(begin: -0.2, delay: 400.ms, duration: 400.ms),
+              .slideX(begin: -0.1, delay: 400.ms, duration: 400.ms),
         ],
       ),
     );

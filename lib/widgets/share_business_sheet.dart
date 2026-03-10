@@ -29,9 +29,9 @@ class ShareBusinessSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -118,16 +118,16 @@ class ShareBusinessSheet extends StatelessWidget {
     Navigator.pop(context);
     
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+      const SnackBar(
         content: Row(
-          children: const [
+          children: [
             Icon(Icons.check_circle, color: Colors.white),
             SizedBox(width: 8),
             Text('Business info copied to clipboard'),
           ],
         ),
         backgroundColor: AppColors.success,
-        duration: const Duration(seconds: 2),
+        duration: Duration(seconds: 2),
       ),
     );
   }
@@ -160,9 +160,9 @@ class ShareBusinessSheet extends StatelessWidget {
     Navigator.pop(context);
     
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+      const SnackBar(
         content: Row(
-          children: const [
+          children: [
             Icon(Icons.info_outline, color: Colors.white),
             SizedBox(width: 8),
             Text('Coming soon in next update!'),

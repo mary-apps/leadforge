@@ -77,7 +77,7 @@ class ScoutService {
     
     if (response == null) return null;
     
-    return Business.fromJson(response as Map<String, dynamic>);
+    return Business.fromJson(response);
   }
   
   /// Update business notes

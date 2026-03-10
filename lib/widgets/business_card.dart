@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../config/theme.dart';
 import '../models/business.dart';
 
-class BusinessCard extends StatelessWidget {
+class BusinessCard extends StatefulWidget {
   final Business business;
   final VoidCallback? onTap;
 
@@ -13,153 +13,137 @@ class BusinessCard extends StatelessWidget {
     this.onTap,
   });
 
-  Color _statusColor() {
-    switch (business.status) {
-      case BusinessStatus.found:
-        return AppColors.textTertiary;
-      case BusinessStatus.audited:
-        return AppColors.secondary;
-      case BusinessStatus.demoCreated:
-        return AppColors.primary;
-      case BusinessStatus.contacted:
-      case BusinessStatus.interested:
-        return AppColors.success;
-      case BusinessStatus.closed:
-        return AppColors.success;
-      case BusinessStatus.lost:
-        return AppColors.danger;
-    }
-  }
+  @override
+  State<BusinessCard> createState() => _BusinessCardState();
+}
+
+class _BusinessCardState extends State<BusinessCard> {
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+    final biz = widget.business;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: widget.onTap != null
+          ? (_) => setState(() => _pressed = true)
+          : null,
+      onTapUp: widget.onTap != null
+          ? (_) {
+              setState(() => _pressed = false);
+              widget.onTap!();
+            }
+          : null,
+      onTapCancel: widget.onTap != null
+          ? () => setState(() => _pressed = false)
+          : null,
+      child: AnimatedScale(
+        scale: _pressed ? 0.98 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        curve: Curves.easeInOut,
         child: Container(
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            border: Border(
-              left: BorderSide(color: _statusColor(), width: 4),
-            ),
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppColors.radiusL),
           ),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              // Header
-              Row(
-                children: [
-                  Text(business.statusBadge, style: const TextStyle(fontSize: 20)),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Hero(
-                      tag: 'business-name-${business.id}',
+              // Avatar
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(AppColors.radiusM),
+                ),
+                alignment: Alignment.center,
+                child: Icon(biz.webPresenceIcon, color: biz.webPresenceColor, size: 20),
+              ),
+              const SizedBox(width: 12),
+              // Name + address
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Hero(
+                      tag: 'business-name-${biz.id}',
                       child: Material(
                         color: Colors.transparent,
                         child: Text(
-                          business.name,
-                          style: AppTypography.titleLarge.copyWith(
-                            fontWeight: FontWeight.w700,
+                          biz.name,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ),
-                  ),
-                  if (business.auditScore != null)
+                    if (biz.address != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        biz.shortAddress ?? biz.address!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textTertiary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Score badge + status badge
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (biz.auditScore != null)
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
-                        vertical: 4,
+                        vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.scoreColor(business.auditScore!)
-                            .withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: AppColors.scoreColor(business.auditScore!),
-                          width: 1.5,
-                        ),
+                        color: AppColors.scoreColor(biz.auditScore!)
+                            .withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        business.auditScore.toString(),
+                        biz.auditScore.toString(),
                         style: AppTypography.mono.copyWith(
-                          color: AppColors.scoreColor(business.auditScore!),
-                          fontSize: 14,
+                          color: AppColors.scoreColor(biz.auditScore!),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: biz.statusColor.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      biz.status.name,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: biz.statusColor,
+                      ),
+                    ),
+                  ),
                 ],
               ),
-              
-              if (business.address != null) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.location_on_outlined,
-                      size: 16,
-                      color: AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        business.shortAddress ?? business.address!,
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-              
-              if (business.rating != null) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.star,
-                      size: 16,
-                      color: Colors.amber,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${business.rating} (${business.reviewsCount} reviews)',
-                      style: AppTypography.bodyMedium,
-                    ),
-                  ],
-                ),
-              ],
-              
-              if (business.website != null) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.language,
-                      size: 16,
-                      color: AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        business.website!,
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ],
           ),
         ),

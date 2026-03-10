@@ -81,7 +81,8 @@ class PipelineScreen extends ConsumerWidget {
               ]
             : businesses.map((business) {
                 return ListTile(
-                  leading: Text(business.statusBadge),
+                  leading: Icon(business.webPresenceIcon,
+                      color: business.webPresenceColor, size: 20),
                   title: Text(business.name),
                   subtitle: business.shortAddress != null
                       ? Text(business.shortAddress!)

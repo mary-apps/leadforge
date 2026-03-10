@@ -61,47 +61,92 @@ class DashboardSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ShimmerWrap(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Greeting area
-            const _ShimmerBox(width: 200, height: 20),
-            const SizedBox(height: 8),
-            const _ShimmerBox(width: 140, height: 28),
-            const SizedBox(height: 24),
-
-            // Stats row — 3 cards
             Row(
-              children: List.generate(3, (index) => Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: index == 0 ? 0 : 6,
-                    right: index == 2 ? 0 : 6,
-                  ),
-                  child: const _ShimmerBox(height: 90, borderRadius: 12),
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _ShimmerBox(width: 120, height: 14),
+                    SizedBox(height: 6),
+                    _ShimmerBox(width: 160, height: 22),
+                  ],
                 ),
-              )),
+                _ShimmerBox(width: 36, height: 36, borderRadius: AppColors.radiusM),
+              ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 28),
 
-            // Quick actions row — 3 cards
-            Row(
-              children: List.generate(3, (index) => Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: index == 0 ? 0 : 6,
-                    right: index == 2 ? 0 : 6,
+            // Stats row — 2 cards with gradient border
+            const _ShimmerBox(height: 110, borderRadius: AppColors.radiusXL),
+            const SizedBox(height: 28),
+
+            // Quick actions label
+            const _ShimmerBox(width: 100, height: 12),
+            const SizedBox(height: 12),
+
+            // Asymmetric quick actions
+            const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 2, child: _ShimmerBox(height: 110, borderRadius: AppColors.radiusL)),
+                SizedBox(width: 10),
+                Expanded(
+                  flex: 1,
+                  child: Column(
+                    children: [
+                      _ShimmerBox(height: 50, borderRadius: AppColors.radiusL),
+                      SizedBox(height: 10),
+                      _ShimmerBox(height: 50, borderRadius: AppColors.radiusL),
+                    ],
                   ),
-                  child: const _ShimmerBox(height: 60, borderRadius: 12),
                 ),
-              )),
+              ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 28),
 
-            // Chart area
-            const _ShimmerBox(height: 200, borderRadius: 12),
+            // Recent leads
+            const _ShimmerBox(width: 100, height: 12),
+            const SizedBox(height: 12),
+            ...List.generate(3, (index) => const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: _ShimmerBox(height: 56, borderRadius: AppColors.radiusL),
+            )),
+            const SizedBox(height: 28),
+
+            // Weekly activity
+            const _ShimmerBox(width: 120, height: 12),
+            const SizedBox(height: 12),
+            const _ShimmerBox(height: 180, borderRadius: AppColors.radiusXL),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// ActivitySkeleton — matches the activity/messages screen layout.
+// ---------------------------------------------------------------------------
+
+class ActivitySkeleton extends StatelessWidget {
+  const ActivitySkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ShimmerWrap(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        child: Column(
+          children: List.generate(8, (index) => Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: _ShimmerBox(height: 60, borderRadius: AppColors.radiusL),
+          )),
         ),
       ),
     );

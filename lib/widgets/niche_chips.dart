@@ -16,7 +16,7 @@ class NicheChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 40,
+      height: 36,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         scrollDirection: Axis.horizontal,
@@ -26,16 +26,24 @@ class NicheChips extends StatelessWidget {
           final niche = AppConstants.suggestedNiches[index];
           final isSelected = selectedNiche == niche;
 
-          return ActionChip(
-            label: Text(niche),
-            onPressed: () => onSelected(niche),
-            backgroundColor: isSelected ? AppColors.primary : AppColors.surface,
-            side: BorderSide(
-              color: isSelected ? AppColors.primary : AppColors.border,
-              width: isSelected ? 2 : 1,
-            ),
-            labelStyle: AppTypography.bodyMedium.copyWith(
-              color: isSelected ? AppColors.background : AppColors.textSecondary,
+          return GestureDetector(
+            onTap: () => onSelected(niche),
+            child: Container(
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary : AppColors.surface,
+                borderRadius: BorderRadius.circular(AppColors.radiusS),
+              ),
+              child: Text(
+                niche,
+                style: AppTypography.bodyMedium.copyWith(
+                  fontSize: 14,
+                  color: isSelected
+                      ? AppColors.background
+                      : AppColors.textSecondary,
+                ),
+              ),
             ),
           );
         },

@@ -1,10 +1,10 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../config/theme.dart';
 import '../utils/haptics.dart';
-import 'brutal_card.dart';
 
-/// Segmented brutal-style score gauge
+/// Conic gradient ring score gauge with animated fill.
 class AnimatedScoreGauge extends StatefulWidget {
   final int score;
   final VoidCallback? onComplete;
@@ -24,24 +24,15 @@ class _AnimatedScoreGaugeState extends State<AnimatedScoreGauge>
   late AnimationController _controller;
   late Animation<double> _animation;
 
-  int get _currentScore =>
-      (widget.score * _animation.value).round();
+  int get _currentScore => (widget.score * _animation.value).round();
 
-  int get _filledSegments =>
-      (_currentScore / 20).ceil().clamp(0, 5);
-
-  Color get _scoreColor {
-    final s = _currentScore;
-    if (s < 40) return AppColors.danger;
-    if (s <= 70) return AppColors.warning;
-    return AppColors.success;
-  }
+  Color get _scoreColor => AppColors.scoreColor(_currentScore);
 
   String get _statusLabel {
     final s = _currentScore;
-    if (s < 40) return 'NEEDS WORK';
-    if (s <= 70) return 'DECENT';
-    return 'STRONG';
+    if (s < 40) return 'Needs Work';
+    if (s <= 70) return 'Decent';
+    return 'Strong';
   }
 
   @override
@@ -49,7 +40,7 @@ class _AnimatedScoreGaugeState extends State<AnimatedScoreGauge>
     super.initState();
 
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
 
@@ -80,49 +71,105 @@ class _AnimatedScoreGaugeState extends State<AnimatedScoreGauge>
       animation: _animation,
       builder: (context, _) {
         final color = _scoreColor;
-        return BrutalCard(
-          borderColor: color,
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('DIGITAL SCORE', style: AppTypography.labelBrutal),
-              const SizedBox(height: 8),
-              Text(
-                '$_currentScore',
-                style: AppTypography.scoreLarge.copyWith(color: color),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _statusLabel,
-                style: TextStyle(
+        final progress = (widget.score / 100.0) * _animation.value;
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 160,
+              height: 160,
+              child: CustomPaint(
+                painter: _RingPainter(
+                  progress: progress,
                   color: color,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '$_currentScore',
+                        style: AppTypography.scoreLarge.copyWith(color: color),
+                      ),
+                      const Text(
+                        'SCORE',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.5,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
-              // Segmented bar — 5 segments
-              Row(
-                children: List.generate(5, (i) {
-                  return Expanded(
-                    child: Container(
-                      height: 6,
-                      margin: const EdgeInsets.symmetric(horizontal: 2),
-                      decoration: BoxDecoration(
-                        color: i < _filledSegments
-                            ? color
-                            : AppColors.border,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
-                  );
-                }),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _statusLabel,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
               ),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );
   }
+}
+
+class _RingPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+
+  _RingPainter({required this.progress, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - 16) / 2;
+    const strokeWidth = 8.0;
+
+    // Background ring
+    final bgPaint = Paint()
+      ..color = AppColors.surface
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawCircle(center, radius, bgPaint);
+
+    // Foreground arc with gradient
+    if (progress > 0) {
+      final sweepAngle = 2 * math.pi * progress;
+      const startAngle = -math.pi / 2;
+
+      final rect = Rect.fromCircle(center: center, radius: radius);
+
+      final gradientPaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round
+        ..shader = SweepGradient(
+          startAngle: startAngle,
+          endAngle: startAngle + sweepAngle,
+          colors: [
+            color.withValues(alpha: 0.4),
+            color,
+          ],
+          stops: const [0.0, 1.0],
+          transform: const GradientRotation(-math.pi / 2),
+        ).createShader(rect);
+
+      canvas.drawArc(rect, startAngle, sweepAngle, false, gradientPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter oldDelegate) =>
+      oldDelegate.progress != progress || oldDelegate.color != color;
 }

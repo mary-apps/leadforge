@@ -91,29 +91,17 @@ serve(async (req) => {
       user_id: user.id,
     }))
     
-    // 7. Save search
-    const { data: search } = await supabase
-      .from('searches')
-      .insert({
-        user_id: user.id,
-        query,
-        results_count: businesses.length
-      })
-      .select()
-      .single()
-    
-    // 8. Upsert businesses
-    const businessesWithSearch = businesses.map(b => ({
+    // 7. Insert businesses (skip duplicates by place_id per user)
+    const businessesForInsert = businesses.map(b => ({
       ...b,
-      search_id: search.id,
       created_at: new Date().toISOString(),
     }))
-    
+
     await supabase
       .from('businesses')
-      .upsert(businessesWithSearch, {
+      .upsert(businessesForInsert, {
         onConflict: 'user_id,place_id',
-        ignoreDuplicates: false
+        ignoreDuplicates: true
       })
     
     // 9. Increment usage

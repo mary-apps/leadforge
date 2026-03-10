@@ -115,8 +115,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (email.isEmpty) {
       Haptics.light();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please enter your email address'),
+        const SnackBar(
+          content: Text('Please enter your email address'),
           backgroundColor: AppColors.warning,
         ),
       );
@@ -132,20 +132,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           context: context,
           builder: (context) => AlertDialog(
             backgroundColor: AppColors.surface,
-            title: Row(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppColors.radiusXL),
+            ),
+            title: const Row(
               children: [
                 Icon(Icons.check_circle, color: AppColors.success),
-                const SizedBox(width: 8),
-                const Text('Email Sent'),
+                SizedBox(width: 8),
+                Text('Email Sent'),
               ],
             ),
             content: Text(
               'Password reset link sent to $email. Check your inbox.',
             ),
             actions: [
-              BrutalButton(
-                label: 'OK',
+              TextButton(
                 onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
               ),
             ],
           ),
@@ -169,289 +172,288 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppColors.radiusL),
       ),
       child: Row(
         children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                if (_isSignUp) {
-                  Haptics.light();
-                  setState(() => _isSignUp = false);
-                }
-              },
-              child: AnimatedContainer(
-                duration: 200.ms,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: !_isSignUp ? AppColors.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                  border: !_isSignUp
-                      ? Border.all(color: AppColors.primary, width: 2)
-                      : null,
-                  boxShadow: !_isSignUp
-                      ? [
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.4),
-                            offset: const Offset(2, 2),
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Text(
-                  'Sign In',
-                  textAlign: TextAlign.center,
-                  style: AppTypography.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: !_isSignUp
-                        ? AppColors.background
-                        : AppColors.textSecondary,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                if (!_isSignUp) {
-                  Haptics.light();
-                  setState(() => _isSignUp = true);
-                }
-              },
-              child: AnimatedContainer(
-                duration: 200.ms,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: _isSignUp ? AppColors.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                  border: _isSignUp
-                      ? Border.all(color: AppColors.primary, width: 2)
-                      : null,
-                  boxShadow: _isSignUp
-                      ? [
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.4),
-                            offset: const Offset(2, 2),
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Text(
-                  'Sign Up',
-                  textAlign: TextAlign.center,
-                  style: AppTypography.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: _isSignUp
-                        ? AppColors.background
-                        : AppColors.textSecondary,
-                  ),
-                ),
-              ),
-            ),
-          ),
+          _buildPillOption('Sign In', !_isSignUp, () {
+            if (_isSignUp) {
+              Haptics.light();
+              setState(() {
+                _isSignUp = false;
+                _errorMessage = null;
+              });
+            }
+          }),
+          _buildPillOption('Sign Up', _isSignUp, () {
+            if (!_isSignUp) {
+              Haptics.light();
+              setState(() {
+                _isSignUp = true;
+                _errorMessage = null;
+              });
+            }
+          }),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPillOption(String label, bool isActive, VoidCallback onTap) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: 200.ms,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppColors.radiusM),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: AppTypography.bodyMedium.copyWith(
+              fontWeight: FontWeight.w700,
+              color: isActive ? AppColors.background : AppColors.textSecondary,
+            ),
+          ),
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider);
-
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Logo area with animated gradient container
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppColors.primary.withValues(alpha: 0.15),
-                      AppColors.secondary.withValues(alpha: 0.1),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.bolt,
-                      size: 80,
-                      color: AppColors.primary,
-                    )
-                        .animate(onPlay: (controller) => controller.repeat())
-                        .shimmer(
-                          duration: 2000.ms,
-                          color: AppColors.primary.withValues(alpha: 0.3),
-                        ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'LeadForge',
-                      style: AppTypography.displayLarge,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'AI-powered lead generation',
-                      style: AppTypography.bodyLarge.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+      body: Stack(
+        children: [
+          // Subtle radial gradient background
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment.topCenter,
+                  radius: 1.2,
+                  colors: [
+                    AppColors.primary.withValues(alpha: 0.08),
+                    Colors.transparent,
                   ],
                 ),
-              )
-                  .animate(onPlay: (controller) => controller.repeat(reverse: true))
-                  .fade(begin: 0.85, end: 1.0, duration: 3000.ms, curve: Curves.easeInOut),
-              const SizedBox(height: 32),
-
-              // Brutal pill toggle for Sign In / Sign Up
-              _buildPillToggle(),
-              const SizedBox(height: 24),
-
-              // Email field
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                autocorrect: false,
-                validator: _validateEmail,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  prefixIcon: Icon(Icons.email_outlined),
-                ),
               ),
-              const SizedBox(height: 16),
+            ),
+          ),
+          SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 56),
 
-              // Password field
-              TextFormField(
-                controller: _passwordController,
-                obscureText: _obscurePassword,
-                validator: _validatePassword,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  // Logo
+                  Column(
+                    children: [
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Icon(
+                          Icons.bolt,
+                          size: 36,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'LeadForge',
+                        style: AppTypography.headlineLarge.copyWith(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'AI-powered lead generation',
+                        style: AppTypography.labelLarge.copyWith(
+                          fontSize: 13,
+                          color: AppColors.textTertiary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  )
+                      .animate()
+                      .fadeIn(duration: 400.ms)
+                      .slideY(
+                          begin: -0.1,
+                          duration: 400.ms,
+                          curve: Curves.easeOut),
+                  const SizedBox(height: 36),
+
+                  // Pill toggle
+                  _buildPillToggle(),
+                  const SizedBox(height: 24),
+
+                  // Email field
+                  TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    autocorrect: false,
+                    textInputAction: TextInputAction.next,
+                    validator: _validateEmail,
+                    decoration: const InputDecoration(
+                      hintText: 'Email address',
+                      prefixIcon: Icon(Icons.email_outlined),
                     ),
-                    onPressed: () {
-                      setState(() => _obscurePassword = !_obscurePassword);
-                    },
                   ),
-                ),
-              ),
-              const SizedBox(height: 8),
+                  const SizedBox(height: 14),
 
-              // Forgot password link
-              if (!_isSignUp)
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: _forgotPassword,
-                    child: Text(
-                      'Forgot Password?',
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.primary,
+                  // Password field
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _handleEmailAuth(),
+                    validator: _validatePassword,
+                    decoration: InputDecoration(
+                      hintText: 'Password',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          setState(
+                              () => _obscurePassword = !_obscurePassword);
+                        },
                       ),
                     ),
                   ),
-                ),
-              const SizedBox(height: 12),
 
-              // Error message (animated)
-              if (_errorMessage != null)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.danger.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.danger),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.error_outline, color: AppColors.danger, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
+                  // Forgot password link
+                  if (!_isSignUp)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _forgotPassword,
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
                         child: Text(
-                          _errorMessage!,
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppColors.danger,
+                          'Forgot password?',
+                          style: AppTypography.labelLarge.copyWith(
+                            fontSize: 13,
+                            color: AppColors.primary,
                           ),
                         ),
                       ),
-                    ],
+                    ),
+                  const SizedBox(height: 8),
+
+                  // Error message
+                  if (_errorMessage != null)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.danger.withValues(alpha: 0.08),
+                        borderRadius:
+                            BorderRadius.circular(AppColors.radiusM),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline,
+                              color: AppColors.danger, size: 18),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: AppTypography.bodyMedium.copyWith(
+                                color: AppColors.danger,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ).animate().fadeIn(duration: 250.ms),
+
+                  // Submit button
+                  SizedBox(
+                    width: double.infinity,
+                    child: BrutalButton(
+                      label: _isSignUp ? 'Create Account' : 'Sign In',
+                      onPressed: _isLoading ? null : _handleEmailAuth,
+                      isLoading: _isLoading,
+                    ),
                   ),
-                )
-                    .animate()
-                    .slideX(begin: -0.1, duration: 200.ms, curve: Curves.easeOut)
-                    .fadeIn(duration: 200.ms)
-                    .shake(hz: 4, curve: Curves.easeInOut),
-              const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
-              // Submit button — BrutalButton, full width
-              SizedBox(
-                width: double.infinity,
-                child: BrutalButton(
-                  label: _isSignUp ? 'Sign Up' : 'Sign In',
-                  onPressed: _isLoading ? null : _handleEmailAuth,
-                  isLoading: _isLoading,
-                ),
-              ),
-              const SizedBox(height: 24),
+                  // Apple Sign In (only on Apple platforms)
+                  if (!kIsWeb && (Platform.isIOS || Platform.isMacOS)) ...[
+                    Row(
+                      children: [
+                        const Expanded(child: Divider()),
+                        Padding(
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'or',
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                        ),
+                        const Expanded(child: Divider()),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
 
-              // Divider + Apple Sign In (only on Apple platforms)
-              if (!kIsWeb && (Platform.isIOS || Platform.isMacOS)) ...[
-              Row(
-                children: [
-                  const Expanded(child: Divider()),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'OR',
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.textTertiary,
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: OutlinedButton.icon(
+                        onPressed:
+                            _isLoading ? null : _handleAppleSignIn,
+                        icon: const Icon(Icons.apple,
+                            color: AppColors.textPrimary, size: 22),
+                        label: const Text('Continue with Apple'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.textPrimary,
+                          side: BorderSide(
+                            color: AppColors.textTertiary
+                                .withValues(alpha: 0.3),
+                          ),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                                AppColors.radiusL),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                  const Expanded(child: Divider()),
+                  ],
                 ],
               ),
-              const SizedBox(height: 32),
-
-              // Apple Sign In
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _isLoading ? null : _handleAppleSignIn,
-                  icon: const Icon(Icons.apple, color: AppColors.textPrimary),
-                  label: const Text('Continue with Apple'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textPrimary,
-                    side: const BorderSide(color: AppColors.textTertiary),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-              ],
-            ],
-          ),
+            ),
           ),
         ),
+      ),
+        ],
       ),
     );
   }

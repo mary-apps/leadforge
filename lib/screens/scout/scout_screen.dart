@@ -27,7 +27,7 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
   final _focusNode = FocusNode();
   bool _showSuggestions = false;
   bool _isSearching = false;
-  
+
   final List<String> _recentSearches = []; // TODO: Load from local storage
   final List<String> _trendingSearches = [
     'dentists Los Angeles',
@@ -35,49 +35,50 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
     'plumbers Austin',
     'real estate agents NYC',
   ];
-  
+
   @override
   void initState() {
     super.initState();
     _focusNode.addListener(() {
       setState(() {
-        _showSuggestions = _focusNode.hasFocus && _searchController.text.isEmpty;
+        _showSuggestions =
+            _focusNode.hasFocus && _searchController.text.isEmpty;
       });
     });
   }
-  
+
   @override
   void dispose() {
     _searchController.dispose();
     _focusNode.dispose();
     super.dispose();
   }
-  
+
   Future<void> _handleSearch(String query) async {
     if (query.trim().isEmpty) return;
-    
+
     // Hide suggestions
     setState(() => _showSuggestions = false);
     _focusNode.unfocus();
-    
+
     // Check limits
     final profileAsync = ref.read(profileNotifierProvider);
     final profile = profileAsync.value;
-    
+
     if (profile != null && !profile.canSearch) {
       Haptics.heavy();
       _showPaywall();
       return;
     }
-    
+
     // Show optimistic loading
     setState(() => _isSearching = true);
     Haptics.medium();
-    
+
     try {
       // Perform search
       await ref.read(businessesProvider.notifier).search(query);
-      
+
       // Add to recent searches
       if (!_recentSearches.contains(query)) {
         setState(() {
@@ -91,17 +92,20 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
       }
     }
   }
-  
+
   void _showPaywall() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surface,
-        title: Row(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppColors.radiusXL),
+        ),
+        title: const Row(
           children: [
             Icon(Icons.lock, color: AppColors.warning),
-            const SizedBox(width: 8),
-            const Text('Search Limit Reached'),
+            SizedBox(width: 8),
+            Text('Search Limit Reached'),
           ],
         ),
         content: Column(
@@ -128,41 +132,52 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
             onPressed: () => Navigator.pop(context),
             child: const Text('Maybe Later'),
           ),
-          BrutalButton(
-            label: 'Upgrade to Pro',
+          TextButton(
             onPressed: () {
               Navigator.pop(context);
               context.push('/settings');
             },
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              textStyle: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            child: const Text('Upgrade to Pro'),
           ),
         ],
       ),
     );
   }
-  
+
   Widget _buildBenefit(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         children: [
-          Icon(Icons.check_circle, color: AppColors.success, size: 16),
+          const Icon(Icons.check_circle, color: AppColors.success, size: 16),
           const SizedBox(width: 8),
           Text(text, style: AppTypography.bodyMedium),
         ],
       ),
     );
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final businessesAsync = ref.watch(businessesProvider);
-    
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Scout'),
+        centerTitle: true,
+        title: Text(
+          'Scout',
+          style: AppTypography.titleMedium.copyWith(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: AppColors.textTertiary),
             onPressed: () => ref.read(businessesProvider.notifier).load(),
           ),
         ],
@@ -171,7 +186,7 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
         children: [
           // Search bar
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Column(
               children: [
                 TextField(
@@ -181,30 +196,31 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
                     hintText: 'Search businesses (e.g., "dentists Austin")',
                     prefixIcon: Icon(
                       Icons.search,
-                      color: _focusNode.hasFocus ? AppColors.primary : null,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.primary, width: 2),
+                      color:
+                          _focusNode.hasFocus ? AppColors.primary : AppColors.textTertiary,
                     ),
                     suffixIcon: _isSearching
                         ? const Padding(
                             padding: EdgeInsets.all(12),
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child:
+                                CircularProgressIndicator(strokeWidth: 2),
                           )
                         : IconButton(
-                            icon: const Icon(Icons.send),
-                            onPressed: () => _handleSearch(_searchController.text),
+                            icon: const Icon(Icons.send, size: 20),
+                            color: AppColors.textTertiary,
+                            onPressed: () =>
+                                _handleSearch(_searchController.text),
                           ),
                   ),
                   onSubmitted: _handleSearch,
                   onChanged: (value) {
                     setState(() {
-                      _showSuggestions = _focusNode.hasFocus && value.isEmpty;
+                      _showSuggestions =
+                          _focusNode.hasFocus && value.isEmpty;
                     });
                   },
                 ),
-                
+
                 // Search suggestions
                 if (_showSuggestions) ...[
                   const SizedBox(height: 12),
@@ -220,7 +236,7 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
               ],
             ),
           ),
-          
+
           // Niche chips
           NicheChips(
             onSelected: (niche) {
@@ -228,70 +244,99 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
               _handleSearch(niche);
             },
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           // Results
           Expanded(
             child: businessesAsync.when(
               data: (businesses) {
                 if (businesses.isEmpty) {
                   return EmptyState.noResults(
-                    onRetry: () => _handleSearch(_searchController.text),
+                    onRetry: () =>
+                        _handleSearch(_searchController.text),
                   );
                 }
-                
+
                 return RefreshIndicator(
                   onRefresh: () async {
                     Haptics.light();
-                    await ref.read(businessesProvider.notifier).load();
+                    await ref
+                        .read(businessesProvider.notifier)
+                        .load();
                   },
                   color: AppColors.primary,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: businesses.length,
-                    itemBuilder: (context, index) {
-                      final business = businesses[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: BusinessCard(
-                          business: business,
-                          onTap: () => context.push('/business/${business.id}'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 4),
+                        child: Text(
+                          '${businesses.length} results',
+                          style: AppTypography.labelSmall.copyWith(
+                            color: AppColors.textTertiary,
+                          ),
                         ),
-                      );
-                    },
+                      ),
+                      Expanded(
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 8),
+                          itemCount: businesses.length,
+                          itemBuilder: (context, index) {
+                            final business = businesses[index];
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.only(bottom: 10),
+                              child: BusinessCard(
+                                business: business,
+                                onTap: () => context.push(
+                                    '/business/${business.id}'),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 );
               },
               loading: () => const SearchSkeleton(),
               error: (error, _) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 80,
-                      color: AppColors.danger,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Error loading businesses',
-                      style: AppTypography.titleLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      error.toString(),
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 56,
+                        color: AppColors.textTertiary,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                    BrutalButton(
-                      label: 'Retry',
-                      onPressed: () => ref.read(businessesProvider.notifier).load(),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error loading businesses',
+                        style: AppTypography.titleMedium.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        error.toString(),
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppColors.textTertiary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      BrutalButton(
+                        label: 'Retry',
+                        onPressed: () =>
+                            ref.read(businessesProvider.notifier).load(),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

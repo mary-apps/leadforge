@@ -27,7 +27,7 @@ class WeeklyActivityGraph extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              const Text(
                 'Weekly Activity',
                 style: AppTypography.titleLarge,
               ),
@@ -44,7 +44,7 @@ class WeeklyActivityGraph extends StatelessWidget {
                   drawVerticalLine: false,
                   horizontalInterval: 1,
                   getDrawingHorizontalLine: (value) {
-                    return FlLine(
+                    return const FlLine(
                       color: AppColors.border,
                       strokeWidth: 1,
                     );
@@ -225,13 +225,13 @@ class WeeklyActivityGraph extends StatelessWidget {
 class _Legend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return const Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         _LegendItem(color: AppColors.primary, label: 'Searches'),
-        const SizedBox(height: 4),
+        SizedBox(height: 4),
         _LegendItem(color: AppColors.info, label: 'Audits'),
-        const SizedBox(height: 4),
+        SizedBox(height: 4),
         _LegendItem(color: AppColors.success, label: 'Outreach'),
       ],
     );

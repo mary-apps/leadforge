@@ -3,15 +3,17 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../config/theme.dart';
 
-/// Animated stat card with counting numbers
+/// Animated stat card with counting numbers and entrance animation.
 class StatCardAnimated extends StatefulWidget {
   final String label;
   final int value;
   final IconData icon;
   final Color color;
-  final int index; // For stagger animation
-  final bool isBrutal;
+  final int index;
   final String? trend;
+
+  /// Kept for backward compat — ignored.
+  final bool isBrutal;
 
   const StatCardAnimated({
     super.key,
@@ -38,7 +40,7 @@ class _StatCardAnimatedState extends State<StatCardAnimated>
     super.initState();
 
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 800),
       vsync: this,
     );
 
@@ -47,10 +49,9 @@ class _StatCardAnimatedState extends State<StatCardAnimated>
       end: widget.value,
     ).animate(CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeOut,
+      curve: Curves.easeOutCubic,
     ));
 
-    // Start after stagger delay
     Future.delayed(
       Duration(milliseconds: 100 * widget.index),
       () {
@@ -69,25 +70,8 @@ class _StatCardAnimatedState extends State<StatCardAnimated>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: widget.isBrutal ? widget.color : AppColors.border,
-          width: widget.isBrutal ? 2 : 1,
-        ),
-        boxShadow: widget.isBrutal
-            ? [
-                BoxShadow(
-                  color: widget.color.withValues(alpha: 0.4),
-                  offset: const Offset(3, 3),
-                  blurRadius: 0,
-                ),
-              ]
-            : null,
-      ),
+    return Padding(
+      padding: const EdgeInsets.all(4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -98,11 +82,7 @@ class _StatCardAnimatedState extends State<StatCardAnimated>
             builder: (context, child) {
               return Text(
                 _counterAnimation.value.toString(),
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.textPrimary,
-                ),
+                style: AppTypography.numberLarge,
               );
             },
           ),
@@ -121,12 +101,11 @@ class _StatCardAnimatedState extends State<StatCardAnimated>
           ],
           const SizedBox(height: 4),
           Text(
-            widget.label.toUpperCase(),
+            widget.label,
             style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
-              color: AppColors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textTertiary,
             ),
           ),
         ],

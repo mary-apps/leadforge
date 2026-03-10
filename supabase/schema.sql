@@ -79,6 +79,9 @@ CREATE TABLE IF NOT EXISTS messages (
 -- INDEXES
 -- ============================================
 
+-- Unique constraint for upsert (prevents duplicate place per user)
+ALTER TABLE businesses ADD CONSTRAINT uq_businesses_user_place UNIQUE (user_id, place_id);
+
 CREATE INDEX IF NOT EXISTS idx_businesses_user_id ON businesses(user_id);
 CREATE INDEX IF NOT EXISTS idx_businesses_user_status ON businesses(user_id, status);
 CREATE INDEX IF NOT EXISTS idx_businesses_created_at ON businesses(created_at DESC);

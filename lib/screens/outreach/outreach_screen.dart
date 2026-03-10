@@ -82,11 +82,14 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surface,
-        title: Row(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppColors.radiusXL),
+        ),
+        title: const Row(
           children: [
             Icon(Icons.lock, color: AppColors.warning),
-            const SizedBox(width: 8),
-            const Text('Pro Feature'),
+            SizedBox(width: 8),
+            Text('Pro Feature'),
           ],
         ),
         content: Column(
@@ -116,6 +119,7 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
           BrutalButton(
             label: 'Upgrade to Pro',
             icon: Icons.workspace_premium,
+            compact: true,
             onPressed: () {
               Navigator.pop(context);
               context.push('/settings');
@@ -131,7 +135,7 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         children: [
-          Icon(Icons.check_circle, color: AppColors.success, size: 16),
+          const Icon(Icons.check_circle, color: AppColors.success, size: 16),
           const SizedBox(width: 8),
           Text(text, style: AppTypography.bodyMedium),
         ],
@@ -143,16 +147,16 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
     Clipboard.setData(ClipboardData(text: content));
     Haptics.medium();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+      const SnackBar(
         content: Row(
-          children: const [
+          children: [
             Icon(Icons.check_circle, color: Colors.white),
             SizedBox(width: 8),
             Text('Message copied to clipboard'),
           ],
         ),
         backgroundColor: AppColors.success,
-        duration: const Duration(seconds: 2),
+        duration: Duration(seconds: 2),
       ),
     );
   }
@@ -168,7 +172,14 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Outreach Message'),
+        centerTitle: true,
+        title: Text(
+          'Create Outreach Message',
+          style: AppTypography.titleMedium.copyWith(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
       body: businessAsync.when(
         data: (business) {
@@ -184,29 +195,37 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
                 // Header
                 Text(
                   'Generate message for',
-                  style: AppTypography.bodyLarge.copyWith(
-                    color: AppColors.textSecondary,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.textTertiary,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   business.name,
-                  style: AppTypography.headlineLarge,
+                  style: AppTypography.headlineLarge.copyWith(
+                    fontSize: 22,
+                    letterSpacing: -0.5,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
 
                 // Channel selector
                 Text(
-                  'Outreach Channel',
-                  style: AppTypography.titleLarge,
+                  'CHANNEL',
+                  style: AppTypography.labelSmall.copyWith(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                    color: AppColors.textTertiary,
+                  ),
                 ),
                 const SizedBox(height: 12),
 
                 Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
+                  spacing: 10,
+                  runSpacing: 10,
                   children: OutreachChannel.values.map((channel) {
                     final isSelected = channel == _selectedChannel;
                     return _ChannelChip(
@@ -223,14 +242,19 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
 
                 // Tone selector
                 Text(
-                  'Tone',
-                  style: AppTypography.titleLarge,
+                  'TONE',
+                  style: AppTypography.labelSmall.copyWith(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                    color: AppColors.textTertiary,
+                  ),
                 ),
                 const SizedBox(height: 12),
 
                 Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
+                  spacing: 10,
+                  runSpacing: 10,
                   children: _tones.map((tone) {
                     final isSelected = tone == _selectedTone;
                     return _ToneChip(
@@ -253,8 +277,7 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
                     onPressed: () => _generateMessage(business),
                   ),
 
-                if (_isGenerating)
-                  _GeneratingAnimation(),
+                if (_isGenerating) _GeneratingAnimation(),
 
                 if (_generatedMessage != null)
                   _MessageResult(
@@ -293,37 +316,29 @@ class _ChannelChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : AppColors.surface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    offset: const Offset(2, 2),
-                  ),
-                ]
-              : [],
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               info['icon'] as IconData,
-              color: isSelected ? Colors.white : AppColors.textSecondary,
-              size: 20,
+              color: isSelected ? AppColors.background : AppColors.textTertiary,
+              size: 18,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             Text(
               info['name'] as String,
               style: AppTypography.bodyMedium.copyWith(
-                color: isSelected ? Colors.white : AppColors.textPrimary,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                color: isSelected
+                    ? AppColors.background
+                    : AppColors.textPrimary,
+                fontWeight:
+                    isSelected ? FontWeight.w600 : FontWeight.normal,
+                fontSize: 14,
               ),
             ),
           ],
@@ -366,28 +381,19 @@ class _ToneChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : AppColors.surface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    offset: const Offset(2, 2),
-                  ),
-                ]
-              : [],
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           tone[0].toUpperCase() + tone.substring(1),
           style: AppTypography.bodyMedium.copyWith(
-            color: isSelected ? Colors.white : AppColors.textPrimary,
+            color: isSelected
+                ? AppColors.background
+                : AppColors.textPrimary,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            fontSize: 14,
           ),
         ),
       ),
@@ -432,12 +438,11 @@ class _GeneratingAnimationState extends State<_GeneratingAnimation> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AppColors.radiusXL),
       ),
       child: Column(
         children: [
-          const CircularProgressIndicator(),
+          const CircularProgressIndicator(strokeWidth: 2),
           const SizedBox(height: 24),
           ...List.generate(_steps.length, (index) {
             final isActive = index == _currentStep;
@@ -466,7 +471,8 @@ class _GeneratingAnimationState extends State<_GeneratingAnimation> {
                             : isDone
                                 ? AppColors.textSecondary
                                 : AppColors.textTertiary,
-                        fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                        fontWeight:
+                            isActive ? FontWeight.w600 : FontWeight.normal,
                       ),
                     ),
                   ),
@@ -479,7 +485,7 @@ class _GeneratingAnimationState extends State<_GeneratingAnimation> {
     )
         .animate()
         .fadeIn(duration: 300.ms)
-        .scale(begin: const Offset(0.95, 0.95), duration: 300.ms);
+        .scale(begin: const Offset(0.97, 0.97), duration: 300.ms);
   }
 }
 
@@ -501,20 +507,21 @@ class _MessageResult extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.success),
+        borderRadius: BorderRadius.circular(AppColors.radiusXL),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.auto_awesome, color: AppColors.success),
+              const Icon(Icons.auto_awesome,
+                  color: AppColors.success, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Message Generated',
-                style: AppTypography.titleLarge.copyWith(
+                style: AppTypography.labelLarge.copyWith(
                   color: AppColors.success,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -526,12 +533,13 @@ class _MessageResult extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppColors.background,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppColors.radiusL),
             ),
             child: SelectableText(
               message.content,
               style: AppTypography.bodyLarge.copyWith(
                 height: 1.6,
+                color: AppColors.textSecondary,
               ),
             ),
           ),
@@ -562,6 +570,6 @@ class _MessageResult extends StatelessWidget {
     )
         .animate()
         .fadeIn(duration: 400.ms)
-        .slideY(begin: 0.1, duration: 400.ms, curve: Curves.easeOut);
+        .slideY(begin: 0.08, duration: 400.ms, curve: Curves.easeOut);
   }
 }

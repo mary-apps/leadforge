@@ -16,7 +16,7 @@ final profileProvider = FutureProvider<Profile?>((ref) async {
   
   if (response == null) return null;
   
-  return Profile.fromJson(response as Map<String, dynamic>);
+  return Profile.fromJson(response);
 });
 
 /// Profile notifier for updates
@@ -46,7 +46,7 @@ class ProfileNotifier extends StateNotifier<AsyncValue<Profile?>> {
         return;
       }
       
-      final profile = Profile.fromJson(response as Map<String, dynamic>);
+      final profile = Profile.fromJson(response);
       state = AsyncValue.data(profile);
     } catch (e, st) {
       state = AsyncValue.error(e, st);

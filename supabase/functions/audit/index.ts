@@ -94,7 +94,7 @@ Return ONLY valid JSON in this exact format:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4.1-mini',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.3,
         response_format: { type: 'json_object' },

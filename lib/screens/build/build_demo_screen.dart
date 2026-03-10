@@ -15,7 +15,6 @@ import '../../providers/businesses_provider.dart';
 import '../../models/profile.dart';
 import '../../providers/profile_provider.dart';
 import '../../widgets/brutal_button.dart';
-import '../../widgets/brutal_card.dart';
 import '../../utils/haptics.dart';
 
 class BuildDemoScreen extends ConsumerStatefulWidget {
@@ -82,11 +81,14 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surface,
-        title: Row(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppColors.radiusXL),
+        ),
+        title: const Row(
           children: [
             Icon(Icons.lock, color: AppColors.warning),
-            const SizedBox(width: 8),
-            const Text('Demo Limit Reached'),
+            SizedBox(width: 8),
+            Text('Demo Limit Reached'),
           ],
         ),
         content: const Text(
@@ -100,6 +102,7 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
           BrutalButton(
             label: 'Upgrade to Pro',
             icon: Icons.workspace_premium,
+            compact: true,
             onPressed: () {
               Navigator.pop(context);
               context.push('/settings');
@@ -114,16 +117,16 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
     Clipboard.setData(ClipboardData(text: url));
     Haptics.medium();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+      const SnackBar(
         content: Row(
-          children: const [
+          children: [
             Icon(Icons.check_circle, color: Colors.white),
             SizedBox(width: 8),
             Text('Link copied to clipboard'),
           ],
         ),
         backgroundColor: AppColors.success,
-        duration: const Duration(seconds: 2),
+        duration: Duration(seconds: 2),
       ),
     );
   }
@@ -143,7 +146,14 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Build Demo Site'),
+        centerTitle: true,
+        title: Text(
+          'Build Demo Site',
+          style: AppTypography.titleMedium.copyWith(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
       body: businessAsync.when(
         data: (business) {
@@ -159,51 +169,64 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
                 // Header
                 Text(
                   'Create a demo website for',
-                  style: AppTypography.bodyLarge.copyWith(
-                    color: AppColors.textSecondary,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.textTertiary,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   business.name,
-                  style: AppTypography.headlineLarge,
+                  style: AppTypography.headlineLarge.copyWith(
+                    fontSize: 22,
+                    letterSpacing: -0.5,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
 
                 // Template selector
                 Text(
-                  'Choose Template',
-                  style: AppTypography.titleLarge,
+                  'TEMPLATE',
+                  style: AppTypography.labelSmall.copyWith(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                    color: AppColors.textTertiary,
+                  ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 _TemplateCard(
                   template: DemoTemplate.restaurant,
                   isSelected: _selectedTemplate == DemoTemplate.restaurant,
                   onTap: () {
-                    setState(() => _selectedTemplate = DemoTemplate.restaurant);
+                    setState(
+                        () => _selectedTemplate = DemoTemplate.restaurant);
                     Haptics.light();
                   },
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
                 _TemplateCard(
                   template: DemoTemplate.professional,
-                  isSelected: _selectedTemplate == DemoTemplate.professional,
+                  isSelected:
+                      _selectedTemplate == DemoTemplate.professional,
                   onTap: () {
-                    setState(() => _selectedTemplate = DemoTemplate.professional);
+                    setState(() =>
+                        _selectedTemplate = DemoTemplate.professional);
                     Haptics.light();
                   },
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
                 _TemplateCard(
                   template: DemoTemplate.healthBeauty,
-                  isSelected: _selectedTemplate == DemoTemplate.healthBeauty,
+                  isSelected:
+                      _selectedTemplate == DemoTemplate.healthBeauty,
                   onTap: () {
-                    setState(() => _selectedTemplate = DemoTemplate.healthBeauty);
+                    setState(() =>
+                        _selectedTemplate = DemoTemplate.healthBeauty);
                     Haptics.light();
                   },
                 ),
@@ -217,8 +240,7 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
                     onPressed: () => _buildDemo(business),
                   ),
 
-                if (_isBuilding)
-                  _BuildingAnimation(),
+                if (_isBuilding) _BuildingAnimation(),
 
                 if (_generatedDemo != null)
                   _DemoResult(
@@ -259,27 +281,19 @@ class _TemplateCard extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    offset: const Offset(3, 3),
-                  ),
-                ]
-              : [],
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.08)
+              : AppColors.surface,
+          borderRadius: BorderRadius.circular(AppColors.radiusXL),
         ),
         child: Row(
           children: [
             Icon(
               info['icon'] as IconData,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
-              size: 32,
+              color: isSelected
+                  ? AppColors.primary
+                  : AppColors.textTertiary,
+              size: 28,
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -290,21 +304,25 @@ class _TemplateCard extends StatelessWidget {
                     info['name'] as String,
                     style: AppTypography.bodyLarge.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                      color: isSelected
+                          ? AppColors.primary
+                          : AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     info['description'] as String,
                     style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
+                      color: AppColors.textTertiary,
+                      fontSize: 13,
                     ),
                   ),
                 ],
               ),
             ),
             if (isSelected)
-              Icon(Icons.check_circle, color: AppColors.primary),
+              const Icon(Icons.check_circle,
+                  color: AppColors.primary, size: 20),
           ],
         ),
       ),
@@ -373,12 +391,11 @@ class _BuildingAnimationState extends State<_BuildingAnimation> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AppColors.radiusXL),
       ),
       child: Column(
         children: [
-          const CircularProgressIndicator(),
+          const CircularProgressIndicator(strokeWidth: 2),
           const SizedBox(height: 24),
           ...List.generate(_steps.length, (index) {
             final isActive = index == _currentStep;
@@ -407,7 +424,8 @@ class _BuildingAnimationState extends State<_BuildingAnimation> {
                             : isDone
                                 ? AppColors.textSecondary
                                 : AppColors.textTertiary,
-                        fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                        fontWeight:
+                            isActive ? FontWeight.w600 : FontWeight.normal,
                       ),
                     ),
                   ),
@@ -420,7 +438,7 @@ class _BuildingAnimationState extends State<_BuildingAnimation> {
     )
         .animate()
         .fadeIn(duration: 300.ms)
-        .scale(begin: const Offset(0.95, 0.95), duration: 300.ms);
+        .scale(begin: const Offset(0.97, 0.97), duration: 300.ms);
   }
 }
 
@@ -438,57 +456,66 @@ class _DemoResult extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BrutalCard(
-      borderColor: AppColors.success,
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppColors.radiusXL),
+      ),
       child: Column(
         children: [
-          Icon(
+          const Icon(
             Icons.check_circle,
             color: AppColors.success,
-            size: 64,
+            size: 48,
           )
               .animate()
               .scale(
                 delay: 100.ms,
                 duration: 400.ms,
-                curve: Curves.elasticOut,
+                curve: Curves.easeOutBack,
               ),
           const SizedBox(height: 16),
           Text(
             'Demo Site Created!',
-            style: AppTypography.titleLarge.copyWith(
+            style: AppTypography.titleMedium.copyWith(
               color: AppColors.success,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Text(
             'Share this link with your prospect',
             style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+              color: AppColors.textTertiary,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
           // URL display
-          BrutalCard(
-            borderColor: AppColors.success,
-            padding: const EdgeInsets.all(12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(AppColors.radiusM),
+            ),
             child: Row(
               children: [
                 Expanded(
                   child: Text(
                     demo.publicUrl,
-                    style: AppTypography.bodyMedium.copyWith(
-                      fontFamily: 'SF Mono',
+                    style: AppTypography.mono.copyWith(
                       color: AppColors.primary,
+                      fontSize: 13,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.copy, size: 20),
+                  icon: const Icon(Icons.copy, size: 18),
                   onPressed: () => onCopyLink(demo.publicUrl),
                   color: AppColors.primary,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
               ],
             ),
@@ -511,7 +538,8 @@ class _DemoResult extends StatelessWidget {
                   label: 'Open',
                   icon: Icons.open_in_new,
                   onPressed: () {
-                    launchUrl(Uri.parse(demo.publicUrl), mode: LaunchMode.externalApplication);
+                    launchUrl(Uri.parse(demo.publicUrl),
+                        mode: LaunchMode.externalApplication);
                   },
                 ),
               ),
@@ -522,6 +550,6 @@ class _DemoResult extends StatelessWidget {
     )
         .animate()
         .fadeIn(duration: 400.ms)
-        .slideY(begin: 0.1, duration: 400.ms, curve: Curves.easeOut);
+        .slideY(begin: 0.08, duration: 400.ms, curve: Curves.easeOut);
   }
 }

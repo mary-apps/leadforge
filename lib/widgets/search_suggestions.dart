@@ -38,7 +38,7 @@ class SearchSuggestions extends StatelessWidget {
           if (hasRecent) ...[
             Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.history,
                   size: 16,
                   color: AppColors.textSecondary,
@@ -63,7 +63,7 @@ class SearchSuggestions extends StatelessWidget {
           if (hasTrending) ...[
             Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.trending_up,
                   size: 16,
                   color: AppColors.textSecondary,
@@ -122,7 +122,7 @@ class _SuggestionTile extends StatelessWidget {
                 style: AppTypography.bodyMedium,
               ),
             ),
-            Icon(
+            const Icon(
               Icons.north_west,
               size: 14,
               color: AppColors.textTertiary,

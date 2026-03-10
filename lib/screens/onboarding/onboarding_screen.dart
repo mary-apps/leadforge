@@ -204,7 +204,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
+          const Text(
             'Set Up Your Profile',
             style: AppTypography.headlineLarge,
             textAlign: TextAlign.center,

@@ -4,7 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../config/theme.dart';
 import 'brutal_button.dart';
 
-/// A reusable empty-state widget with neo-brutalist styling and animated entrance.
+/// A reusable empty-state widget with simple fade entrance.
 class EmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -32,7 +32,8 @@ class EmptyState extends StatelessWidget {
       key: key,
       icon: Icons.search_off_rounded,
       title: 'No results found',
-      subtitle: 'Try adjusting your search or filters to find what you\'re looking for.',
+      subtitle:
+          'Try adjusting your search or filters to find what you\'re looking for.',
       actionLabel: onRetry != null ? 'Retry' : null,
       onAction: onRetry,
       iconColor: AppColors.secondary,
@@ -44,7 +45,8 @@ class EmptyState extends StatelessWidget {
       key: key,
       icon: Icons.people_outline_rounded,
       title: 'No leads yet',
-      subtitle: 'Start scouting to discover and qualify new leads for your business.',
+      subtitle:
+          'Start scouting to discover and qualify new leads for your business.',
       actionLabel: onScout != null ? 'Scout Leads' : null,
       onAction: onScout,
       iconColor: AppColors.primary,
@@ -56,7 +58,8 @@ class EmptyState extends StatelessWidget {
       key: key,
       icon: Icons.rocket_launch_rounded,
       title: 'Welcome to LeadForge',
-      subtitle: 'Your AI-powered lead generation journey starts here. Let\'s get going!',
+      subtitle:
+          'Your AI-powered lead generation journey starts here. Let\'s get going!',
       actionLabel: onStart != null ? 'Get Started' : null,
       onAction: onStart,
       iconColor: AppColors.primary,
@@ -87,72 +90,40 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Layered icon composition
-            _buildIcon(),
+            Icon(
+              icon,
+              size: 48,
+              color: iconColor.withValues(alpha: 0.6),
+            ),
             const SizedBox(height: 24),
-            // Title
             Text(
               title,
-              style: AppTypography.titleLarge.copyWith(
-                fontWeight: FontWeight.w800,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
               ),
               textAlign: TextAlign.center,
-            )
-                .animate()
-                .fadeIn(delay: 150.ms, duration: 400.ms)
-                .slideY(begin: 0.15, end: 0, delay: 150.ms, duration: 400.ms),
+            ),
             const SizedBox(height: 8),
-            // Subtitle
             Text(
               subtitle,
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.textTertiary,
               ),
               textAlign: TextAlign.center,
-            )
-                .animate()
-                .fadeIn(delay: 300.ms, duration: 400.ms)
-                .slideY(begin: 0.15, end: 0, delay: 300.ms, duration: 400.ms),
-            // Optional action button
+            ),
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 24),
               BrutalButton(
                 label: actionLabel!,
                 onPressed: onAction!,
-              )
-                  .animate()
-                  .fadeIn(delay: 450.ms, duration: 400.ms)
-                  .slideY(
-                      begin: 0.15, end: 0, delay: 450.ms, duration: 400.ms),
+              ),
             ],
           ],
-        ),
+        ).animate().fadeIn(duration: 400.ms),
       ),
     );
-  }
-
-  Widget _buildIcon() {
-    return SizedBox(
-      width: 80,
-      height: 80,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Icon(
-            icon,
-            size: 80,
-            color: iconColor.withValues(alpha: 0.1),
-          ),
-          Icon(
-            icon,
-            size: 48,
-            color: iconColor.withValues(alpha: 0.6),
-          ),
-        ],
-      ),
-    )
-        .animate()
-        .fadeIn(duration: 400.ms)
-        .scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1), duration: 400.ms);
   }
 }
