@@ -103,10 +103,16 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: Text(
-                              business.name,
-                              style: AppTypography.titleLarge.copyWith(
-                                fontWeight: FontWeight.w800,
+                            child: Hero(
+                              tag: 'business-name-${business.id}',
+                              child: Material(
+                                color: Colors.transparent,
+                                child: Text(
+                                  business.name,
+                                  style: AppTypography.titleLarge.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
                               ),
                             ),
                           ),

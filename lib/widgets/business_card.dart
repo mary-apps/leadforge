@@ -54,13 +54,19 @@ class BusinessCard extends StatelessWidget {
                   Text(business.statusBadge, style: const TextStyle(fontSize: 20)),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
-                      business.name,
-                      style: AppTypography.titleLarge.copyWith(
-                        fontWeight: FontWeight.w700,
+                    child: Hero(
+                      tag: 'business-name-${business.id}',
+                      child: Material(
+                        color: Colors.transparent,
+                        child: Text(
+                          business.name,
+                          style: AppTypography.titleLarge.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   if (business.auditScore != null)
