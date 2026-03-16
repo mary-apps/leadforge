@@ -1,47 +1,44 @@
-import 'package:flutter/material.dart';
-
-import '../config/theme.dart';
+import 'package:flutter/cupertino.dart';
 import '../config/constants.dart';
 
 class NicheChips extends StatelessWidget {
   final Function(String) onSelected;
   final String? selectedNiche;
 
-  const NicheChips({
-    super.key,
-    required this.onSelected,
-    this.selectedNiche,
-  });
+  const NicheChips({super.key, required this.onSelected, this.selectedNiche});
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 36,
+      height: 38,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
         scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: AppConstants.suggestedNiches.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final niche = AppConstants.suggestedNiches[index];
           final isSelected = selectedNiche == niche;
-
           return GestureDetector(
             onTap: () => onSelected(niche),
-            child: Container(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : AppColors.surface,
-                borderRadius: BorderRadius.circular(AppColors.radiusS),
+                color: isSelected
+                    ? CupertinoColors.systemBlue.resolveFrom(context)
+                    : CupertinoColors.tertiarySystemFill.resolveFrom(context),
+                borderRadius: BorderRadius.circular(19),
               ),
               child: Text(
                 niche,
-                style: AppTypography.bodyMedium.copyWith(
+                style: TextStyle(
                   fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   color: isSelected
-                      ? AppColors.background
-                      : AppColors.textSecondary,
+                      ? CupertinoColors.white
+                      : CupertinoColors.label.resolveFrom(context),
                 ),
               ),
             ),

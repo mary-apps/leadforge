@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../config/theme.dart';
@@ -70,12 +70,31 @@ class _StatCardAnimatedState extends State<StatCardAnimated>
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(4),
+    final resolvedSurface = CupertinoColors.secondarySystemGroupedBackground.resolveFrom(context);
+    final resolvedTertiary = CupertinoColors.tertiaryLabel.resolveFrom(context);
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: resolvedSurface,
+        borderRadius: BorderRadius.circular(AppColors.radiusL),
+        border: Border.all(
+          color: CupertinoColors.separator.resolveFrom(context),
+          width: 0.5,
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(widget.icon, color: widget.color, size: 24),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: widget.color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(widget.icon, color: widget.color, size: 16),
+          ),
           const SizedBox(height: 8),
           AnimatedBuilder(
             animation: _counterAnimation,
@@ -88,24 +107,36 @@ class _StatCardAnimatedState extends State<StatCardAnimated>
           ),
           if (widget.trend != null) ...[
             const SizedBox(height: 2),
-            Text(
-              widget.trend!,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: widget.trend!.startsWith('-')
-                    ? AppColors.danger
-                    : AppColors.success,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: (widget.trend!.startsWith('-')
+                        ? CupertinoColors.systemRed
+                        : CupertinoColors.systemGreen)
+                    .resolveFrom(context)
+                    .withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                widget.trend!,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: (widget.trend!.startsWith('-')
+                          ? CupertinoColors.systemRed
+                          : CupertinoColors.systemGreen)
+                      .resolveFrom(context),
+                ),
               ),
             ),
           ],
           const SizedBox(height: 4),
           Text(
             widget.label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: AppColors.textTertiary,
+              color: resolvedTertiary,
             ),
           ),
         ],

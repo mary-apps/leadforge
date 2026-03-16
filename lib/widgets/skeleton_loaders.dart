@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../config/theme.dart';
@@ -24,7 +24,7 @@ class _ShimmerBox extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(context),
         borderRadius: BorderRadius.circular(borderRadius),
       ),
     );
@@ -42,9 +42,13 @@ class ShimmerWrap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final base = CupertinoColors.secondarySystemGroupedBackground.resolveFrom(context);
+    final highlight = CupertinoColors.tertiarySystemGroupedBackground.resolveFrom(context);
+
     return Shimmer.fromColors(
-      baseColor: AppColors.surface,
-      highlightColor: AppColors.surfaceLight,
+      baseColor: base,
+      highlightColor: highlight.withValues(alpha: 0.8),
+      period: const Duration(milliseconds: 1500),
       child: child,
     );
   }
@@ -61,68 +65,54 @@ class DashboardSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ShimmerWrap(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
+        padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Greeting area
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _ShimmerBox(width: 120, height: 14),
-                    SizedBox(height: 6),
-                    _ShimmerBox(width: 160, height: 22),
-                  ],
-                ),
-                _ShimmerBox(width: 36, height: 36, borderRadius: AppColors.radiusM),
-              ],
-            ),
-            const SizedBox(height: 28),
-
-            // Stats row — 2 cards with gradient border
-            const _ShimmerBox(height: 110, borderRadius: AppColors.radiusXL),
-            const SizedBox(height: 28),
-
-            // Quick actions label
+            // Greeting
+            const _ShimmerBox(width: 140, height: 14),
+            const SizedBox(height: 10),
+            // Hero stat
+            const _ShimmerBox(width: 80, height: 48, borderRadius: AppColors.radiusM),
+            const SizedBox(height: 4),
             const _ShimmerBox(width: 100, height: 12),
             const SizedBox(height: 12),
 
-            // Asymmetric quick actions
+            // 3-column stat pills
             const Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(flex: 2, child: _ShimmerBox(height: 110, borderRadius: AppColors.radiusL)),
-                SizedBox(width: 10),
                 Expanded(
-                  flex: 1,
-                  child: Column(
-                    children: [
-                      _ShimmerBox(height: 50, borderRadius: AppColors.radiusL),
-                      SizedBox(height: 10),
-                      _ShimmerBox(height: 50, borderRadius: AppColors.radiusL),
-                    ],
-                  ),
+                  child: _ShimmerBox(height: 40, borderRadius: AppColors.radiusL),
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: _ShimmerBox(height: 40, borderRadius: AppColors.radiusL),
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: _ShimmerBox(height: 40, borderRadius: AppColors.radiusL),
                 ),
               ],
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 14),
 
-            // Recent leads
-            const _ShimmerBox(width: 100, height: 12),
+            // Weekly activity graph
+            const _ShimmerBox(height: 160, borderRadius: AppColors.radiusXL),
+            const SizedBox(height: 16),
+
+            // Recent header
+            const _ShimmerBox(width: 60, height: 12),
             const SizedBox(height: 12),
+
+            // Featured first lead card (taller)
+            const _ShimmerBox(height: 72, borderRadius: AppColors.radiusL),
+            const SizedBox(height: 12),
+
+            // Compact remaining lead cards
             ...List.generate(3, (index) => const Padding(
               padding: EdgeInsets.only(bottom: 8),
-              child: _ShimmerBox(height: 56, borderRadius: AppColors.radiusL),
+              child: _ShimmerBox(height: 48, borderRadius: AppColors.radiusL),
             )),
-            const SizedBox(height: 28),
-
-            // Weekly activity
-            const _ShimmerBox(width: 120, height: 12),
-            const SizedBox(height: 12),
-            const _ShimmerBox(height: 180, borderRadius: AppColors.radiusXL),
           ],
         ),
       ),

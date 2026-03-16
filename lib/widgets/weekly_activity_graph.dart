@@ -1,12 +1,13 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../config/theme.dart';
 
-/// Weekly activity graph showing searches, audits, and outreach
+/// Weekly activity graph showing searches, audits, and outreach as grouped bars
 class WeeklyActivityGraph extends StatelessWidget {
   final Map<String, List<int>> data; // {day: [searches, audits, outreach]}
-  
+
   const WeeklyActivityGraph({
     super.key,
     required this.data,
@@ -14,12 +15,15 @@ class WeeklyActivityGraph extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final today = DateTime.now().weekday - 1; // 0=Mon, 6=Sun
+    final resolvedSurface = CupertinoColors.secondarySystemGroupedBackground.resolveFrom(context);
+    final resolvedBorder = CupertinoColors.separator.resolveFrom(context);
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        color: resolvedSurface,
+        borderRadius: BorderRadius.circular(AppColors.radiusL),
+        border: Border.all(color: resolvedBorder, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -31,25 +35,19 @@ class WeeklyActivityGraph extends StatelessWidget {
                 'Weekly Activity',
                 style: AppTypography.titleLarge,
               ),
-              _Legend(),
+              _Legend(context: context),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           SizedBox(
-            height: 200,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: 1,
-                  getDrawingHorizontalLine: (value) {
-                    return const FlLine(
-                      color: AppColors.border,
-                      strokeWidth: 1,
-                    );
-                  },
-                ),
+            height: 160,
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: _getMaxY(),
+                barTouchData: BarTouchData(enabled: false),
+                gridData: const FlGridData(show: false),
+                borderData: FlBorderData(show: false),
                 titlesData: FlTitlesData(
                   show: true,
                   rightTitles: const AxisTitles(
@@ -58,181 +56,144 @@ class WeeklyActivityGraph extends StatelessWidget {
                   topTitles: const AxisTitles(
                     sideTitles: SideTitles(showTitles: false),
                   ),
+                  leftTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      reservedSize: 30,
-                      interval: 1,
-                      getTitlesWidget: _bottomTitleWidgets,
-                    ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      interval: 1,
-                      getTitlesWidget: _leftTitleWidgets,
-                      reservedSize: 32,
+                      reservedSize: 24,
+                      getTitlesWidget: (value, meta) =>
+                          _bottomTitle(context, value, today),
                     ),
                   ),
                 ),
-                borderData: FlBorderData(show: false),
-                minX: 0,
-                maxX: 6,
-                minY: 0,
-                maxY: _getMaxY(),
-                lineBarsData: [
-                  // Searches line
-                  LineChartBarData(
-                    spots: _getSpots(0), // index 0 = searches
-                    isCurved: true,
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.primary.withOpacity(0.8),
-                        AppColors.primary,
-                      ],
-                    ),
-                    barWidth: 3,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, percent, barData, index) {
-                        return FlDotCirclePainter(
-                          radius: 4,
-                          color: AppColors.primary,
-                          strokeWidth: 2,
-                          strokeColor: AppColors.background,
-                        );
-                      },
-                    ),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.primary.withOpacity(0.1),
-                          AppColors.primary.withOpacity(0.0),
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                    ),
-                  ),
-                  
-                  // Audits line
-                  LineChartBarData(
-                    spots: _getSpots(1), // index 1 = audits
-                    isCurved: true,
-                    color: AppColors.info,
-                    barWidth: 3,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, percent, barData, index) {
-                        return FlDotCirclePainter(
-                          radius: 4,
-                          color: AppColors.info,
-                          strokeWidth: 2,
-                          strokeColor: AppColors.background,
-                        );
-                      },
-                    ),
-                  ),
-                  
-                  // Outreach line
-                  LineChartBarData(
-                    spots: _getSpots(2), // index 2 = outreach
-                    isCurved: true,
-                    color: AppColors.success,
-                    barWidth: 3,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, percent, barData, index) {
-                        return FlDotCirclePainter(
-                          radius: 4,
-                          color: AppColors.success,
-                          strokeWidth: 2,
-                          strokeColor: AppColors.background,
-                        );
-                      },
-                    ),
-                  ),
-                ],
+                barGroups: _buildBarGroups(context, today),
               ),
             ),
           ),
         ],
       ),
-    );
+    )
+        .animate()
+        .slideY(
+            begin: 0.02,
+            duration: 400.ms,
+            curve: Curves.easeOutQuart);
   }
-  
-  List<FlSpot> _getSpots(int dataIndex) {
-    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    final spots = <FlSpot>[];
-    
-    for (int i = 0; i < days.length; i++) {
+
+  List<BarChartGroupData> _buildBarGroups(BuildContext context, int today) {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const barWidth = 6.0;
+    const radius = BorderRadius.vertical(top: Radius.circular(3));
+
+    final primaryColor = CupertinoColors.systemBlue.resolveFrom(context);
+    final secondaryColor = CupertinoColors.systemIndigo.resolveFrom(context);
+    final successColor = CupertinoColors.systemGreen.resolveFrom(context);
+
+    return List.generate(7, (i) {
       final dayData = data[days[i]] ?? [0, 0, 0];
-      spots.add(FlSpot(i.toDouble(), dayData[dataIndex].toDouble()));
-    }
-    
-    return spots;
+      final isToday = i == today;
+
+      return BarChartGroupData(
+        x: i,
+        barRods: [
+          // Searches
+          BarChartRodData(
+            toY: dayData[0].toDouble(),
+            color: isToday
+                ? primaryColor
+                : primaryColor.withValues(alpha: 0.5),
+            width: barWidth,
+            borderRadius: radius,
+          ),
+          // Audits
+          BarChartRodData(
+            toY: dayData[1].toDouble(),
+            color: isToday
+                ? secondaryColor
+                : secondaryColor.withValues(alpha: 0.5),
+            width: barWidth,
+            borderRadius: radius,
+          ),
+          // Outreach
+          BarChartRodData(
+            toY: dayData[2].toDouble(),
+            color: isToday
+                ? successColor
+                : successColor.withValues(alpha: 0.5),
+            width: barWidth,
+            borderRadius: radius,
+          ),
+        ],
+      );
+    });
   }
-  
+
   double _getMaxY() {
-    double max = 5; // Minimum max
-    
+    double max = 5;
     data.forEach((day, values) {
       for (final value in values) {
         if (value > max) max = value.toDouble();
       }
     });
-    
-    return (max * 1.2).ceilToDouble(); // Add 20% padding
+    return (max * 1.2).ceilToDouble();
   }
-  
-  Widget _bottomTitleWidgets(double value, TitleMeta meta) {
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  Widget _bottomTitle(BuildContext context, double value, int today) {
+    const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     final index = value.toInt();
-    
-    if (index < 0 || index >= days.length) {
-      return const SizedBox();
-    }
-    
+    if (index < 0 || index >= days.length) return const SizedBox();
+
+    final isToday = index == today;
+
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: Text(
-        days[index],
-        style: AppTypography.labelLarge.copyWith(
-          color: AppColors.textSecondary,
-          fontSize: 11,
-        ),
+      padding: const EdgeInsets.only(top: 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            days[index],
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: isToday ? FontWeight.w600 : FontWeight.w400,
+              color: isToday
+                  ? CupertinoColors.label.resolveFrom(context)
+                  : CupertinoColors.tertiaryLabel.resolveFrom(context),
+            ),
+          ),
+          if (isToday)
+            Container(
+              margin: const EdgeInsets.only(top: 1),
+              width: 3,
+              height: 3,
+              decoration: BoxDecoration(
+                color: CupertinoColors.systemBlue.resolveFrom(context),
+                shape: BoxShape.circle,
+              ),
+            ),
+        ],
       ),
-    );
-  }
-  
-  Widget _leftTitleWidgets(double value, TitleMeta meta) {
-    return Text(
-      value.toInt().toString(),
-      style: AppTypography.mono.copyWith(
-        color: AppColors.textSecondary,
-        fontSize: 11,
-      ),
-      textAlign: TextAlign.right,
     );
   }
 }
 
 /// Legend for graph
 class _Legend extends StatelessWidget {
+  final BuildContext context;
+
+  const _Legend({required this.context});
+
   @override
-  Widget build(BuildContext context) {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+  Widget build(BuildContext outerContext) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        _LegendItem(color: AppColors.primary, label: 'Searches'),
-        SizedBox(height: 4),
-        _LegendItem(color: AppColors.info, label: 'Audits'),
-        SizedBox(height: 4),
-        _LegendItem(color: AppColors.success, label: 'Outreach'),
+        _LegendItem(color: CupertinoColors.systemBlue.resolveFrom(context), label: 'Search'),
+        const SizedBox(width: 12),
+        _LegendItem(color: CupertinoColors.systemIndigo.resolveFrom(context), label: 'Audit'),
+        const SizedBox(width: 12),
+        _LegendItem(color: CupertinoColors.systemGreen.resolveFrom(context), label: 'Outreach'),
       ],
     );
   }
@@ -241,7 +202,7 @@ class _Legend extends StatelessWidget {
 class _LegendItem extends StatelessWidget {
   final Color color;
   final String label;
-  
+
   const _LegendItem({
     required this.color,
     required this.label,
@@ -253,19 +214,20 @@ class _LegendItem extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 12,
-          height: 12,
+          width: 3,
+          height: 10,
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(2),
+            borderRadius: BorderRadius.circular(1.5),
           ),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: 4),
         Text(
           label,
-          style: AppTypography.labelLarge.copyWith(
-            color: AppColors.textSecondary,
-            fontSize: 11,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            color: CupertinoColors.secondaryLabel.resolveFrom(context),
           ),
         ),
       ],
