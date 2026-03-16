@@ -1,6 +1,5 @@
 import 'package:confetti/confetti.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -17,10 +16,8 @@ import '../../providers/businesses_provider.dart';
 import '../../models/profile.dart';
 import '../../providers/profile_provider.dart';
 import '../../widgets/brutal_button.dart';
+import '../../widgets/brutal_card.dart';
 import '../../widgets/ios_toast.dart';
-import '../../widgets/forge_loader.dart';
-import '../../widgets/glow_card.dart';
-import '../../widgets/shimmer_text.dart';
 import '../../utils/haptics.dart';
 
 class BuildDemoScreen extends ConsumerStatefulWidget {
@@ -95,7 +92,8 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
       if (mounted) {
         setState(() => _isBuilding = false);
         Haptics.heavy();
-        IosToast.show(context, 'Error: $e', icon: CupertinoIcons.exclamationmark_triangle);
+        IosToast.show(context, 'Error: $e',
+            icon: CupertinoIcons.exclamationmark_triangle);
       }
     }
   }
@@ -129,7 +127,8 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
   void _copyLink(String url) {
     Clipboard.setData(ClipboardData(text: url));
     Haptics.medium();
-    IosToast.show(context, 'Link copied to clipboard', icon: CupertinoIcons.check_mark);
+    IosToast.show(context, 'Link copied to clipboard',
+        icon: CupertinoIcons.check_mark);
   }
 
   void _shareDemo() {
@@ -145,131 +144,105 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
   Widget build(BuildContext context) {
     final businessAsync = ref.watch(businessProvider(widget.businessId));
 
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: const GradientText(
-          text: 'Build Demo Site',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-          colors: [AppColors.primary, AppColors.primaryLight],
-        ),
+    return CupertinoPageScaffold(
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text('Build Demo Site'),
       ),
-      body: Stack(
+      child: Stack(
         children: [
-          businessAsync.when(
-            data: (business) {
-              if (business == null) {
-                return const Center(child: Text('Business not found'));
-              }
+          SafeArea(
+            child: businessAsync.when(
+              data: (business) {
+                if (business == null) {
+                  return const Center(child: Text('Business not found'));
+                }
 
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Create a demo website for',
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.textTertiary,
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Create a demo website for',
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppColors.textTertiary,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      business.name,
-                      style: AppTypography.headlineLarge.copyWith(
-                        fontSize: 22,
-                        letterSpacing: -0.5,
+                      const SizedBox(height: 6),
+                      Text(
+                        business.name,
+                        style: AppTypography.headlineLarge.copyWith(
+                          fontSize: 22,
+                          letterSpacing: -0.5,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    // Business data summary — what AI will use
-                    _BusinessDataSummary(business: business),
-                    const SizedBox(height: 20),
+                      // Business data summary
+                      _BusinessDataSummary(business: business),
+                      const SizedBox(height: 20),
 
-                    // Custom notes for AI
-                    Text(
-                      'CUSTOM INSTRUCTIONS',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
-                        color: AppColors.textTertiary,
+                      // Custom notes for AI
+                      Text(
+                        'CUSTOM INSTRUCTIONS',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.2,
+                          color: AppColors.textTertiary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _notesController,
-                      maxLines: 3,
-                      maxLength: 200,
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.textPrimary,
-                      ),
-                      decoration: InputDecoration(
-                        hintText:
+                      const SizedBox(height: 8),
+                      CupertinoTextField(
+                        controller: _notesController,
+                        maxLines: 3,
+                        maxLength: 200,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppColors.textPrimary,
+                        ),
+                        placeholder:
                             'e.g. "Highlight their new menu" or "Focus on premium services"',
-                        hintStyle: AppTypography.bodyMedium.copyWith(
+                        placeholderStyle: AppTypography.bodyMedium.copyWith(
                           color: AppColors.textTertiary,
                           fontSize: 13,
                         ),
-                        filled: true,
-                        fillColor: AppColors.surface,
-                        border: OutlineInputBorder(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
                           borderRadius:
                               BorderRadius.circular(AppColors.radiusM),
-                          borderSide: BorderSide(
+                          border: Border.all(
                             color: AppColors.border,
                             width: 0.5,
                           ),
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius.circular(AppColors.radiusM),
-                          borderSide: BorderSide(
-                            color: AppColors.border,
-                            width: 0.5,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius.circular(AppColors.radiusM),
-                          borderSide: BorderSide(
-                            color: AppColors.primary.withValues(alpha: 0.5),
-                            width: 1,
-                          ),
-                        ),
-                        contentPadding: const EdgeInsets.all(14),
-                        counterStyle: TextStyle(
-                          color: AppColors.textTertiary,
-                          fontSize: 11,
-                        ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    if (_generatedDemo == null && !_isBuilding)
-                      _GradientCTA(
-                        label: 'Generate Demo Site',
-                        icon: Icons.auto_awesome_rounded,
-                        onPressed: () => _buildDemo(business),
-                      ),
+                      if (_generatedDemo == null && !_isBuilding)
+                        _GradientCTA(
+                          label: 'Generate Demo Site',
+                          icon: CupertinoIcons.sparkles,
+                          onPressed: () => _buildDemo(business),
+                        ),
 
-                    if (_isBuilding) _BuildingAnimation(),
+                      if (_isBuilding) _BuildingAnimation(),
 
-                    if (_generatedDemo != null)
-                      _DemoResult(
-                        demo: _generatedDemo!,
-                        onCopyLink: _copyLink,
-                        onShare: _shareDemo,
-                      ),
-                  ],
-                ),
-              );
-            },
-            loading: () => const Center(child: ForgeLoader(size: 40)),
-            error: (error, _) => Center(child: Text('Error: $error')),
+                      if (_generatedDemo != null)
+                        _DemoResult(
+                          demo: _generatedDemo!,
+                          onCopyLink: _copyLink,
+                          onShare: _shareDemo,
+                        ),
+                    ],
+                  ),
+                );
+              },
+              loading: () => const Center(child: CupertinoActivityIndicator()),
+              error: (error, _) => Center(child: Text('Error: $error')),
+            ),
           ),
           Align(
             alignment: Alignment.topCenter,
@@ -359,7 +332,7 @@ class _GradientCTAState extends State<_GradientCTA> {
   }
 }
 
-// Building animation with glow card
+// Building animation card
 class _BuildingAnimation extends StatefulWidget {
   @override
   State<_BuildingAnimation> createState() => _BuildingAnimationState();
@@ -393,14 +366,11 @@ class _BuildingAnimationState extends State<_BuildingAnimation> {
 
   @override
   Widget build(BuildContext context) {
-    return GlowCard(
-      glowColor: AppColors.primary,
-      animateBorder: true,
-      glowIntensity: 0.5,
+    return BrutalCard(
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-          const ForgeLoader(),
+          const CupertinoActivityIndicator(radius: 16),
           const SizedBox(height: 24),
           ...List.generate(_steps.length, (index) {
             final isActive = index == _currentStep;
@@ -414,8 +384,8 @@ class _BuildingAnimationState extends State<_BuildingAnimation> {
                     duration: const Duration(milliseconds: 200),
                     child: Icon(
                       isDone
-                          ? Icons.check_circle_rounded
-                          : Icons.circle_outlined,
+                          ? CupertinoIcons.check_mark_circled_solid
+                          : CupertinoIcons.circle,
                       key: ValueKey('step-$index-$isDone'),
                       size: 18,
                       color: isActive
@@ -453,7 +423,7 @@ class _BuildingAnimationState extends State<_BuildingAnimation> {
   }
 }
 
-// Demo result with glow
+// Demo result card
 class _DemoResult extends StatelessWidget {
   final Demo demo;
   final Function(String) onCopyLink;
@@ -467,9 +437,7 @@ class _DemoResult extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlowCard(
-      glowColor: AppColors.success,
-      glowIntensity: 0.5,
+    return BrutalCard(
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
@@ -478,15 +446,10 @@ class _DemoResult extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.success.withValues(alpha: 0.2),
-                  AppColors.success.withValues(alpha: 0.05),
-                ],
-              ),
+              color: AppColors.success.withValues(alpha: 0.15),
             ),
             child: const Icon(
-              Icons.check_circle_rounded,
+              CupertinoIcons.check_mark_circled_solid,
               color: AppColors.success,
               size: 32,
             ),
@@ -498,10 +461,11 @@ class _DemoResult extends StatelessWidget {
                 curve: Curves.easeOutBack,
               ),
           const SizedBox(height: 16),
-          const GradientText(
-            text: 'Demo Site Created!',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-            colors: [AppColors.success, Color(0xFF6EE7B7)],
+          Text(
+            'Demo Site Created!',
+            style: AppTypography.titleMedium.copyWith(
+              color: AppColors.success,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
@@ -535,12 +499,11 @@ class _DemoResult extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.copy, size: 18),
-                  onPressed: () => onCopyLink(demo.publicUrl),
-                  color: AppColors.primary,
+                CupertinoButton(
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+                  minimumSize: const Size(24, 24),
+                  onPressed: () => onCopyLink(demo.publicUrl),
+                  child: const Icon(CupertinoIcons.doc_on_doc, size: 18),
                 ),
               ],
             ),
@@ -556,7 +519,7 @@ class _DemoResult extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.visibility_rounded, size: 16,
+                const Icon(CupertinoIcons.eye, size: 16,
                     color: AppColors.textTertiary),
                 const SizedBox(width: 6),
                 Text(
@@ -569,7 +532,7 @@ class _DemoResult extends StatelessWidget {
                 ),
                 if (demo.lastViewedAt != null) ...[
                   const SizedBox(width: 16),
-                  const Icon(Icons.schedule_rounded, size: 16,
+                  const Icon(CupertinoIcons.clock, size: 16,
                       color: AppColors.textTertiary),
                   const SizedBox(width: 6),
                   Text(
@@ -590,7 +553,7 @@ class _DemoResult extends StatelessWidget {
               Expanded(
                 child: BrutalButton.secondary(
                   label: 'Share',
-                  icon: Icons.share,
+                  icon: CupertinoIcons.share,
                   onPressed: onShare,
                 ),
               ),
@@ -598,7 +561,7 @@ class _DemoResult extends StatelessWidget {
               Expanded(
                 child: BrutalButton(
                   label: 'Open',
-                  icon: Icons.open_in_new,
+                  icon: CupertinoIcons.arrow_up_right_square,
                   onPressed: () {
                     launchUrl(Uri.parse(demo.publicUrl),
                         mode: LaunchMode.externalApplication);
@@ -625,7 +588,7 @@ class _DemoResult extends StatelessWidget {
   }
 }
 
-// Business data summary — shows what AI will use to personalize the demo
+// Business data summary
 class _BusinessDataSummary extends StatelessWidget {
   final Business business;
 
@@ -637,7 +600,7 @@ class _BusinessDataSummary extends StatelessWidget {
 
     if (business.categories.isNotEmpty) {
       items.add(_DataItem(
-        icon: Icons.category_rounded,
+        icon: CupertinoIcons.tag,
         label: 'Categories',
         value: business.categories.take(3).join(', '),
         color: AppColors.primary,
@@ -646,17 +609,16 @@ class _BusinessDataSummary extends StatelessWidget {
 
     if (business.rating != null) {
       items.add(_DataItem(
-        icon: Icons.star_rounded,
+        icon: CupertinoIcons.star_fill,
         label: 'Rating',
-        value:
-            '${business.rating}/5 (${business.reviewsCount} reviews)',
+        value: '${business.rating}/5 (${business.reviewsCount} reviews)',
         color: AppColors.warning,
       ));
     }
 
     if (business.auditScore != null) {
       items.add(_DataItem(
-        icon: Icons.query_stats_rounded,
+        icon: CupertinoIcons.chart_bar,
         label: 'Audit Score',
         value: '${business.auditScore}/100',
         color: business.auditScore! >= 60
@@ -669,7 +631,7 @@ class _BusinessDataSummary extends StatelessWidget {
 
     if (business.phone != null) {
       items.add(_DataItem(
-        icon: Icons.phone_rounded,
+        icon: CupertinoIcons.phone,
         label: 'Phone',
         value: business.phone!,
         color: AppColors.success,
@@ -678,7 +640,7 @@ class _BusinessDataSummary extends StatelessWidget {
 
     if (business.website != null) {
       items.add(_DataItem(
-        icon: Icons.language_rounded,
+        icon: CupertinoIcons.globe,
         label: 'Website',
         value: business.website!.replaceAll(RegExp(r'^https?://'), ''),
         color: AppColors.info,
@@ -687,7 +649,7 @@ class _BusinessDataSummary extends StatelessWidget {
 
     if (business.openingHours != null) {
       items.add(_DataItem(
-        icon: Icons.schedule_rounded,
+        icon: CupertinoIcons.clock,
         label: 'Hours',
         value: 'Available',
         color: AppColors.secondary,
@@ -704,7 +666,7 @@ class _BusinessDataSummary extends StatelessWidget {
         Row(
           children: [
             Icon(
-              Icons.auto_awesome_rounded,
+              CupertinoIcons.sparkles,
               size: 14,
               color: AppColors.primary,
             ),
@@ -734,9 +696,7 @@ class _BusinessDataSummary extends StatelessWidget {
           child: Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: items
-                .map((item) => _DataChip(item: item))
-                .toList(),
+            children: items.map((item) => _DataChip(item: item)).toList(),
           ),
         ),
         if (business.auditDiagnosis != null) ...[
@@ -751,7 +711,7 @@ class _BusinessDataSummary extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(
-                  Icons.lightbulb_outline_rounded,
+                  CupertinoIcons.lightbulb,
                   size: 16,
                   color: AppColors.warning,
                 ),

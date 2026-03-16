@@ -16,6 +16,28 @@ class AppColors {
   static const border = CupertinoColors.separator;
   static const divider = CupertinoColors.opaqueSeparator;
 
+  // Accent aliases (used by outreach, build-demo, confetti, etc.)
+  static const primaryLight = CupertinoColors.systemTeal;
+  static const secondary = CupertinoColors.systemPurple;
+
+  // Gradient helpers
+  static final primaryGradient = LinearGradient(
+    colors: [primary, primaryLight],
+  );
+
+  /// Returns a two-stop gradient pair for a 0-100 audit score.
+  static List<Color> scoreGradient(int score) {
+    final base = scoreColor(score);
+    return [base, base.withValues(alpha: 0.7)];
+  }
+
+  /// Single colour for a 0-100 audit score.
+  static Color scoreColor(int score) {
+    if (score >= 60) return success;
+    if (score >= 30) return warning;
+    return danger;
+  }
+
   // Border radius tokens
   static const double radiusS = 6.0;
   static const double radiusM = 10.0;
@@ -37,6 +59,7 @@ class AppTypography {
   static const numberLarge = TextStyle(fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: 0.36);
   static const scoreLarge = TextStyle(fontSize: 48, fontWeight: FontWeight.w800, letterSpacing: 0.37);
   static const button = TextStyle(fontSize: 17, fontWeight: FontWeight.w600, letterSpacing: -0.41);
+  static const mono = TextStyle(fontSize: 13, fontWeight: FontWeight.w500, fontFamily: 'Menlo', letterSpacing: -0.08);
 }
 
 /// App theme configuration

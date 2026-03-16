@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 part 'business.freezed.dart';
 part 'business.g.dart';
@@ -22,11 +22,12 @@ enum BusinessStatus {
 
 @freezed
 class Business with _$Business {
+  const Business._();
   const factory Business({
     required String id,
-    required String userId,
+    String? userId,
     String? searchId,
-    required String placeId,
+    String? placeId,
     required String name,
     String? address,
     String? phone,
@@ -46,7 +47,7 @@ class Business with _$Business {
     @Default(BusinessStatus.found) BusinessStatus status,
     String? notes,
     double? dealValue,
-    required DateTime createdAt,
+    DateTime? createdAt,
     DateTime? updatedAt,
   }) = _Business;
 
@@ -85,35 +86,35 @@ extension BusinessX on Business {
     }
   }
 
-  /// Returns a Material icon for web-presence status
+  /// Returns a Cupertino icon for web-presence status
   IconData get webPresenceIcon {
     switch (webPresence) {
       case WebPresence.none:
-        return Icons.cancel_rounded;
+        return CupertinoIcons.xmark_circle_fill;
       case WebPresence.poor:
-        return Icons.warning_amber_rounded;
+        return CupertinoIcons.exclamationmark_triangle_fill;
       case WebPresence.decent:
-        return Icons.check_circle_rounded;
+        return CupertinoIcons.check_mark_circled_solid;
     }
   }
 
-  /// Returns a Material icon for pipeline status
+  /// Returns a Cupertino icon for pipeline status
   IconData get statusIcon {
     switch (status) {
       case BusinessStatus.found:
-        return Icons.travel_explore_rounded;
+        return CupertinoIcons.search;
       case BusinessStatus.audited:
-        return Icons.query_stats_rounded;
+        return CupertinoIcons.chart_bar;
       case BusinessStatus.demoCreated:
-        return Icons.web_rounded;
+        return CupertinoIcons.globe;
       case BusinessStatus.contacted:
-        return Icons.send_rounded;
+        return CupertinoIcons.paperplane;
       case BusinessStatus.interested:
-        return Icons.thumb_up_rounded;
+        return CupertinoIcons.hand_thumbsup;
       case BusinessStatus.closed:
-        return Icons.handshake_rounded;
+        return CupertinoIcons.checkmark_seal;
       case BusinessStatus.lost:
-        return Icons.block_rounded;
+        return CupertinoIcons.nosign;
     }
   }
 

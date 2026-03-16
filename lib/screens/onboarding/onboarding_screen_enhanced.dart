@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -116,7 +115,8 @@ class _OnboardingScreenEnhancedState
     } catch (e) {
       Haptics.heavy();
       if (mounted) {
-        IosToast.show(context, 'Error: $e', icon: CupertinoIcons.exclamationmark_triangle);
+        IosToast.show(context, 'Error: $e',
+            icon: CupertinoIcons.exclamationmark_triangle);
       }
     } finally {
       if (mounted) {
@@ -127,8 +127,8 @@ class _OnboardingScreenEnhancedState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
+    return CupertinoPageScaffold(
+      child: Stack(
         children: [
           SafeArea(
             child: Column(
@@ -143,7 +143,7 @@ class _OnboardingScreenEnhancedState
                     },
                     children: [
                       const _OnboardingPage(
-                        icon: Icons.search,
+                        icon: CupertinoIcons.search,
                         iconColor: AppColors.primary,
                         title: 'Find Hidden Opportunities',
                         description:
@@ -151,7 +151,7 @@ class _OnboardingScreenEnhancedState
                         pageIndex: 0,
                       ),
                       const _OnboardingPage(
-                        icon: Icons.analytics,
+                        icon: CupertinoIcons.chart_bar,
                         iconColor: AppColors.primary,
                         title: 'AI-Powered Analysis',
                         description:
@@ -159,7 +159,7 @@ class _OnboardingScreenEnhancedState
                         pageIndex: 1,
                       ),
                       const _OnboardingPage(
-                        icon: Icons.web,
+                        icon: CupertinoIcons.globe,
                         iconColor: AppColors.primary,
                         title: 'Generate Demo Sites',
                         description:
@@ -167,7 +167,7 @@ class _OnboardingScreenEnhancedState
                         pageIndex: 2,
                       ),
                       const _OnboardingPage(
-                        icon: Icons.message,
+                        icon: CupertinoIcons.bubble_left_bubble_right,
                         iconColor: AppColors.primary,
                         title: 'Personalized Outreach',
                         description:
@@ -212,10 +212,9 @@ class _OnboardingScreenEnhancedState
                   padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                   child: _currentPage < 4
                       ? Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            TextButton(
+                            CupertinoButton(
                               onPressed: _skipConfirmation,
                               child: Text(
                                 'Skip',
@@ -226,7 +225,7 @@ class _OnboardingScreenEnhancedState
                             ),
                             BrutalButton(
                               label: 'Next',
-                              icon: Icons.arrow_forward,
+                              icon: CupertinoIcons.arrow_right,
                               onPressed: () {
                                 _pageController.nextPage(
                                   duration:
@@ -241,7 +240,7 @@ class _OnboardingScreenEnhancedState
                           width: double.infinity,
                           child: BrutalButton(
                             label: 'Get Started',
-                            icon: Icons.rocket_launch,
+                            icon: CupertinoIcons.rocket,
                             isLoading: _isLoading,
                             onPressed:
                                 (_nameValid && _businessValid && !_isLoading)
@@ -429,15 +428,26 @@ class _ProfileSetupPage extends StatelessWidget {
           const SizedBox(height: 32),
 
           // Name field
-          TextField(
+          CupertinoTextField(
             controller: nameController,
-            decoration: InputDecoration(
-              labelText: 'Your Name',
-              prefixIcon: const Icon(Icons.person_outline),
-              suffixIcon: nameValid
-                  ? const Icon(Icons.check_circle,
-                      color: AppColors.success, size: 20)
-                  : null,
+            placeholder: 'Your Name',
+            prefix: Padding(
+              padding: const EdgeInsets.only(left: 12),
+              child: Icon(CupertinoIcons.person,
+                  color: AppColors.textTertiary, size: 20),
+            ),
+            suffix: nameValid
+                ? const Padding(
+                    padding: EdgeInsets.only(right: 12),
+                    child: Icon(CupertinoIcons.check_mark_circled_solid,
+                        color: AppColors.success, size: 20),
+                  )
+                : null,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppColors.radiusM),
+              border: Border.all(color: AppColors.border, width: 0.5),
             ),
             onTap: () => Haptics.light(),
           )
@@ -447,15 +457,26 @@ class _ProfileSetupPage extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Business field
-          TextField(
+          CupertinoTextField(
             controller: businessController,
-            decoration: InputDecoration(
-              labelText: 'Business / Agency Name',
-              prefixIcon: const Icon(Icons.business_outlined),
-              suffixIcon: businessValid
-                  ? const Icon(Icons.check_circle,
-                      color: AppColors.success, size: 20)
-                  : null,
+            placeholder: 'Business / Agency Name',
+            prefix: Padding(
+              padding: const EdgeInsets.only(left: 12),
+              child: Icon(CupertinoIcons.building_2_fill,
+                  color: AppColors.textTertiary, size: 20),
+            ),
+            suffix: businessValid
+                ? const Padding(
+                    padding: EdgeInsets.only(right: 12),
+                    child: Icon(CupertinoIcons.check_mark_circled_solid,
+                        color: AppColors.success, size: 20),
+                  )
+                : null,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppColors.radiusM),
+              border: Border.all(color: AppColors.border, width: 0.5),
             ),
             onTap: () => Haptics.light(),
           )
