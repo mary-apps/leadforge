@@ -1,17 +1,13 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import 'package:flutter/cupertino.dart';
-
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
-import '../../widgets/aurora_background.dart';
 import '../../widgets/ios_toast.dart';
-import '../../widgets/shimmer_text.dart';
 import '../../utils/haptics.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -22,11 +18,12 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isSignUp = false;
   String? _errorMessage;
+  String? _emailError;
+  String? _passwordError;
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -58,8 +55,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return null;
   }
 
+  bool _validate() {
+    final emailErr = _validateEmail(_emailController.text);
+    final passErr = _validatePassword(_passwordController.text);
+    setState(() {
+      _emailError = emailErr;
+      _passwordError = passErr;
+    });
+    return emailErr == null && passErr == null;
+  }
+
   Future<void> _handleEmailAuth() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_validate()) return;
 
     final email = _emailController.text.trim();
     final password = _passwordController.text;
@@ -155,9 +162,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: CupertinoColors.tertiarySystemFill,
         borderRadius: BorderRadius.circular(AppColors.radiusL),
-        border: Border.all(color: AppColors.border, width: 0.5),
       ),
       child: Row(
         children: [
@@ -167,6 +173,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               setState(() {
                 _isSignUp = false;
                 _errorMessage = null;
+                _emailError = null;
+                _passwordError = null;
               });
             }
           }),
@@ -176,6 +184,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               setState(() {
                 _isSignUp = true;
                 _errorMessage = null;
+                _emailError = null;
+                _passwordError = null;
               });
             }
           }),
@@ -192,14 +202,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           duration: 200.ms,
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            gradient: isActive ? AppColors.primaryGradient : null,
+            color: isActive
+                ? CupertinoColors.systemBackground
+                : null,
             borderRadius: BorderRadius.circular(AppColors.radiusM),
             boxShadow: isActive
                 ? [
                     BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.2),
-                      blurRadius: 8,
-                      spreadRadius: -2,
+                      color: CupertinoColors.black.withValues(alpha: 0.1),
+                      blurRadius: 4,
+                      spreadRadius: 0,
                     ),
                   ]
                 : null,
@@ -207,10 +219,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Text(
             label,
             textAlign: TextAlign.center,
-            style: AppTypography.bodyMedium.copyWith(
+            style: TextStyle(
+              fontSize: 15,
               fontWeight: FontWeight.w700,
-              color:
-                  isActive ? AppColors.background : AppColors.textSecondary,
+              color: isActive
+                  ? AppColors.primary
+                  : CupertinoColors.secondaryLabel,
             ),
           ),
         ),
@@ -220,325 +234,288 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: AuroraBackground(
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 56),
+    return CupertinoPageScaffold(
+      backgroundColor: CupertinoColors.systemGroupedBackground,
+      child: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 56),
 
-                    // Logo with gradient glow
-                    Column(
+                // Logo
+                Column(
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(22),
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        border: Border.all(
+                          color:
+                              AppColors.primary.withValues(alpha: 0.2),
+                          width: 1,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        CupertinoIcons.bolt_fill,
+                        size: 36,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'LeadForge',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -1,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'AI-powered lead generation',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                )
+                    .animate()
+                    .fadeIn(duration: 400.ms)
+                    .slideY(
+                        begin: -0.1,
+                        duration: 400.ms,
+                        curve: Curves.easeOut),
+                const SizedBox(height: 36),
+
+                // Pill toggle
+                _buildPillToggle(),
+                const SizedBox(height: 24),
+
+                // Email field
+                CupertinoTextField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  autocorrect: false,
+                  textInputAction: TextInputAction.next,
+                  placeholder: 'Email address',
+                  prefix: Padding(
+                    padding: const EdgeInsets.only(left: 12),
+                    child: Icon(
+                      CupertinoIcons.mail,
+                      size: 20,
+                      color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                    ),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(context),
+                    borderRadius: BorderRadius.circular(AppColors.radiusM),
+                    border: Border.all(
+                      color: _emailError != null
+                          ? CupertinoColors.destructiveRed
+                          : CupertinoColors.separator.resolveFrom(context),
+                      width: 0.5,
+                    ),
+                  ),
+                ),
+                if (_emailError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4, left: 4),
+                    child: Text(
+                      _emailError!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: CupertinoColors.destructiveRed,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 14),
+
+                // Password field
+                CupertinoTextField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _handleEmailAuth(),
+                  placeholder: 'Password',
+                  prefix: Padding(
+                    padding: const EdgeInsets.only(left: 12),
+                    child: Icon(
+                      CupertinoIcons.lock,
+                      size: 20,
+                      color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                    ),
+                  ),
+                  suffix: Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      onPressed: () {
+                        setState(() => _obscurePassword = !_obscurePassword);
+                      },
+                      child: Icon(
+                        _obscurePassword
+                            ? CupertinoIcons.eye_slash
+                            : CupertinoIcons.eye,
+                        size: 20,
+                        color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                      ),
+                    ),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(context),
+                    borderRadius: BorderRadius.circular(AppColors.radiusM),
+                    border: Border.all(
+                      color: _passwordError != null
+                          ? CupertinoColors.destructiveRed
+                          : CupertinoColors.separator.resolveFrom(context),
+                      width: 0.5,
+                    ),
+                  ),
+                ),
+                if (_passwordError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4, left: 4),
+                    child: Text(
+                      _passwordError!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: CupertinoColors.destructiveRed,
+                      ),
+                    ),
+                  ),
+
+                if (!_isSignUp)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: CupertinoButton(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      onPressed: _forgotPassword,
+                      child: const Text(
+                        'Forgot password?',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 8),
+
+                // Error message
+                if (_errorMessage != null)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.danger.withValues(alpha: 0.08),
+                      borderRadius:
+                          BorderRadius.circular(AppColors.radiusM),
+                      border: Border.all(
+                        color:
+                            AppColors.danger.withValues(alpha: 0.15),
+                      ),
+                    ),
+                    child: Row(
                       children: [
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(22),
-                            gradient: LinearGradient(
-                              colors: [
-                                AppColors.primary.withValues(alpha: 0.15),
-                                AppColors.primary.withValues(alpha: 0.05),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
+                        const Icon(CupertinoIcons.exclamationmark_circle,
+                            color: AppColors.danger, size: 18),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: const TextStyle(
+                              color: AppColors.danger,
+                              fontSize: 13,
                             ),
-                            border: Border.all(
-                              color:
-                                  AppColors.primary.withValues(alpha: 0.2),
-                              width: 1,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary
-                                    .withValues(alpha: 0.15),
-                                blurRadius: 24,
-                                spreadRadius: -4,
-                              ),
-                            ],
                           ),
-                          alignment: Alignment.center,
-                          child: const Icon(
-                            Icons.bolt,
-                            size: 36,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        const ShimmerText(
-                          text: 'LeadForge',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -1,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'AI-powered lead generation',
-                          style: AppTypography.labelLarge.copyWith(
-                            fontSize: 13,
-                            color: AppColors.textTertiary,
-                          ),
-                          textAlign: TextAlign.center,
                         ),
                       ],
-                    )
-                        .animate()
-                        .fadeIn(duration: 400.ms)
-                        .slideY(
-                            begin: -0.1,
-                            duration: 400.ms,
-                            curve: Curves.easeOut),
-                    const SizedBox(height: 36),
-
-                    // Pill toggle with gradient
-                    _buildPillToggle(),
-                    const SizedBox(height: 24),
-
-                    // Email field
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      autocorrect: false,
-                      textInputAction: TextInputAction.next,
-                      validator: _validateEmail,
-                      decoration: const InputDecoration(
-                        hintText: 'Email address',
-                        prefixIcon: Icon(Icons.email_outlined),
-                      ),
                     ),
-                    const SizedBox(height: 14),
+                  ).animate().fadeIn(duration: 250.ms),
 
-                    // Password field
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _handleEmailAuth(),
-                      validator: _validatePassword,
-                      decoration: InputDecoration(
-                        hintText: 'Password',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
+                // Submit button
+                CupertinoButton.filled(
+                  onPressed: _isLoading ? null : _handleEmailAuth,
+                  child: _isLoading
+                      ? const CupertinoActivityIndicator(
+                          color: CupertinoColors.white,
+                        )
+                      : Text(_isSignUp ? 'Create Account' : 'Sign In'),
+                ),
+                const SizedBox(height: 20),
+
+                // Apple Sign In
+                if (!kIsWeb &&
+                    (Platform.isIOS || Platform.isMacOS)) ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 0.5,
+                          color: CupertinoColors.separator.resolveFrom(context),
+                        ),
+                      ),
+                      Padding(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          'or',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Container(
+                          height: 0.5,
+                          color: CupertinoColors.separator.resolveFrom(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: CupertinoButton(
+                      color: CupertinoColors.label.resolveFrom(context),
+                      onPressed:
+                          _isLoading ? null : _handleAppleSignIn,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            CupertinoIcons.person_fill,
+                            color: CupertinoColors.systemBackground.resolveFrom(context),
                             size: 20,
                           ),
-                          onPressed: () {
-                            setState(
-                                () => _obscurePassword = !_obscurePassword);
-                          },
-                        ),
-                      ),
-                    ),
-
-                    if (!_isSignUp)
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: _forgotPassword,
-                          style: TextButton.styleFrom(
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 8),
-                          ),
-                          child: Text(
-                            'Forgot password?',
-                            style: AppTypography.labelLarge.copyWith(
-                              fontSize: 13,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: 8),
-
-                    // Error message
-                    if (_errorMessage != null)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: AppColors.danger.withValues(alpha: 0.08),
-                          borderRadius:
-                              BorderRadius.circular(AppColors.radiusM),
-                          border: Border.all(
-                            color:
-                                AppColors.danger.withValues(alpha: 0.15),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.error_outline,
-                                color: AppColors.danger, size: 18),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                _errorMessage!,
-                                style: AppTypography.bodyMedium.copyWith(
-                                  color: AppColors.danger,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ).animate().fadeIn(duration: 250.ms),
-
-                    // Submit button with gradient
-                    _GradientSubmitButton(
-                      label: _isSignUp ? 'Create Account' : 'Sign In',
-                      isLoading: _isLoading,
-                      onPressed: _isLoading ? null : _handleEmailAuth,
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Apple Sign In
-                    if (!kIsWeb &&
-                        (Platform.isIOS || Platform.isMacOS)) ...[
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              height: 0.5,
-                              color: AppColors.divider,
-                            ),
-                          ),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16),
-                            child: Text(
-                              'or',
-                              style: AppTypography.bodyMedium.copyWith(
-                                color: AppColors.textTertiary,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Container(
-                              height: 0.5,
-                              color: AppColors.divider,
+                          const SizedBox(width: 8),
+                          Text(
+                            'Continue with Apple',
+                            style: TextStyle(
+                              color: CupertinoColors.systemBackground.resolveFrom(context),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
-
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: OutlinedButton.icon(
-                          onPressed:
-                              _isLoading ? null : _handleAppleSignIn,
-                          icon: const Icon(Icons.apple,
-                              color: AppColors.textPrimary, size: 22),
-                          label: const Text('Continue with Apple'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.textPrimary,
-                            side: BorderSide(
-                              color: AppColors.textTertiary
-                                  .withValues(alpha: 0.3),
-                            ),
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                  AppColors.radiusL),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _GradientSubmitButton extends StatefulWidget {
-  final String label;
-  final bool isLoading;
-  final VoidCallback? onPressed;
-
-  const _GradientSubmitButton({
-    required this.label,
-    required this.isLoading,
-    required this.onPressed,
-  });
-
-  @override
-  State<_GradientSubmitButton> createState() => _GradientSubmitButtonState();
-}
-
-class _GradientSubmitButtonState extends State<_GradientSubmitButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDisabled = widget.onPressed == null;
-
-    return GestureDetector(
-      onTapDown: isDisabled ? null : (_) => setState(() => _pressed = true),
-      onTapUp: isDisabled
-          ? null
-          : (_) {
-              setState(() => _pressed = false);
-              widget.onPressed?.call();
-            },
-      onTapCancel:
-          isDisabled ? null : () => setState(() => _pressed = false),
-      child: AnimatedScale(
-        scale: _pressed ? 0.97 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: AnimatedOpacity(
-          opacity: isDisabled ? 0.5 : 1.0,
-          duration: const Duration(milliseconds: 150),
-          child: Container(
-            height: 48,
-            decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(AppColors.radiusM),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.3),
-                  blurRadius: 16,
-                  spreadRadius: -2,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Center(
-              child: widget.isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.background,
-                      ),
-                    )
-                  : Text(
-                      widget.label,
-                      style: AppTypography.button.copyWith(
-                        color: AppColors.background,
-                        fontSize: 16,
-                      ),
                     ),
+                  ),
+                ],
+              ],
             ),
           ),
         ),

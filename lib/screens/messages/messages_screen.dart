@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
 import '../../models/business.dart';
 import '../../providers/businesses_provider.dart';
+import '../../widgets/brutal_card.dart';
+import '../../widgets/error_state.dart';
 import '../../widgets/skeleton_loaders.dart';
 
 class MessagesScreen extends ConsumerWidget {
@@ -15,44 +17,41 @@ class MessagesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final businessesAsync = ref.watch(businessesProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: Text(
-          'Activity',
-          style: AppTypography.titleMedium.copyWith(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-      body: businessesAsync.when(
+    return CupertinoPageScaffold(
+      backgroundColor: CupertinoColors.systemGroupedBackground,
+      child: businessesAsync.when(
         data: (businesses) {
           if (businesses.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.history_rounded,
-                    size: 48,
-                    color: AppColors.textTertiary.withValues(alpha: 0.5),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No activity yet',
-                    style: AppTypography.titleMedium.copyWith(
-                      color: AppColors.textSecondary,
+            return SafeArea(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      CupertinoIcons.clock,
+                      size: 48,
+                      color: CupertinoColors.tertiaryLabel.resolveFrom(context),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Your recent actions will appear here',
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.textTertiary,
+                    const SizedBox(height: 16),
+                    Text(
+                      'No activity yet',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 6),
+                    Text(
+                      'Your recent actions will appear here',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
+                        color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           }
@@ -60,44 +59,331 @@ class MessagesScreen extends ConsumerWidget {
           // Sort by most recently updated
           final sorted = List<Business>.from(businesses)
             ..sort((a, b) {
-              final aDate = a.updatedAt ?? a.createdAt;
-              final bDate = b.updatedAt ?? b.createdAt;
+              final aDate = a.updatedAt ?? a.createdAt ?? DateTime.now();
+              final bDate = b.updatedAt ?? b.createdAt ?? DateTime.now();
               return bDate.compareTo(aDate);
             });
 
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            itemCount: sorted.length,
-            itemBuilder: (context, index) {
-              final business = sorted[index];
-              return _ActivityTile(
-                business: business,
-                index: index,
-                onTap: () => context.push('/business/${business.id}'),
-              );
-            },
+          // Group by time period
+          final now = DateTime.now();
+          DateTime eventDate(Business b) => b.updatedAt ?? b.createdAt ?? DateTime.now();
+
+          final today = sorted
+              .where((b) => now.difference(eventDate(b)).inHours < 24)
+              .toList();
+          final thisWeek = sorted.where((b) {
+            final d = now.difference(eventDate(b));
+            return d.inHours >= 24 && d.inDays < 7;
+          }).toList();
+          final earlier = sorted
+              .where((b) => now.difference(eventDate(b)).inDays >= 7)
+              .toList();
+
+          return SafeArea(
+            bottom: false,
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              slivers: [
+                CupertinoSliverNavigationBar(
+                  largeTitle: const Text('Activity'),
+                  border: null,
+                ),
+
+                // Summary text
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                    child: Text(
+                      _summaryText(today.length, thisWeek.length),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Today group
+                if (today.isNotEmpty)
+                  ..._buildGroup(
+                    context,
+                    label: 'TODAY',
+                    items: today,
+                    density: _Density.full,
+                    animationOffset: 0,
+                  ),
+
+                // This week group
+                if (thisWeek.isNotEmpty)
+                  ..._buildGroup(
+                    context,
+                    label: 'THIS WEEK',
+                    items: thisWeek,
+                    density: _Density.medium,
+                    animationOffset: today.length,
+                  ),
+
+                // Earlier group
+                if (earlier.isNotEmpty)
+                  ..._buildGroup(
+                    context,
+                    label: 'EARLIER',
+                    items: earlier,
+                    density: _Density.compact,
+                    animationOffset: today.length + thisWeek.length,
+                  ),
+
+                // Bottom spacing
+                const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              ],
+            ),
           );
         },
         loading: () => const ActivitySkeleton(),
-        error: (error, _) => Center(child: Text('Error: $error')),
+        error: (error, _) => ErrorState(
+          error: error,
+          onRetry: () => ref.read(businessesProvider.notifier).load(),
+        ),
+      ),
+    );
+  }
+
+  String _summaryText(int todayCount, int weekCount) {
+    final parts = <String>[];
+    if (todayCount > 0) parts.add('$todayCount today');
+    if (weekCount > 0) parts.add('$weekCount this week');
+    if (parts.isEmpty) return 'No recent activity';
+    return parts.join(', ');
+  }
+
+  List<Widget> _buildGroup(
+    BuildContext context, {
+    required String label,
+    required List<Business> items,
+    required _Density density,
+    required int animationOffset,
+  }) {
+    final featured = density == _Density.full && items.isNotEmpty;
+    final featuredBusiness = featured ? items.first : null;
+    final remainingItems = featured ? items.sublist(1) : items;
+
+    return [
+      // Section header
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+          child: Row(
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                  color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  items.length.toString(),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+
+      // Featured first item (only for Today)
+      if (featured && featuredBusiness != null)
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            child: _FeaturedActivityCard(
+              business: featuredBusiness,
+              onTap: () => context.push('/business/${featuredBusiness.id}'),
+            ),
+          )
+              .animate(delay: Duration(milliseconds: 50 * animationOffset))
+              .fadeIn(duration: 300.ms)
+              .slideX(
+                begin: -0.03,
+                duration: 350.ms,
+                curve: Curves.easeOutCubic,
+              ),
+        ),
+
+      // Remaining items in grouped card
+      if (remainingItems.isNotEmpty)
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: BrutalCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(remainingItems.length, (index) {
+                  final business = remainingItems[index];
+                  final isLast = index == remainingItems.length - 1;
+                  final globalIndex =
+                      animationOffset + (featured ? index + 1 : index);
+
+                  return _ActivityTile(
+                    business: business,
+                    index: globalIndex,
+                    showDivider: !isLast,
+                    density: density,
+                    onTap: () =>
+                        context.push('/business/${business.id}'),
+                  );
+                }),
+              ),
+            ),
+          ),
+        ),
+    ];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Density levels for progressive information density
+// ---------------------------------------------------------------------------
+
+enum _Density { full, medium, compact }
+
+// ---------------------------------------------------------------------------
+// Featured activity card — promoted first item of "Today"
+// ---------------------------------------------------------------------------
+
+class _FeaturedActivityCard extends StatefulWidget {
+  final Business business;
+  final VoidCallback onTap;
+
+  const _FeaturedActivityCard({
+    required this.business,
+    required this.onTap,
+  });
+
+  @override
+  State<_FeaturedActivityCard> createState() => _FeaturedActivityCardState();
+}
+
+class _FeaturedActivityCardState extends State<_FeaturedActivityCard> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final business = widget.business;
+    final timeAgo = _timeAgo(business.updatedAt ?? business.createdAt ?? DateTime.now());
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedScale(
+        scale: _pressed ? 0.98 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: BrutalCard(
+          padding: EdgeInsets.zero,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              border: Border(
+                left: BorderSide(
+                  color: business.statusColor,
+                  width: 3,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: business.statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(business.statusIcon,
+                      color: business.statusColor, size: 20),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        business.name,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: CupertinoColors.label.resolveFrom(context),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '${_statusDescription(business.status)} · $timeAgo',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: business.statusColor.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  CupertinoIcons.chevron_right,
+                  color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// Activity tile with press-scale feedback + staggered entrance
+// Activity tile — density-aware rendering
 // ---------------------------------------------------------------------------
 
 class _ActivityTile extends StatefulWidget {
   final Business business;
   final int index;
+  final bool showDivider;
+  final _Density density;
   final VoidCallback onTap;
 
   const _ActivityTile({
     required this.business,
     required this.index,
     required this.onTap,
+    required this.density,
+    this.showDivider = true,
   });
 
   @override
@@ -110,7 +396,30 @@ class _ActivityTileState extends State<_ActivityTile> {
   @override
   Widget build(BuildContext context) {
     final business = widget.business;
-    final timeAgo = _timeAgo(business.updatedAt ?? business.createdAt);
+    final timeAgo = _timeAgo(business.updatedAt ?? business.createdAt ?? DateTime.now());
+    final density = widget.density;
+
+    // Progressive density: padding, icon size, content
+    final hPad = switch (density) {
+      _Density.full => 14.0,
+      _Density.medium => 12.0,
+      _Density.compact => 10.0,
+    };
+    final vPad = switch (density) {
+      _Density.full => 12.0,
+      _Density.medium => 10.0,
+      _Density.compact => 8.0,
+    };
+    final iconSize = switch (density) {
+      _Density.full => 36.0,
+      _Density.medium => 36.0,
+      _Density.compact => 28.0,
+    };
+    final iconInnerSize = switch (density) {
+      _Density.full => 18.0,
+      _Density.medium => 18.0,
+      _Density.compact => 14.0,
+    };
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
@@ -120,104 +429,147 @@ class _ActivityTileState extends State<_ActivityTile> {
       },
       onTapCancel: () => setState(() => _pressed = false),
       behavior: HitTestBehavior.opaque,
-      child: AnimatedScale(
-        scale: _pressed ? 0.97 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        curve: Curves.easeInOut,
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 6),
-          padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppColors.radiusL),
-          ),
-          child: Row(
-            children: [
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 80),
+        color: _pressed
+            ? CupertinoColors.systemFill.resolveFrom(context)
+            : const Color(0x00000000),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
+              child: Row(
+                children: [
+                  // Icon — smaller for compact
+                  Container(
+                    width: iconSize,
+                    height: iconSize,
+                    decoration: BoxDecoration(
+                      color: business.statusColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(
+                          density == _Density.compact ? 6 : 8),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(business.statusIcon,
+                        color: business.statusColor, size: iconInnerSize),
+                  ),
+                  SizedBox(width: density == _Density.compact ? 8 : 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          business.name,
+                          style: TextStyle(
+                            fontSize: density == _Density.compact ? 14 : 15,
+                            fontWeight: FontWeight.w600,
+                            color: CupertinoColors.label.resolveFrom(context),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        // Compact: only status dot, no full text
+                        if (density != _Density.compact) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            '${_statusLabel(business.status)} · $timeAgo',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                              color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  // Compact: just a colored dot instead of chevron
+                  if (density == _Density.compact)
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: business.statusColor,
+                        shape: BoxShape.circle,
+                      ),
+                    )
+                  else
+                    Icon(
+                      CupertinoIcons.chevron_right,
+                      color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                      size: 18,
+                    ),
+                ],
+              ),
+            ),
+            if (widget.showDivider)
               Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: business.statusColor.withValues(alpha: 0.1),
-                  borderRadius:
-                      BorderRadius.circular(AppColors.radiusM),
-                ),
-                alignment: Alignment.center,
-                child: Icon(business.statusIcon,
-                    color: business.statusColor, size: 18),
+                margin: const EdgeInsets.only(left: 16),
+                height: 0.5,
+                color: CupertinoColors.separator.resolveFrom(context),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      business.name,
-                      style: AppTypography.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${_statusLabel(business.status)} · $timeAgo',
-                      style: AppTypography.labelSmall.copyWith(
-                        color: AppColors.textTertiary,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.textTertiary,
-                size: 18,
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     )
-        .animate()
-        .fadeIn(
-          delay: Duration(milliseconds: 50 * widget.index),
-          duration: 300.ms,
-        )
+        .animate(delay: Duration(milliseconds: 50 * widget.index))
+        .fadeIn(duration: 300.ms)
         .slideX(
-          begin: 0.03,
-          delay: Duration(milliseconds: 50 * widget.index),
-          duration: 200.ms,
-          curve: Curves.easeOut,
+          begin: -0.03,
+          duration: 350.ms,
+          curve: Curves.easeOutCubic,
         );
   }
+}
 
-  static String _statusLabel(BusinessStatus status) {
-    switch (status) {
-      case BusinessStatus.found:
-        return 'Found';
-      case BusinessStatus.audited:
-        return 'Audited';
-      case BusinessStatus.demoCreated:
-        return 'Demo created';
-      case BusinessStatus.contacted:
-        return 'Contacted';
-      case BusinessStatus.interested:
-        return 'Interested';
-      case BusinessStatus.closed:
-        return 'Closed';
-      case BusinessStatus.lost:
-        return 'Lost';
-    }
-  }
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
-  static String _timeAgo(DateTime date) {
-    final diff = DateTime.now().difference(date);
-    if (diff.inMinutes < 1) return 'just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
-    return '${(diff.inDays / 7).floor()}w ago';
+String _statusLabel(BusinessStatus status) {
+  switch (status) {
+    case BusinessStatus.found:
+      return 'Found';
+    case BusinessStatus.audited:
+      return 'Audited';
+    case BusinessStatus.demoCreated:
+      return 'Demo created';
+    case BusinessStatus.contacted:
+      return 'Contacted';
+    case BusinessStatus.interested:
+      return 'Interested';
+    case BusinessStatus.closed:
+      return 'Closed';
+    case BusinessStatus.lost:
+      return 'Lost';
   }
+}
+
+String _statusDescription(BusinessStatus status) {
+  switch (status) {
+    case BusinessStatus.found:
+      return 'New lead found';
+    case BusinessStatus.audited:
+      return 'Audit completed';
+    case BusinessStatus.demoCreated:
+      return 'Demo site built';
+    case BusinessStatus.contacted:
+      return 'Outreach sent';
+    case BusinessStatus.interested:
+      return 'Marked interested';
+    case BusinessStatus.closed:
+      return 'Deal closed';
+    case BusinessStatus.lost:
+      return 'Marked as lost';
+  }
+}
+
+String _timeAgo(DateTime date) {
+  final diff = DateTime.now().difference(date);
+  if (diff.inMinutes < 1) return 'just now';
+  if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+  if (diff.inHours < 24) return '${diff.inHours}h ago';
+  if (diff.inDays < 7) return '${diff.inDays}d ago';
+  return '${(diff.inDays / 7).floor()}w ago';
 }

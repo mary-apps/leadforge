@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -11,8 +10,7 @@ import '../../models/audit_result.dart';
 import '../../services/audit_service.dart';
 import '../../providers/businesses_provider.dart';
 import '../../widgets/animated_score_gauge.dart';
-import '../../widgets/aurora_background.dart';
-import '../../widgets/glow_card.dart';
+import '../../widgets/brutal_card.dart';
 import '../../widgets/ios_toast.dart';
 import '../../widgets/share_business_sheet.dart';
 import '../../widgets/skeleton_loaders.dart';
@@ -86,8 +84,6 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                 },
               ),
             ),
-            child: AuroraBackground(
-            intensity: 0.5,
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(
                 parent: AlwaysScrollableScrollPhysics(),
@@ -99,96 +95,68 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                     delegate: SliverChildListDelegate([
                       const SizedBox(height: 16),
 
-                      // Business info header with gradient icon
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      // Business info header
+                      CupertinoListSection.insetGrouped(
+                        margin: EdgeInsets.zero,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 52,
-                                height: 52,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      business.webPresenceColor
-                                          .withValues(alpha: 0.2),
-                                      business.webPresenceColor
-                                          .withValues(alpha: 0.05),
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(
-                                      AppColors.radiusL),
-                                  border: Border.all(
-                                    color: business.webPresenceColor
-                                        .withValues(alpha: 0.15),
-                                    width: 1,
-                                  ),
-                                ),
-                                alignment: Alignment.center,
-                                child: Icon(business.webPresenceIcon,
-                                    color: business.webPresenceColor,
-                                    size: 26),
+                          CupertinoListTile(
+                            leading: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: business.webPresenceColor
+                                    .withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Hero(
-                                  tag: 'business-name-${business.id}',
-                                  child: Material(
-                                    color: Colors.transparent,
-                                    child: Text(
-                                      business.name,
-                                      style:
-                                          AppTypography.headlineLarge.copyWith(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: -0.5,
-                                      ),
+                              alignment: Alignment.center,
+                              child: Icon(business.webPresenceIcon,
+                                  color: business.webPresenceColor,
+                                  size: 22),
+                            ),
+                            title: Text(
+                              business.name,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            subtitle: business.address != null
+                                ? Text(business.address!)
+                                : null,
+                          ),
+                          if (business.rating != null)
+                            CupertinoListTile(
+                              leading: const Icon(
+                                CupertinoIcons.star_fill,
+                                color: AppColors.warning,
+                                size: 20,
+                              ),
+                              title: Row(
+                                children: [
+                                  ...List.generate(5, (i) {
+                                    final fill = (business.rating ?? 0) - i;
+                                    return Icon(
+                                      fill >= 1
+                                          ? CupertinoIcons.star_fill
+                                          : fill >= 0.5
+                                              ? CupertinoIcons.star_lefthalf_fill
+                                              : CupertinoIcons.star,
+                                      color: AppColors.warning,
+                                      size: 14,
+                                    );
+                                  }),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '${business.rating} (${business.reviewsCount})',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: CupertinoColors.secondaryLabel
+                                          .resolveFrom(context),
                                     ),
                                   ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (business.address != null) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              business.address!,
-                              style: AppTypography.bodyMedium.copyWith(
-                                color: AppColors.textSecondary,
+                                ],
                               ),
                             ),
-                          ],
-                          if (business.rating != null) ...[
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                // Star rating with gradient
-                                ...List.generate(5, (i) {
-                                  final fill = (business.rating ?? 0) - i;
-                                  return Icon(
-                                    fill >= 1
-                                        ? Icons.star_rounded
-                                        : fill >= 0.5
-                                            ? Icons.star_half_rounded
-                                            : Icons.star_outline_rounded,
-                                    color: AppColors.warning,
-                                    size: 16,
-                                  );
-                                }),
-                                const SizedBox(width: 6),
-                                Text(
-                                  '${business.rating} (${business.reviewsCount})',
-                                  style: AppTypography.bodyMedium.copyWith(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
                         ],
                       )
                           .animate()
@@ -200,30 +168,60 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                           ),
                       const SizedBox(height: 20),
 
-                      // Contact buttons with glow
+                      // Contact buttons
                       Row(
                         children: [
                           if (business.phone != null)
                             Expanded(
-                              child: _GlowContactButton(
-                                icon: Icons.phone_rounded,
-                                label: 'Call',
-                                color: AppColors.success,
-                                onTap: () => launchUrl(
+                              child: CupertinoButton(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                color: AppColors.success.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(AppColors.radiusL),
+                                onPressed: () => launchUrl(
                                     Uri.parse('tel:${business.phone}')),
+                                child: Column(
+                                  children: [
+                                    Icon(CupertinoIcons.phone,
+                                        color: AppColors.success, size: 20),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Call',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.success,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           if (business.website != null) ...[
                             if (business.phone != null)
                               const SizedBox(width: 10),
                             Expanded(
-                              child: _GlowContactButton(
-                                icon: Icons.language_rounded,
-                                label: 'Website',
-                                color: AppColors.info,
-                                onTap: () => launchUrl(
+                              child: CupertinoButton(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                color: AppColors.info.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(AppColors.radiusL),
+                                onPressed: () => launchUrl(
                                     Uri.parse(business.website!),
                                     mode: LaunchMode.externalApplication),
+                                child: Column(
+                                  children: [
+                                    Icon(CupertinoIcons.globe,
+                                        color: AppColors.info, size: 20),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Website',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.info,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -232,14 +230,29 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                                 business.website != null)
                               const SizedBox(width: 10),
                             Expanded(
-                              child: _GlowContactButton(
-                                icon: Icons.map_rounded,
-                                label: 'Maps',
-                                color: AppColors.primary,
-                                onTap: () => launchUrl(
+                              child: CupertinoButton(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                color: AppColors.primary.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(AppColors.radiusL),
+                                onPressed: () => launchUrl(
                                   Uri.parse(
                                       'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(business.address!)}'),
                                   mode: LaunchMode.externalApplication,
+                                ),
+                                child: Column(
+                                  children: [
+                                    Icon(CupertinoIcons.map,
+                                        color: AppColors.primary, size: 20),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Maps',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -258,10 +271,16 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                       // Audit section
                       if (!business.isAudited && !_isAuditing)
                         Center(
-                          child: _GlowCTAButton(
-                            label: 'Analyze Business',
-                            icon: Icons.analytics_rounded,
+                          child: CupertinoButton.filled(
                             onPressed: () => _runAudit(business),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(CupertinoIcons.chart_bar, size: 18),
+                                SizedBox(width: 8),
+                                Text('Analyze Business'),
+                              ],
+                            ),
                           ),
                         )
                             .animate(delay: 300.ms)
@@ -293,10 +312,8 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                             ),
                         const SizedBox(height: 28),
 
-                        // AI Analysis in glow card
-                        GlowCard(
-                          glowColor: AppColors.info,
-                          glowIntensity: 0.3,
+                        // AI Analysis
+                        BrutalCard(
                           padding: const EdgeInsets.all(20),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,19 +324,13 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                                     width: 28,
                                     height: 28,
                                     decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          AppColors.info
-                                              .withValues(alpha: 0.2),
-                                          AppColors.info
-                                              .withValues(alpha: 0.05),
-                                        ],
-                                      ),
+                                      color: AppColors.info
+                                          .withValues(alpha: 0.12),
                                       borderRadius:
                                           BorderRadius.circular(8),
                                     ),
                                     child: const Icon(
-                                      Icons.auto_awesome_rounded,
+                                      CupertinoIcons.sparkles,
                                       size: 14,
                                       color: AppColors.info,
                                     ),
@@ -327,10 +338,11 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                                   const SizedBox(width: 10),
                                   Text(
                                     'AI Analysis',
-                                    style:
-                                        AppTypography.labelLarge.copyWith(
+                                    style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w700,
+                                      color: CupertinoColors.label
+                                          .resolveFrom(context),
                                     ),
                                   ),
                                 ],
@@ -340,8 +352,10 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                                 _auditResult?.diagnosis ??
                                     business.auditDiagnosis ??
                                     '',
-                                style: AppTypography.bodyLarge.copyWith(
-                                  color: AppColors.textSecondary,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: CupertinoColors.secondaryLabel
+                                      .resolveFrom(context),
                                   height: 1.6,
                                 ),
                               ),
@@ -357,30 +371,52 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                             ),
                         const SizedBox(height: 20),
 
-                        // CTAs with gradient
+                        // CTAs
                         Row(
                           children: [
                             Expanded(
-                              child: _GlowCTAButton(
-                                label: 'Build Demo',
-                                icon: Icons.web_rounded,
-                                color: AppColors.secondary,
+                              child: CupertinoButton.filled(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 14),
                                 onPressed: () {
                                   context.push(
                                       '/business/${business.id}/build-demo');
                                 },
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(CupertinoIcons.globe, size: 18),
+                                    SizedBox(width: 8),
+                                    Text('Build Demo'),
+                                  ],
+                                ),
                               ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: _GlowCTAButton(
-                                label: 'Outreach',
-                                icon: Icons.send_rounded,
+                              child: CupertinoButton(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 14),
                                 color: AppColors.success,
+                                borderRadius: BorderRadius.circular(8),
                                 onPressed: () {
                                   context.push(
                                       '/business/${business.id}/outreach');
                                 },
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(CupertinoIcons.paperplane,
+                                        size: 18,
+                                        color: CupertinoColors.white),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Outreach',
+                                      style: TextStyle(
+                                          color: CupertinoColors.white),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -398,7 +434,6 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                 ),
               ],
             ),
-          ),
           );
         },
         loading: () => const SafeArea(child: BusinessDetailSkeleton()),
@@ -408,156 +443,7 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
 }
 
 // ---------------------------------------------------------------------------
-// Glow Contact Button
-// ---------------------------------------------------------------------------
-
-class _GlowContactButton extends StatefulWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _GlowContactButton({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  State<_GlowContactButton> createState() => _GlowContactButtonState();
-}
-
-class _GlowContactButtonState extends State<_GlowContactButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) {
-        setState(() => _pressed = false);
-        Haptics.light();
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _pressed = false),
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedScale(
-        scale: _pressed ? 0.95 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppColors.radiusL),
-            border: Border.all(
-              color: widget.color.withValues(alpha: 0.15),
-              width: 0.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: widget.color.withValues(alpha: 0.06),
-                blurRadius: 12,
-                spreadRadius: -2,
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Icon(widget.icon, color: widget.color, size: 20),
-              const SizedBox(height: 4),
-              Text(
-                widget.label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: widget.color.withValues(alpha: 0.8),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Glow CTA Button — gradient background with glow shadow
-// ---------------------------------------------------------------------------
-
-class _GlowCTAButton extends StatefulWidget {
-  final String label;
-  final IconData icon;
-  final Color? color;
-  final VoidCallback onPressed;
-
-  const _GlowCTAButton({
-    required this.label,
-    required this.icon,
-    required this.onPressed,
-    this.color,
-  });
-
-  @override
-  State<_GlowCTAButton> createState() => _GlowCTAButtonState();
-}
-
-class _GlowCTAButtonState extends State<_GlowCTAButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = widget.color ?? AppColors.primary;
-
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) {
-        setState(() => _pressed = false);
-        Haptics.light();
-        widget.onPressed();
-      },
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedScale(
-        scale: _pressed ? 0.97 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [color, color.withValues(alpha: 0.7)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(AppColors.radiusM),
-            boxShadow: [
-              BoxShadow(
-                color: color.withValues(alpha: 0.3),
-                blurRadius: 16,
-                spreadRadius: -2,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(widget.icon, size: 18, color: Colors.white),
-              const SizedBox(width: 8),
-              Text(
-                widget.label,
-                style: AppTypography.button.copyWith(color: Colors.white),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Analyzing Animation — premium version with gradient pulse
+// Analyzing Animation
 // ---------------------------------------------------------------------------
 
 class _AnalyzingAnimation extends StatefulWidget {
@@ -571,9 +457,9 @@ class _AnalyzingAnimationState extends State<_AnalyzingAnimation>
   late AnimationController _pulseController;
 
   final List<_AnalysisStep> _steps = const [
-    _AnalysisStep(Icons.language_rounded, 'Checking website...'),
-    _AnalysisStep(Icons.reviews_rounded, 'Analyzing reviews...'),
-    _AnalysisStep(Icons.calculate_rounded, 'Calculating score...'),
+    _AnalysisStep(CupertinoIcons.globe, 'Checking website...'),
+    _AnalysisStep(CupertinoIcons.text_bubble, 'Analyzing reviews...'),
+    _AnalysisStep(CupertinoIcons.chart_bar, 'Calculating score...'),
   ];
 
   @override
@@ -605,10 +491,7 @@ class _AnalyzingAnimationState extends State<_AnalyzingAnimation>
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: GlowCard(
-        glowColor: AppColors.primary,
-        animateBorder: true,
-        glowIntensity: 0.6,
+      child: BrutalCard(
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
@@ -627,16 +510,11 @@ class _AnalyzingAnimationState extends State<_AnalyzingAnimation>
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primary.withValues(alpha: 0.15),
-                      AppColors.primary.withValues(alpha: 0.05),
-                    ],
-                  ),
+                  color: AppColors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(AppColors.radiusL),
                 ),
                 child: const Icon(
-                  Icons.analytics_rounded,
+                  CupertinoIcons.chart_bar,
                   color: AppColors.primary,
                   size: 24,
                 ),
@@ -656,7 +534,7 @@ class _AnalyzingAnimationState extends State<_AnalyzingAnimation>
                 decoration: BoxDecoration(
                   color: isActive
                       ? AppColors.primary.withValues(alpha: 0.06)
-                      : Colors.transparent,
+                      : const Color(0x00000000),
                   borderRadius: BorderRadius.circular(AppColors.radiusS),
                 ),
                 child: Row(
@@ -666,28 +544,32 @@ class _AnalyzingAnimationState extends State<_AnalyzingAnimation>
                       duration: const Duration(milliseconds: 200),
                       child: Icon(
                         isDone
-                            ? Icons.check_circle_rounded
+                            ? CupertinoIcons.checkmark_circle_fill
                             : isActive
                                 ? _steps[index].icon
-                                : Icons.circle_outlined,
+                                : CupertinoIcons.circle,
                         key: ValueKey('$index-$isDone-$isActive'),
                         size: 16,
                         color: isActive
                             ? AppColors.primary
                             : isDone
                                 ? AppColors.success
-                                : AppColors.textTertiary,
+                                : CupertinoColors.tertiaryLabel
+                                    .resolveFrom(context),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       _steps[index].label,
-                      style: AppTypography.bodyMedium.copyWith(
+                      style: TextStyle(
+                        fontSize: 15,
                         color: isActive
-                            ? AppColors.textPrimary
+                            ? CupertinoColors.label.resolveFrom(context)
                             : isDone
-                                ? AppColors.textSecondary
-                                : AppColors.textTertiary,
+                                ? CupertinoColors.secondaryLabel
+                                    .resolveFrom(context)
+                                : CupertinoColors.tertiaryLabel
+                                    .resolveFrom(context),
                         fontWeight:
                             isActive ? FontWeight.w600 : FontWeight.normal,
                       ),
