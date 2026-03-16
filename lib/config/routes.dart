@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -14,29 +14,6 @@ import '../screens/messages/messages_screen.dart';
 import '../screens/build/build_demo_screen.dart';
 import '../screens/outreach/outreach_screen.dart';
 import '../widgets/app_bottom_nav.dart';
-
-CustomTransitionPage<void> _buildPageTransition({
-  required GoRouterState state,
-  required Widget child,
-}) {
-  return CustomTransitionPage<void>(
-    key: state.pageKey,
-    child: child,
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      return FadeTransition(
-        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0.05, 0),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
-          child: child,
-        ),
-      );
-    },
-    transitionDuration: const Duration(milliseconds: 300),
-  );
-}
 
 /// Notifier that bridges Riverpod state changes to GoRouter's refreshListenable.
 class _AuthChangeNotifier extends ChangeNotifier {
@@ -125,7 +102,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/messages',
+                path: '/activity',
                 builder: (context, state) => const MessagesScreen(),
               ),
             ],
@@ -145,8 +122,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Business Detail (full screen, no bottom nav)
       GoRoute(
         path: '/business/:id',
-        pageBuilder: (context, state) => _buildPageTransition(
-          state: state,
+        pageBuilder: (context, state) => CupertinoPage(
           child: BusinessDetailScreen(businessId: state.pathParameters['id']!),
         ),
       ),
@@ -154,8 +130,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Build Demo (full screen, no bottom nav)
       GoRoute(
         path: '/business/:id/build-demo',
-        pageBuilder: (context, state) => _buildPageTransition(
-          state: state,
+        pageBuilder: (context, state) => CupertinoPage(
           child: BuildDemoScreen(businessId: state.pathParameters['id']!),
         ),
       ),
@@ -163,8 +138,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Outreach (full screen, no bottom nav)
       GoRoute(
         path: '/business/:id/outreach',
-        pageBuilder: (context, state) => _buildPageTransition(
-          state: state,
+        pageBuilder: (context, state) => CupertinoPage(
           child: OutreachScreen(businessId: state.pathParameters['id']!),
         ),
       ),

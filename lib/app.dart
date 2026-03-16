@@ -1,22 +1,19 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'config/theme.dart';
 import 'config/routes.dart';
 
 class LeadForgeApp extends ConsumerWidget {
   const LeadForgeApp({super.key});
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
-
-    return MaterialApp.router(
+    return CupertinoApp.router(
       title: 'LeadForge',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.theme,
       routerConfig: router,
       localizationsDelegates: const [
         AppLocalizations.delegate,
@@ -24,10 +21,7 @@ class LeadForgeApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('en'),
-        Locale('es'),
-      ],
+      supportedLocales: AppLocalizations.supportedLocales,
     );
   }
 }
