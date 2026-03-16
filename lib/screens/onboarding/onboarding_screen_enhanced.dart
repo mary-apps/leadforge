@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -7,6 +8,7 @@ import 'package:confetti/confetti.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/brutal_button.dart';
+import '../../widgets/ios_toast.dart';
 import '../../utils/haptics.dart';
 
 class OnboardingScreenEnhanced extends ConsumerStatefulWidget {
@@ -59,27 +61,21 @@ class _OnboardingScreenEnhancedState
 
   Future<void> _skipConfirmation() async {
     Haptics.light();
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showCupertinoDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppColors.radiusXL),
-        ),
+      builder: (context) => CupertinoAlertDialog(
         title: const Text('Skip Tutorial?'),
         content: const Text(
           'This quick tour helps you understand LeadForge\'s features. Are you sure you want to skip?',
         ),
         actions: [
-          TextButton(
+          CupertinoDialogAction(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Stay'),
           ),
-          TextButton(
+          CupertinoDialogAction(
+            isDestructiveAction: true,
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.warning,
-            ),
             child: const Text('Skip'),
           ),
         ],
@@ -120,12 +116,7 @@ class _OnboardingScreenEnhancedState
     } catch (e) {
       Haptics.heavy();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: AppColors.danger,
-          ),
-        );
+        IosToast.show(context, 'Error: $e', icon: CupertinoIcons.exclamationmark_triangle);
       }
     } finally {
       if (mounted) {

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,9 @@ import '../../config/theme.dart';
 import '../../models/business.dart';
 import '../../providers/businesses_provider.dart';
 import '../../utils/haptics.dart';
+import '../../widgets/ios_toast.dart';
+import '../../widgets/pulse_dot.dart';
+import '../../widgets/shimmer_text.dart';
 import '../../widgets/skeleton_loaders.dart';
 
 class PipelineScreenEnhanced extends ConsumerStatefulWidget {
@@ -33,53 +37,31 @@ class _PipelineScreenEnhancedState
 
   void _showFilterSheet() {
     Haptics.light();
-    showModalBottomSheet(
+    showCupertinoModalPopup(
       context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Filter by Status',
-              style: AppTypography.titleMedium.copyWith(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.all_inclusive, size: 20),
-              title: const Text('All Stages'),
-              selected: _filterStatus == null,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppColors.radiusM),
-              ),
-              onTap: () {
-                setState(() => _filterStatus = null);
-                Navigator.pop(context);
-              },
-            ),
-            ...BusinessStatus.values.map((status) => ListTile(
-                  leading: Icon(_getStatusIcon(status),
-                      color: AppColors.textSecondary, size: 20),
-                  title: Text(_getStatusTitle(status)),
-                  selected: _filterStatus == status,
-                  shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppColors.radiusM),
-                  ),
-                  onTap: () {
-                    setState(() => _filterStatus = status);
-                    Navigator.pop(context);
-                  },
-                )),
-          ],
+      builder: (context) => CupertinoActionSheet(
+        title: const Text('Filter by Status'),
+        actions: [
+          CupertinoActionSheetAction(
+            isDefaultAction: _filterStatus == null,
+            onPressed: () {
+              setState(() => _filterStatus = null);
+              Navigator.pop(context);
+            },
+            child: const Text('All Stages'),
+          ),
+          ...BusinessStatus.values.map((status) => CupertinoActionSheetAction(
+                isDefaultAction: _filterStatus == status,
+                onPressed: () {
+                  setState(() => _filterStatus = status);
+                  Navigator.pop(context);
+                },
+                child: Text(_getStatusTitle(status)),
+              )),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
         ),
       ),
     );
@@ -103,25 +85,6 @@ class _PipelineScreenEnhancedState
     Share.share(csv, subject: 'LeadForge Pipeline Export');
   }
 
-  IconData _getStatusIcon(BusinessStatus status) {
-    switch (status) {
-      case BusinessStatus.found:
-        return Icons.travel_explore_rounded;
-      case BusinessStatus.audited:
-        return Icons.query_stats_rounded;
-      case BusinessStatus.demoCreated:
-        return Icons.web_rounded;
-      case BusinessStatus.contacted:
-        return Icons.send_rounded;
-      case BusinessStatus.interested:
-        return Icons.thumb_up_rounded;
-      case BusinessStatus.closed:
-        return Icons.handshake_rounded;
-      case BusinessStatus.lost:
-        return Icons.block_rounded;
-    }
-  }
-
   Future<void> _moveBusinessToStatus(
     Business business,
     BusinessStatus newStatus,
@@ -133,49 +96,30 @@ class _PipelineScreenEnhancedState
           .updateStatus(business.id, newStatus);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Moved to ${_getStatusTitle(newStatus)}',
-            ),
-            backgroundColor: AppColors.success,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        IosToast.show(context, 'Moved to ${_getStatusTitle(newStatus)}', icon: CupertinoIcons.check_mark);
       }
     } catch (e) {
       Haptics.heavy();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: AppColors.danger,
-          ),
-        );
+        IosToast.show(context, 'Error: $e', icon: CupertinoIcons.exclamationmark_triangle);
       }
     }
   }
 
   Future<void> _deleteBusiness(Business business) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showCupertinoDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppColors.radiusXL),
-        ),
+      builder: (context) => CupertinoAlertDialog(
         title: const Text('Delete Business'),
         content: Text('Remove ${business.name} from pipeline?'),
         actions: [
-          TextButton(
+          CupertinoDialogAction(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          CupertinoDialogAction(
+            isDestructiveAction: true,
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.danger,
-            ),
             child: const Text('Delete'),
           ),
         ],
@@ -190,21 +134,11 @@ class _PipelineScreenEnhancedState
             .deleteBusiness(business.id);
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Business removed'),
-              backgroundColor: AppColors.success,
-            ),
-          );
+          IosToast.show(context, 'Business removed', icon: CupertinoIcons.check_mark);
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: AppColors.danger,
-            ),
-          );
+          IosToast.show(context, 'Error: $e', icon: CupertinoIcons.exclamationmark_triangle);
         }
       }
     }
@@ -215,112 +149,156 @@ class _PipelineScreenEnhancedState
     final pipelineAsync = ref.watch(pipelineProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: Text(
-          _filterStatus != null
-              ? 'Pipeline — ${_getStatusTitle(_filterStatus!)}'
-              : 'Pipeline',
-          style: AppTypography.titleMedium.copyWith(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: _showFilterSheet,
-            child: Text(
-              _filterStatus != null ? 'Filtered' : 'Filter',
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.ios_share, size: 20, color: AppColors.textTertiary),
-            onPressed: () {
-              final data = ref.read(pipelineProvider).valueOrNull;
-              if (data != null) _exportPipeline(data);
-            },
-            tooltip: 'Export CSV',
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh, color: AppColors.textTertiary),
-            onPressed: () {
-              Haptics.light();
-              ref.read(businessesProvider.notifier).load();
-            },
-          ),
-        ],
-      ),
+      backgroundColor: AppColors.background,
       body: pipelineAsync.when(
         data: (pipeline) {
-          return RefreshIndicator(
-            onRefresh: () async {
-              Haptics.light();
-              await ref.read(businessesProvider.notifier).load();
-            },
-            color: AppColors.primary,
-            child: ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                if (_filterStatus == null ||
-                    _filterStatus == BusinessStatus.found)
-                  _buildSection(
-                    'Found',
-                    BusinessStatus.found,
-                    pipeline[BusinessStatus.found] ?? [],
-                    AppColors.textTertiary,
+          return SafeArea(
+            bottom: false,
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              slivers: [
+                // iOS large title header
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const Expanded(
+                              child: GradientText(
+                                text: 'Pipeline',
+                                style: TextStyle(
+                                  fontSize: 34,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.37,
+                                  height: 1.2,
+                                ),
+                                colors: [AppColors.primary, AppColors.primaryLight],
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: _showFilterSheet,
+                              child: Text(
+                                _filterStatus != null ? 'Filtered' : 'Filter',
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 20),
+                            GestureDetector(
+                              onTap: () {
+                                final data =
+                                    ref.read(pipelineProvider).valueOrNull;
+                                if (data != null) _exportPipeline(data);
+                              },
+                              child: const Icon(
+                                Icons.ios_share,
+                                size: 20,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 20),
+                            GestureDetector(
+                              onTap: () {
+                                Haptics.light();
+                                ref.read(businessesProvider.notifier).load();
+                              },
+                              child: const Icon(
+                                Icons.refresh,
+                                size: 20,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_filterStatus != null) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            _getStatusTitle(_filterStatus!),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                if (_filterStatus == null ||
-                    _filterStatus == BusinessStatus.audited)
-                  _buildSection(
-                    'Audited',
-                    BusinessStatus.audited,
-                    pipeline[BusinessStatus.audited] ?? [],
-                    AppColors.secondary,
+                ),
+
+                // Pull-to-refresh + pipeline sections
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      if (_filterStatus == null ||
+                          _filterStatus == BusinessStatus.found)
+                        _buildSection(
+                          'Found',
+                          BusinessStatus.found,
+                          pipeline[BusinessStatus.found] ?? [],
+                          AppColors.textTertiary,
+                        ),
+                      if (_filterStatus == null ||
+                          _filterStatus == BusinessStatus.audited)
+                        _buildSection(
+                          'Audited',
+                          BusinessStatus.audited,
+                          pipeline[BusinessStatus.audited] ?? [],
+                          AppColors.secondary,
+                        ),
+                      if (_filterStatus == null ||
+                          _filterStatus == BusinessStatus.demoCreated)
+                        _buildSection(
+                          'Demo Created',
+                          BusinessStatus.demoCreated,
+                          pipeline[BusinessStatus.demoCreated] ?? [],
+                          AppColors.primary,
+                        ),
+                      if (_filterStatus == null ||
+                          _filterStatus == BusinessStatus.contacted)
+                        _buildSection(
+                          'Contacted',
+                          BusinessStatus.contacted,
+                          pipeline[BusinessStatus.contacted] ?? [],
+                          AppColors.success,
+                        ),
+                      if (_filterStatus == null ||
+                          _filterStatus == BusinessStatus.interested)
+                        _buildSection(
+                          'Interested',
+                          BusinessStatus.interested,
+                          pipeline[BusinessStatus.interested] ?? [],
+                          AppColors.info,
+                        ),
+                      if (_filterStatus == null ||
+                          _filterStatus == BusinessStatus.closed)
+                        _buildSection(
+                          'Closed',
+                          BusinessStatus.closed,
+                          pipeline[BusinessStatus.closed] ?? [],
+                          AppColors.success,
+                        ),
+                      if (_filterStatus == null ||
+                          _filterStatus == BusinessStatus.lost)
+                        _buildSection(
+                          'Lost',
+                          BusinessStatus.lost,
+                          pipeline[BusinessStatus.lost] ?? [],
+                          AppColors.danger,
+                        ),
+                    ]),
                   ),
-                if (_filterStatus == null ||
-                    _filterStatus == BusinessStatus.demoCreated)
-                  _buildSection(
-                    'Demo Created',
-                    BusinessStatus.demoCreated,
-                    pipeline[BusinessStatus.demoCreated] ?? [],
-                    AppColors.primary,
-                  ),
-                if (_filterStatus == null ||
-                    _filterStatus == BusinessStatus.contacted)
-                  _buildSection(
-                    'Contacted',
-                    BusinessStatus.contacted,
-                    pipeline[BusinessStatus.contacted] ?? [],
-                    AppColors.success,
-                  ),
-                if (_filterStatus == null ||
-                    _filterStatus == BusinessStatus.interested)
-                  _buildSection(
-                    'Interested',
-                    BusinessStatus.interested,
-                    pipeline[BusinessStatus.interested] ?? [],
-                    AppColors.info,
-                  ),
-                if (_filterStatus == null ||
-                    _filterStatus == BusinessStatus.closed)
-                  _buildSection(
-                    'Closed',
-                    BusinessStatus.closed,
-                    pipeline[BusinessStatus.closed] ?? [],
-                    AppColors.success,
-                  ),
-                if (_filterStatus == null ||
-                    _filterStatus == BusinessStatus.lost)
-                  _buildSection(
-                    'Lost',
-                    BusinessStatus.lost,
-                    pipeline[BusinessStatus.lost] ?? [],
-                    AppColors.danger,
-                  ),
+                ),
               ],
             ),
           );
@@ -344,69 +322,88 @@ class _PipelineScreenEnhancedState
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppColors.radiusXL),
+          borderRadius: BorderRadius.circular(AppColors.radiusL),
+          border: businesses.isNotEmpty
+              ? Border.all(
+                  color: color.withValues(alpha: 0.1),
+                  width: 0.5,
+                )
+              : null,
+          boxShadow: businesses.isNotEmpty
+              ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.04),
+                    blurRadius: 12,
+                    spreadRadius: -4,
+                  ),
+                ]
+              : null,
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(
           children: [
-            InkWell(
+            GestureDetector(
               onTap: () {
                 setState(() {
                   _expandedSections[status] = !isExpanded;
                 });
                 Haptics.light();
               },
+              behavior: HitTestBehavior.opaque,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    Icon(
-                      _getStatusIcon(status),
+                    PulseDot(
                       color: color,
-                      size: 18,
+                      size: 8,
+                      pulse: businesses.isNotEmpty,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         title,
-                        style: AppTypography.bodyMedium.copyWith(
+                        style: const TextStyle(
+                          fontSize: 15,
                           fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
                         ),
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.12),
-                        borderRadius:
-                            BorderRadius.circular(6),
+                        color: color.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         businesses.length.toString(),
-                        style: AppTypography.mono.copyWith(
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
                           color: color,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12,
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Icon(
-                      isExpanded
-                          ? Icons.keyboard_arrow_up
-                          : Icons.keyboard_arrow_down,
-                      color: AppColors.textTertiary,
-                      size: 20,
+                    AnimatedRotation(
+                      turns: isExpanded ? 0.5 : 0.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Icon(
+                        Icons.keyboard_arrow_down,
+                        color: AppColors.textTertiary,
+                        size: 20,
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
             if (isExpanded) ...[
-              const Divider(height: 1),
+              Container(
+                height: 0.5,
+                color: AppColors.divider,
+              ),
               if (businesses.isEmpty)
                 Padding(
                   padding: const EdgeInsets.all(24),
@@ -418,9 +415,10 @@ class _PipelineScreenEnhancedState
                         color: AppColors.textTertiary.withValues(alpha: 0.5),
                       ),
                       const SizedBox(height: 8),
-                      Text(
+                      const Text(
                         'No businesses in this stage',
-                        style: AppTypography.bodyMedium.copyWith(
+                        style: TextStyle(
+                          fontSize: 14,
                           color: AppColors.textTertiary,
                         ),
                       ),
@@ -428,22 +426,38 @@ class _PipelineScreenEnhancedState
                   ),
                 )
               else ...[
-                ...businesses.map((business) => _DraggableBusinessCard(
-                      business: business,
-                      currentStatus: status,
-                      onMoveToStatus: (newStatus) =>
-                          _moveBusinessToStatus(business, newStatus),
-                      onDelete: () => _deleteBusiness(business),
-                      onTap: () =>
-                          context.push('/business/${business.id}'),
-                      stageColor: color,
-                    )),
-                Padding(
-                  padding: const EdgeInsets.only(top: 4, bottom: 12),
+                ...List.generate(businesses.length, (index) {
+                  final business = businesses[index];
+                  return Column(
+                    children: [
+                      _DraggableBusinessCard(
+                        business: business,
+                        currentStatus: status,
+                        onMoveToStatus: (newStatus) =>
+                            _moveBusinessToStatus(business, newStatus),
+                        onDelete: () => _deleteBusiness(business),
+                        onTap: () =>
+                            context.push('/business/${business.id}'),
+                        stageColor: color,
+                      ),
+                      if (index < businesses.length - 1)
+                        Padding(
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 16),
+                          child: Container(
+                            height: 0.5,
+                            color: AppColors.divider,
+                          ),
+                        ),
+                    ],
+                  );
+                }),
+                const Padding(
+                  padding: EdgeInsets.only(top: 4, bottom: 12),
                   child: Text(
                     'Swipe right to advance, left to remove',
                     textAlign: TextAlign.center,
-                    style: AppTypography.labelSmall.copyWith(
+                    style: TextStyle(
                       fontSize: 10,
                       color: AppColors.textTertiary,
                     ),
@@ -477,8 +491,8 @@ class _PipelineScreenEnhancedState
   }
 }
 
-/// Draggable and swipeable business card
-class _DraggableBusinessCard extends StatelessWidget {
+/// Draggable and swipeable business card with tap highlight
+class _DraggableBusinessCard extends StatefulWidget {
   final Business business;
   final BusinessStatus currentStatus;
   final Function(BusinessStatus) onMoveToStatus;
@@ -496,24 +510,32 @@ class _DraggableBusinessCard extends StatelessWidget {
   });
 
   @override
+  State<_DraggableBusinessCard> createState() =>
+      _DraggableBusinessCardState();
+}
+
+class _DraggableBusinessCardState extends State<_DraggableBusinessCard> {
+  bool _isPressed = false;
+
+  @override
   Widget build(BuildContext context) {
     return Dismissible(
-      key: Key(business.id),
+      key: Key(widget.business.id),
       direction: DismissDirection.horizontal,
       confirmDismiss: (direction) async {
         Haptics.light();
 
         if (direction == DismissDirection.startToEnd) {
           // Swipe right: Move to next stage
-          final nextStatus = _getNextStatus(currentStatus);
+          final nextStatus = _getNextStatus(widget.currentStatus);
           if (nextStatus != null) {
-            onMoveToStatus(nextStatus);
+            widget.onMoveToStatus(nextStatus);
           }
           return false; // Don't actually dismiss
         } else {
           // Swipe left: Delete
           Haptics.heavy();
-          onDelete();
+          widget.onDelete();
           return true;
         }
       },
@@ -527,12 +549,20 @@ class _DraggableBusinessCard extends StatelessWidget {
         AppColors.danger,
         Alignment.centerRight,
       ),
-      child: InkWell(
-        onTap: () {
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _isPressed = true),
+        onTapUp: (_) {
+          setState(() => _isPressed = false);
           Haptics.light();
-          onTap();
+          widget.onTap();
         },
-        child: Padding(
+        onTapCancel: () => setState(() => _isPressed = false),
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 100),
+          color: _isPressed
+              ? Colors.white.withValues(alpha: 0.04)
+              : Colors.transparent,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
@@ -541,7 +571,7 @@ class _DraggableBusinessCard extends StatelessWidget {
                 width: 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: stageColor,
+                  color: widget.stageColor,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -553,16 +583,19 @@ class _DraggableBusinessCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      business.name,
-                      style: AppTypography.bodyMedium.copyWith(
+                      widget.business.name,
+                      style: const TextStyle(
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                       ),
                     ),
-                    if (business.shortAddress != null) ...[
+                    if (widget.business.shortAddress != null) ...[
                       const SizedBox(height: 2),
                       Text(
-                        business.shortAddress!,
-                        style: AppTypography.labelSmall.copyWith(
+                        widget.business.shortAddress!,
+                        style: const TextStyle(
+                          fontSize: 12,
                           color: AppColors.textTertiary,
                         ),
                       ),
@@ -571,26 +604,32 @@ class _DraggableBusinessCard extends StatelessWidget {
                 ),
               ),
 
-              // Score badge
-              if (business.auditScore != null) ...[
+              if (widget.business.auditScore != null) ...[
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: AppColors.scoreColor(business.auditScore!)
-                        .withValues(alpha: 0.12),
+                    gradient: LinearGradient(
+                      colors: AppColors.scoreGradient(widget.business.auditScore!),
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                     borderRadius: BorderRadius.circular(6),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.scoreColor(widget.business.auditScore!)
+                            .withValues(alpha: 0.2),
+                        blurRadius: 6,
+                        spreadRadius: -1,
+                      ),
+                    ],
                   ),
                   child: Text(
-                    business.auditScore.toString(),
-                    style: AppTypography.mono.copyWith(
-                      color:
-                          AppColors.scoreColor(business.auditScore!),
-                      fontWeight: FontWeight.w700,
+                    widget.business.auditScore.toString(),
+                    style: const TextStyle(
                       fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.background,
                     ),
                   ),
                 ),

@@ -1,3 +1,5 @@
+import 'package:confetti/confetti.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,8 +11,13 @@ import '../../models/business.dart';
 import '../../models/message.dart';
 import '../../services/outreach_service.dart';
 import '../../providers/businesses_provider.dart';
+import '../../providers/profile_provider.dart';
 import '../../providers/subscription_provider.dart';
 import '../../widgets/brutal_button.dart';
+import '../../widgets/forge_loader.dart';
+import '../../widgets/ios_toast.dart';
+import '../../widgets/glow_card.dart';
+import '../../widgets/shimmer_text.dart';
 import '../../utils/haptics.dart';
 
 class OutreachScreen extends ConsumerStatefulWidget {
@@ -28,13 +35,37 @@ class OutreachScreen extends ConsumerStatefulWidget {
 class _OutreachScreenState extends ConsumerState<OutreachScreen> {
   OutreachChannel _selectedChannel = OutreachChannel.email;
   String _selectedTone = 'professional';
+  String _selectedLanguage = 'en';
   bool _isGenerating = false;
   Message? _generatedMessage;
+  late ConfettiController _confettiController;
 
   final List<String> _tones = ['professional', 'casual', 'direct'];
+  static const _languages = {
+    'en': 'English',
+    'es': 'Español',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _confettiController =
+        ConfettiController(duration: const Duration(seconds: 2));
+    // Default to user's preferred language
+    final profile = ref.read(profileNotifierProvider).valueOrNull;
+    final lang = profile?.preferredLanguage;
+    if (lang != null) {
+      _selectedLanguage = lang;
+    }
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
+  }
 
   Future<void> _generateMessage(Business business) async {
-    // Check Pro status
     final isPro = await ref.read(isProProvider.future);
     if (!isPro) {
       Haptics.heavy();
@@ -53,7 +84,7 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
         businessId: business.id,
         channel: _selectedChannel,
         tone: _selectedTone,
-        language: 'en',
+        language: _selectedLanguage,
       );
 
       if (mounted) {
@@ -62,82 +93,38 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
           _isGenerating = false;
         });
         Haptics.medium();
+        _confettiController.play();
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isGenerating = false);
         Haptics.heavy();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: AppColors.danger,
-          ),
-        );
+        IosToast.show(context, 'Error: $e', icon: CupertinoIcons.exclamationmark_triangle);
       }
     }
   }
 
   void _showPaywall() {
-    showDialog(
+    showCupertinoDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppColors.radiusXL),
-        ),
-        title: const Row(
-          children: [
-            Icon(Icons.lock, color: AppColors.warning),
-            SizedBox(width: 8),
-            Text('Pro Feature'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('AI message generation is a Pro feature.'),
-            const SizedBox(height: 16),
-            Text(
-              'Upgrade to Pro for:',
-              style: AppTypography.bodyMedium.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            _buildBenefit('Unlimited AI messages'),
-            _buildBenefit('4 outreach channels'),
-            _buildBenefit('3 tone options'),
-            _buildBenefit('Bilingual (EN/ES)'),
-          ],
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('Pro Feature'),
+        content: const Text(
+          'AI message generation is a Pro feature.\n\nUpgrade to Pro for unlimited AI messages, 4 outreach channels, 3 tone options, and bilingual (EN/ES) support.',
         ),
         actions: [
-          TextButton(
+          CupertinoDialogAction(
             onPressed: () => Navigator.pop(context),
             child: const Text('Maybe Later'),
           ),
-          BrutalButton(
-            label: 'Upgrade to Pro',
-            icon: Icons.workspace_premium,
-            compact: true,
+          CupertinoDialogAction(
+            isDefaultAction: true,
             onPressed: () {
               Navigator.pop(context);
               context.push('/settings');
             },
+            child: const Text('Upgrade to Pro'),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBenefit(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        children: [
-          const Icon(Icons.check_circle, color: AppColors.success, size: 16),
-          const SizedBox(width: 8),
-          Text(text, style: AppTypography.bodyMedium),
         ],
       ),
     );
@@ -146,19 +133,7 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
   void _copyMessage(String content) {
     Clipboard.setData(ClipboardData(text: content));
     Haptics.medium();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 8),
-            Text('Message copied to clipboard'),
-          ],
-        ),
-        backgroundColor: AppColors.success,
-        duration: Duration(seconds: 2),
-      ),
-    );
+    IosToast.show(context, 'Message copied to clipboard', icon: CupertinoIcons.check_mark);
   }
 
   void _regenerate(Business business) {
@@ -173,130 +148,173 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: Text(
-          'Create Outreach Message',
-          style: AppTypography.titleMedium.copyWith(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+        title: const GradientText(
+          text: 'Create Outreach',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          colors: [AppColors.primary, AppColors.primaryLight],
         ),
       ),
-      body: businessAsync.when(
-        data: (business) {
-          if (business == null) {
-            return const Center(child: Text('Business not found'));
-          }
+      body: Stack(
+        children: [
+          businessAsync.when(
+            data: (business) {
+              if (business == null) {
+                return const Center(child: Text('Business not found'));
+              }
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header
-                Text(
-                  'Generate message for',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.textTertiary,
-                  ),
-                  textAlign: TextAlign.center,
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Generate message for',
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppColors.textTertiary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      business.name,
+                      style: AppTypography.headlineLarge.copyWith(
+                        fontSize: 22,
+                        letterSpacing: -0.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Channel selector
+                    Text(
+                      'CHANNEL',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: OutreachChannel.values.map((channel) {
+                        final isSelected = channel == _selectedChannel;
+                        return _ChannelChip(
+                          channel: channel,
+                          isSelected: isSelected,
+                          onTap: () {
+                            setState(() => _selectedChannel = channel);
+                            Haptics.light();
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Tone selector
+                    Text(
+                      'TONE',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: _tones.map((tone) {
+                        final isSelected = tone == _selectedTone;
+                        return _ToneChip(
+                          tone: tone,
+                          isSelected: isSelected,
+                          onTap: () {
+                            setState(() => _selectedTone = tone);
+                            Haptics.light();
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Language selector
+                    Text(
+                      'LANGUAGE',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 10,
+                      children: _languages.entries.map((entry) {
+                        final isSelected = entry.key == _selectedLanguage;
+                        return _ToneChip(
+                          tone: entry.value,
+                          isSelected: isSelected,
+                          onTap: () {
+                            setState(() => _selectedLanguage = entry.key);
+                            Haptics.light();
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 32),
+
+                    if (_generatedMessage == null && !_isGenerating)
+                      _GradientCTA(
+                        label: 'Generate Message',
+                        icon: Icons.auto_awesome_rounded,
+                        onPressed: () => _generateMessage(business),
+                      ),
+
+                    if (_isGenerating) _GeneratingAnimation(),
+
+                    if (_generatedMessage != null)
+                      _MessageResult(
+                        message: _generatedMessage!,
+                        onCopy: _copyMessage,
+                        onRegenerate: () => _regenerate(business),
+                      ),
+                  ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  business.name,
-                  style: AppTypography.headlineLarge.copyWith(
-                    fontSize: 22,
-                    letterSpacing: -0.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-
-                // Channel selector
-                Text(
-                  'CHANNEL',
-                  style: AppTypography.labelSmall.copyWith(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                    color: AppColors.textTertiary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: OutreachChannel.values.map((channel) {
-                    final isSelected = channel == _selectedChannel;
-                    return _ChannelChip(
-                      channel: channel,
-                      isSelected: isSelected,
-                      onTap: () {
-                        setState(() => _selectedChannel = channel);
-                        Haptics.light();
-                      },
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 24),
-
-                // Tone selector
-                Text(
-                  'TONE',
-                  style: AppTypography.labelSmall.copyWith(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                    color: AppColors.textTertiary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: _tones.map((tone) {
-                    final isSelected = tone == _selectedTone;
-                    return _ToneChip(
-                      tone: tone,
-                      isSelected: isSelected,
-                      onTap: () {
-                        setState(() => _selectedTone = tone);
-                        Haptics.light();
-                      },
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 32),
-
-                // Generate button or result
-                if (_generatedMessage == null && !_isGenerating)
-                  BrutalButton(
-                    label: 'Generate Message',
-                    icon: Icons.auto_awesome,
-                    onPressed: () => _generateMessage(business),
-                  ),
-
-                if (_isGenerating) _GeneratingAnimation(),
-
-                if (_generatedMessage != null)
-                  _MessageResult(
-                    message: _generatedMessage!,
-                    onCopy: _copyMessage,
-                    onRegenerate: () => _regenerate(business),
-                  ),
+              );
+            },
+            loading: () => const Center(child: ForgeLoader(size: 40)),
+            error: (error, _) => Center(child: Text('Error: $error')),
+          ),
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirectionality: BlastDirectionality.explosive,
+              numberOfParticles: 25,
+              maxBlastForce: 12,
+              minBlastForce: 4,
+              gravity: 0.15,
+              shouldLoop: false,
+              colors: const [
+                AppColors.primary,
+                AppColors.primaryLight,
+                AppColors.success,
+                AppColors.secondary,
               ],
             ),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Error: $error')),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Channel selection chip
+// Channel chip with gradient selected state
 class _ChannelChip extends StatelessWidget {
   final OutreachChannel channel;
   final bool isSelected;
@@ -311,6 +329,7 @@ class _ChannelChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final info = _getChannelInfo(channel);
+    final color = info['color'] as Color;
 
     return GestureDetector(
       onTap: onTap,
@@ -318,26 +337,40 @@ class _ChannelChip extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.surface,
+          gradient: isSelected
+              ? LinearGradient(
+                  colors: [color, color.withValues(alpha: 0.7)],
+                )
+              : null,
+          color: isSelected ? null : AppColors.surface,
           borderRadius: BorderRadius.circular(20),
+          border: isSelected
+              ? null
+              : Border.all(color: AppColors.border, width: 0.5),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.25),
+                    blurRadius: 8,
+                    spreadRadius: -2,
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               info['icon'] as IconData,
-              color: isSelected ? AppColors.background : AppColors.textTertiary,
+              color: isSelected ? Colors.white : AppColors.textTertiary,
               size: 18,
             ),
             const SizedBox(width: 6),
             Text(
               info['name'] as String,
               style: AppTypography.bodyMedium.copyWith(
-                color: isSelected
-                    ? AppColors.background
-                    : AppColors.textPrimary,
-                fontWeight:
-                    isSelected ? FontWeight.w600 : FontWeight.normal,
+                color: isSelected ? Colors.white : AppColors.textPrimary,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 fontSize: 14,
               ),
             ),
@@ -350,20 +383,40 @@ class _ChannelChip extends StatelessWidget {
   Map<String, dynamic> _getChannelInfo(OutreachChannel channel) {
     switch (channel) {
       case OutreachChannel.email:
-        return {'name': 'Email', 'icon': Icons.email_outlined};
+        return {
+          'name': 'Email',
+          'icon': Icons.email_outlined,
+          'color': AppColors.primary,
+        };
       case OutreachChannel.whatsapp:
-        return {'name': 'WhatsApp', 'icon': Icons.chat_bubble_outline};
+        return {
+          'name': 'WhatsApp',
+          'icon': Icons.chat_bubble_outline,
+          'color': AppColors.success,
+        };
       case OutreachChannel.instagram:
-        return {'name': 'Instagram', 'icon': Icons.photo_camera_outlined};
+        return {
+          'name': 'Instagram',
+          'icon': Icons.photo_camera_outlined,
+          'color': AppColors.secondary,
+        };
       case OutreachChannel.phone:
-        return {'name': 'Phone', 'icon': Icons.phone_outlined};
+        return {
+          'name': 'Phone',
+          'icon': Icons.phone_outlined,
+          'color': AppColors.info,
+        };
       case OutreachChannel.other:
-        return {'name': 'Other', 'icon': Icons.more_horiz};
+        return {
+          'name': 'Other',
+          'icon': Icons.more_horiz,
+          'color': AppColors.textSecondary,
+        };
     }
   }
 }
 
-/// Tone selection chip
+// Tone chip with gradient
 class _ToneChip extends StatelessWidget {
   final String tone;
   final bool isSelected;
@@ -383,15 +436,26 @@ class _ToneChip extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.surface,
+          gradient: isSelected ? AppColors.primaryGradient : null,
+          color: isSelected ? null : AppColors.surface,
           borderRadius: BorderRadius.circular(20),
+          border: isSelected
+              ? null
+              : Border.all(color: AppColors.border, width: 0.5),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.25),
+                    blurRadius: 8,
+                    spreadRadius: -2,
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           tone[0].toUpperCase() + tone.substring(1),
           style: AppTypography.bodyMedium.copyWith(
-            color: isSelected
-                ? AppColors.background
-                : AppColors.textPrimary,
+            color: isSelected ? AppColors.background : AppColors.textPrimary,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             fontSize: 14,
           ),
@@ -401,7 +465,71 @@ class _ToneChip extends StatelessWidget {
   }
 }
 
-/// Generating animation
+// Gradient CTA button
+class _GradientCTA extends StatefulWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _GradientCTA({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  State<_GradientCTA> createState() => _GradientCTAState();
+}
+
+class _GradientCTAState extends State<_GradientCTA> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        Haptics.medium();
+        widget.onPressed();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            gradient: AppColors.primaryGradient,
+            borderRadius: BorderRadius.circular(AppColors.radiusM),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.3),
+                blurRadius: 16,
+                spreadRadius: -2,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(widget.icon, size: 20, color: AppColors.background),
+              const SizedBox(width: 8),
+              Text(
+                widget.label,
+                style: AppTypography.button
+                    .copyWith(color: AppColors.background, fontSize: 16),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Generating animation with glow card
 class _GeneratingAnimation extends StatefulWidget {
   @override
   State<_GeneratingAnimation> createState() => _GeneratingAnimationState();
@@ -434,15 +562,14 @@ class _GeneratingAnimationState extends State<_GeneratingAnimation> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlowCard(
+      glowColor: AppColors.secondary,
+      animateBorder: true,
+      glowIntensity: 0.5,
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppColors.radiusXL),
-      ),
       child: Column(
         children: [
-          const CircularProgressIndicator(strokeWidth: 2),
+          const ForgeLoader(),
           const SizedBox(height: 24),
           ...List.generate(_steps.length, (index) {
             final isActive = index == _currentStep;
@@ -452,14 +579,20 @@ class _GeneratingAnimationState extends State<_GeneratingAnimation> {
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Row(
                 children: [
-                  Icon(
-                    isDone ? Icons.check_circle : Icons.circle_outlined,
-                    size: 18,
-                    color: isActive
-                        ? AppColors.primary
-                        : isDone
-                            ? AppColors.success
-                            : AppColors.textTertiary,
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      isDone
+                          ? Icons.check_circle_rounded
+                          : Icons.circle_outlined,
+                      key: ValueKey('gen-$index-$isDone'),
+                      size: 18,
+                      color: isActive
+                          ? AppColors.secondary
+                          : isDone
+                              ? AppColors.success
+                              : AppColors.textTertiary,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -489,7 +622,7 @@ class _GeneratingAnimationState extends State<_GeneratingAnimation> {
   }
 }
 
-/// Message result widget
+// Message result with glow card
 class _MessageResult extends StatelessWidget {
   final Message message;
   final Function(String) onCopy;
@@ -503,37 +636,49 @@ class _MessageResult extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlowCard(
+      glowColor: AppColors.success,
+      glowIntensity: 0.4,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppColors.radiusXL),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.auto_awesome,
-                  color: AppColors.success, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'Message Generated',
-                style: AppTypography.labelLarge.copyWith(
-                  color: AppColors.success,
-                  fontWeight: FontWeight.w600,
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.success.withValues(alpha: 0.2),
+                      AppColors.success.withValues(alpha: 0.05),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                child: const Icon(Icons.auto_awesome_rounded,
+                    color: AppColors.success, size: 14),
+              ),
+              const SizedBox(width: 10),
+              const GradientText(
+                text: 'Message Generated',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                colors: [AppColors.success, Color(0xFF6EE7B7)],
               ),
             ],
           ),
           const SizedBox(height: 16),
 
-          // Message content
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppColors.background,
               borderRadius: BorderRadius.circular(AppColors.radiusL),
+              border: Border.all(
+                color: AppColors.success.withValues(alpha: 0.1),
+                width: 0.5,
+              ),
             ),
             child: SelectableText(
               message.content,
@@ -545,7 +690,6 @@ class _MessageResult extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // Action buttons
           Row(
             children: [
               Expanded(
