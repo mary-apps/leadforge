@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,16 +8,11 @@ import '../../config/theme.dart';
 import '../../providers/businesses_provider.dart';
 import '../../models/profile.dart';
 import '../../providers/profile_provider.dart';
-import '../../widgets/aurora_background.dart';
 import '../../widgets/business_card.dart';
-import '../../widgets/glow_card.dart';
 import '../../widgets/skeleton_loaders.dart';
 import '../../widgets/search_suggestions.dart';
 import '../../widgets/brutal_button.dart';
-import '../../widgets/forge_loader.dart';
-import '../../widgets/shimmer_text.dart';
-import '../../widgets/pulse_dot.dart';
-import 'package:flutter/cupertino.dart';
+import '../../widgets/brutal_card.dart';
 import '../../utils/haptics.dart';
 import '../../utils/network.dart';
 
@@ -141,274 +136,226 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
   Widget build(BuildContext context) {
     final businessesAsync = ref.watch(scoutResultsProvider);
 
-    return Scaffold(
-      body: AuroraBackground(
-        intensity: 0.7,
-        child: SafeArea(
-          bottom: false,
-          child: CustomScrollView(
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
+    return CupertinoPageScaffold(
+      child: CustomScrollView(
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
+        slivers: [
+          CupertinoSliverNavigationBar(
+            largeTitle: const Text('Scout'),
+            trailing: CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: () =>
+                  ref.read(businessesProvider.notifier).load(),
+              child: const Icon(CupertinoIcons.refresh, size: 20),
             ),
-            slivers: [
-              // Floating SliverAppBar with title + search
-              SliverAppBar(
-                floating: true,
-                snap: true,
-                expandedHeight: 118,
-                backgroundColor: AppColors.background,
-                surfaceTintColor: Colors.transparent,
-                scrolledUnderElevation: 0,
-                flexibleSpace: FlexibleSpaceBar(
-                  collapseMode: CollapseMode.pin,
-                  background: SafeArea(
-                    bottom: false,
+          ),
+
+          // Search bar (below nav bar)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Column(
+                children: [
+                  _AnimatedSearchBar(
+                    controller: _searchController,
+                    focusNode: _focusNode,
+                    isSearching: _isSearching,
+                    onSubmitted: _handleSearch,
+                    onChanged: (value) {
+                      setState(() {
+                        _showSuggestions =
+                            _focusNode.hasFocus && value.isEmpty;
+                      });
+                    },
+                  ),
+                  if (_showSuggestions) ...[
+                    const SizedBox(height: 12),
+                    SearchSuggestions(
+                      recentSearches: _recentSearches,
+                      trendingSearches: _trendingSearches,
+                      onSelected: (query) {
+                        _searchController.text = query;
+                        _handleSearch(query);
+                      },
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+
+          // Content: discovery view or results
+          businessesAsync.when(
+            data: (businesses) {
+              if (businesses.isEmpty && !_hasSearched) {
+                return _DiscoveryView(
+                  onCategoryTap: (query) {
+                    _searchController.text = query;
+                    _handleSearch(query);
+                  },
+                  onTrendingTap: (query) {
+                    _searchController.text = query;
+                    _handleSearch(query);
+                  },
+                );
+              }
+
+              if (businesses.isEmpty && _hasSearched) {
+                return SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _NoResultsState(
+                    query: _searchController.text,
+                    onRetry: () =>
+                        _handleSearch(_searchController.text),
+                    onClear: () {
+                      setState(() {
+                        _hasSearched = false;
+                        _searchController.clear();
+                      });
+                      ref.read(scoutResultsProvider.notifier).clear();
+                    },
+                  ),
+                );
+              }
+
+              return SliverMainAxisGroup(
+                slivers: [
+                  SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                      child: Row(
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const GradientText(
-                                text: 'Scout',
-                                style: TextStyle(
-                                  fontSize: 34,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: -0.5,
-                                ),
-                                colors: [AppColors.primary, AppColors.primaryLight],
-                              ),
-                              GestureDetector(
-                                onTap: () =>
-                                    ref.read(businessesProvider.notifier).load(),
-                                child: Container(
-                                  width: 36,
-                                  height: 36,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.surface,
-                                    borderRadius:
-                                        BorderRadius.circular(AppColors.radiusL),
-                                    border: Border.all(
-                                        color: AppColors.border, width: 0.5),
-                                  ),
-                                  child: const Icon(Icons.refresh,
-                                      color: AppColors.textSecondary, size: 20),
-                                ),
-                              ),
-                            ],
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: AppColors.success,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${businesses.length} results',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const Spacer(),
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _hasSearched = false;
+                                _searchController.clear();
+                              });
+                              ref
+                                  .read(scoutResultsProvider.notifier)
+                                  .clear();
+                            },
+                            child: const Text(
+                              'Clear',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
-                ),
-              ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+                    sliver: SliverList.builder(
+                      itemCount: businesses.length,
+                      itemBuilder: (context, index) {
+                        final business = businesses[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: BusinessCard(
+                            business: business,
+                            onTap: () => context
+                                .push('/business/${business.id}'),
+                          ),
+                        )
+                            .animate(
+                                delay: Duration(
+                                    milliseconds: 50 * index))
+                            .fadeIn(duration: 300.ms)
+                            .slideX(
+                                begin: -0.03,
+                                duration: 350.ms,
+                                curve: Curves.easeOutCubic);
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
+            loading: () => const SliverFillRemaining(
+              hasScrollBody: false,
+              child: SearchSkeleton(),
+            ),
+            error: (error, _) {
+              final isNoConnection = error is NoConnectionException;
+              final isServer = error is ServerException;
+              final icon = isNoConnection
+                  ? CupertinoIcons.wifi_slash
+                  : isServer
+                      ? CupertinoIcons.cloud
+                      : CupertinoIcons.exclamationmark_circle;
+              final title = isNoConnection
+                  ? 'No internet connection'
+                  : isServer
+                      ? 'Server error'
+                      : 'Search failed';
+              final subtitle = isNoConnection
+                  ? 'Check your connection and try again'
+                  : isServer
+                      ? 'Our servers are having issues. Try again in a moment.'
+                      : error.toString();
 
-              // Search bar (below app bar)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  child: Column(
-                    children: [
-                      _AnimatedSearchBar(
-                        controller: _searchController,
-                        focusNode: _focusNode,
-                        isSearching: _isSearching,
-                        onSubmitted: _handleSearch,
-                        onChanged: (value) {
-                          setState(() {
-                            _showSuggestions =
-                                _focusNode.hasFocus && value.isEmpty;
-                          });
-                        },
-                      ),
-                      if (_showSuggestions) ...[
-                        const SizedBox(height: 12),
-                        SearchSuggestions(
-                          recentSearches: _recentSearches,
-                          trendingSearches: _trendingSearches,
-                          onSelected: (query) {
-                            _searchController.text = query;
-                            _handleSearch(query);
-                          },
+              return SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(icon,
+                            size: 56, color: AppColors.textTertiary),
+                        const SizedBox(height: 16),
+                        Text(title,
+                            style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary)),
+                        const SizedBox(height: 8),
+                        Text(subtitle,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textTertiary)),
+                        const SizedBox(height: 24),
+                        BrutalButton(
+                          label: 'Retry',
+                          onPressed: () => _handleSearch(
+                              _searchController.text),
                         ),
                       ],
-                    ],
+                    ),
                   ),
                 ),
-              ),
-
-              // Content: discovery view or results
-              businessesAsync.when(
-                data: (businesses) {
-                  if (businesses.isEmpty && !_hasSearched) {
-                    return _DiscoveryView(
-                      onCategoryTap: (query) {
-                        _searchController.text = query;
-                        _handleSearch(query);
-                      },
-                      onTrendingTap: (query) {
-                        _searchController.text = query;
-                        _handleSearch(query);
-                      },
-                    );
-                  }
-
-                  if (businesses.isEmpty && _hasSearched) {
-                    return SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: _NoResultsState(
-                        query: _searchController.text,
-                        onRetry: () =>
-                            _handleSearch(_searchController.text),
-                        onClear: () {
-                          setState(() {
-                            _hasSearched = false;
-                            _searchController.clear();
-                          });
-                          ref.read(scoutResultsProvider.notifier).clear();
-                        },
-                      ),
-                    );
-                  }
-
-                  return SliverMainAxisGroup(
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-                          child: Row(
-                            children: [
-                              PulseDot(
-                                  color: AppColors.success,
-                                  size: 6,
-                                  pulse: true),
-                              const SizedBox(width: 8),
-                              Text(
-                                '${businesses.length} results',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              const Spacer(),
-                              GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _hasSearched = false;
-                                    _searchController.clear();
-                                  });
-                                  ref
-                                      .read(scoutResultsProvider.notifier)
-                                      .clear();
-                                },
-                                child: Text(
-                                  'Clear',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
-                        sliver: SliverList.builder(
-                          itemCount: businesses.length,
-                          itemBuilder: (context, index) {
-                            final business = businesses[index];
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: BusinessCard(
-                                business: business,
-                                onTap: () => context
-                                    .push('/business/${business.id}'),
-                              ),
-                            )
-                                .animate(
-                                    delay: Duration(
-                                        milliseconds: 50 * index))
-                                .fadeIn(duration: 300.ms)
-                                .slideX(
-                                    begin: -0.03,
-                                    duration: 350.ms,
-                                    curve: Curves.easeOutCubic);
-                          },
-                        ),
-                      ),
-                    ],
-                  );
-                },
-                loading: () => const SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: SearchSkeleton(),
-                ),
-                error: (error, _) {
-                  final isNoConnection = error is NoConnectionException;
-                  final isServer = error is ServerException;
-                  final icon = isNoConnection
-                      ? Icons.wifi_off_rounded
-                      : isServer
-                          ? Icons.cloud_off_rounded
-                          : Icons.error_outline_rounded;
-                  final title = isNoConnection
-                      ? 'No internet connection'
-                      : isServer
-                          ? 'Server error'
-                          : 'Search failed';
-                  final subtitle = isNoConnection
-                      ? 'Check your connection and try again'
-                      : isServer
-                          ? 'Our servers are having issues. Try again in a moment.'
-                          : error.toString();
-
-                  return SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(32),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(icon,
-                                size: 56, color: AppColors.textTertiary),
-                            const SizedBox(height: 16),
-                            Text(title,
-                                style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textSecondary)),
-                            const SizedBox(height: 8),
-                            Text(subtitle,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    fontSize: 13,
-                                    color: AppColors.textTertiary)),
-                            const SizedBox(height: 24),
-                            BrutalButton(
-                              label: 'Retry',
-                              onPressed: () => _handleSearch(
-                                  _searchController.text),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
+              );
+            },
           ),
-        ),
+        ],
       ),
     );
   }
@@ -428,14 +375,14 @@ class _DiscoveryView extends StatelessWidget {
   });
 
   static const _categories = [
-    _Category('Dentists', Icons.medical_services_rounded, AppColors.info),
-    _Category('Restaurants', Icons.restaurant_rounded, AppColors.primary),
-    _Category('Plumbers', Icons.plumbing_rounded, AppColors.success),
-    _Category('Lawyers', Icons.gavel_rounded, AppColors.secondary),
-    _Category('Hair Salons', Icons.content_cut_rounded, Color(0xFFFF6B9D)),
-    _Category('Gyms', Icons.fitness_center_rounded, Color(0xFF38BDF8)),
-    _Category('Cafes', Icons.coffee_rounded, Color(0xFFFFD166)),
-    _Category('Retail', Icons.storefront_rounded, Color(0xFF6EE7B7)),
+    _Category('Dentists', CupertinoIcons.heart, AppColors.info),
+    _Category('Restaurants', CupertinoIcons.cart, AppColors.primary),
+    _Category('Plumbers', CupertinoIcons.wrench, AppColors.success),
+    _Category('Lawyers', CupertinoIcons.book, AppColors.warning),
+    _Category('Hair Salons', CupertinoIcons.scissors, Color(0xFFFF6B9D)),
+    _Category('Gyms', CupertinoIcons.sportscourt, Color(0xFF38BDF8)),
+    _Category('Cafes', CupertinoIcons.drop, Color(0xFFFFD166)),
+    _Category('Retail', CupertinoIcons.bag, Color(0xFF6EE7B7)),
   ];
 
   static const _trending = [
@@ -467,7 +414,7 @@ class _DiscoveryView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
+              const Text(
                 'Search any business niche and city to discover leads with weak web presence.',
                 style: TextStyle(
                   fontSize: 15,
@@ -484,8 +431,8 @@ class _DiscoveryView extends StatelessWidget {
             .slideY(begin: 0.05, duration: 500.ms, curve: Curves.easeOutCubic),
 
         // Categories label
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(20, 28, 20, 12),
           child: Text(
             'POPULAR NICHES',
             style: TextStyle(
@@ -553,11 +500,11 @@ class _DiscoveryView extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(5),
                 ),
-                child: const Icon(Icons.trending_up_rounded,
+                child: const Icon(CupertinoIcons.graph_square,
                     size: 12, color: AppColors.success),
               ),
               const SizedBox(width: 8),
-              Text(
+              const Text(
                 'TRENDING SEARCHES',
                 style: TextStyle(
                   fontSize: 12,
@@ -599,8 +546,8 @@ class _DiscoveryView extends StatelessWidget {
             .slideY(begin: 0.04, duration: 450.ms, curve: Curves.easeOutCubic),
 
         // How it works
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 32, 20, 0),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(20, 32, 20, 0),
           child: Text(
             'HOW IT WORKS',
             style: TextStyle(
@@ -626,7 +573,7 @@ class _DiscoveryView extends StatelessWidget {
                       top: 2,
                       child: _StepCircle(
                         step: '1',
-                        icon: Icons.search_rounded,
+                        icon: CupertinoIcons.search,
                         color: AppColors.primary,
                         size: 56,
                       ),
@@ -636,7 +583,7 @@ class _DiscoveryView extends StatelessWidget {
                       top: 4,
                       child: _StepCircle(
                         step: '2',
-                        icon: Icons.analytics_rounded,
+                        icon: CupertinoIcons.chart_bar,
                         color: AppColors.info,
                         size: 52,
                       ),
@@ -646,7 +593,7 @@ class _DiscoveryView extends StatelessWidget {
                       top: 6,
                       child: _StepCircle(
                         step: '3',
-                        icon: Icons.send_rounded,
+                        icon: CupertinoIcons.paperplane,
                         color: AppColors.success,
                         size: 48,
                       ),
@@ -782,7 +729,7 @@ class _CategoryCardState extends State<_CategoryCard> {
               Expanded(
                 child: Text(
                   cat.name,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
@@ -790,7 +737,7 @@ class _CategoryCardState extends State<_CategoryCard> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Icon(Icons.arrow_forward_ios_rounded,
+              const Icon(CupertinoIcons.chevron_forward,
                   size: 12, color: AppColors.textTertiary),
             ],
           ),
@@ -844,12 +791,12 @@ class _TrendingTileState extends State<_TrendingTile> {
             duration: const Duration(milliseconds: 80),
             color: _pressed
                 ? AppColors.textPrimary.withValues(alpha: 0.04)
-                : Colors.transparent,
+                : const Color(0x00000000),
             padding: EdgeInsets.fromLTRB(
                 widget.index.isOdd ? 24 : 14, 12, 14, 12),
             child: Row(
               children: [
-                Icon(Icons.trending_up_rounded,
+                const Icon(CupertinoIcons.graph_square,
                     size: 16, color: AppColors.success),
                 const SizedBox(width: 12),
                 Expanded(
@@ -862,7 +809,7 @@ class _TrendingTileState extends State<_TrendingTile> {
                     ),
                   ),
                 ),
-                Icon(Icons.north_west_rounded,
+                const Icon(CupertinoIcons.arrow_up_left,
                     size: 12, color: AppColors.textTertiary),
               ],
             ),
@@ -878,10 +825,6 @@ class _TrendingTileState extends State<_TrendingTile> {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Step badge for "how it works"
-// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Featured category card — full-width dominant card
@@ -918,9 +861,7 @@ class _FeaturedCategoryCardState extends State<_FeaturedCategoryCard> {
       child: AnimatedScale(
         scale: _pressed ? 0.97 : 1.0,
         duration: const Duration(milliseconds: 100),
-        child: GlowCard(
-          glowColor: cat.color,
-          glowIntensity: 0.4,
+        child: BrutalCard(
           padding: const EdgeInsets.all(16),
           child: Row(
               children: [
@@ -966,7 +907,7 @@ class _FeaturedCategoryCardState extends State<_FeaturedCategoryCard> {
                     ],
                   ),
                 ),
-                Icon(Icons.arrow_forward_ios_rounded,
+                Icon(CupertinoIcons.chevron_forward,
                     size: 14, color: cat.color),
               ],
             ),
@@ -1094,7 +1035,7 @@ class _NoResultsState extends StatelessWidget {
                       color: AppColors.primary.withValues(alpha: 0.1),
                     ),
                   ),
-                  child: Icon(Icons.search_off_rounded,
+                  child: Icon(CupertinoIcons.search,
                       size: 24,
                       color: AppColors.primary.withValues(alpha: 0.6)),
                 ),
@@ -1110,7 +1051,7 @@ class _NoResultsState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               'Try a different niche or city combination.\nFor example: "dentists Austin"',
               style: TextStyle(
                 fontSize: 14,
@@ -1126,13 +1067,13 @@ class _NoResultsState extends StatelessWidget {
               children: [
                 BrutalButton.secondary(
                   label: 'Back',
-                  icon: Icons.arrow_back_rounded,
+                  icon: CupertinoIcons.arrow_left,
                   onPressed: onClear,
                 ),
                 const SizedBox(width: 12),
                 BrutalButton(
                   label: 'Retry',
-                  icon: Icons.refresh_rounded,
+                  icon: CupertinoIcons.refresh,
                   onPressed: onRetry,
                 ),
               ],
@@ -1149,7 +1090,7 @@ class _NoResultsState extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Animated Search Bar — rotating placeholder + glow on focus
+// Animated Search Bar — CupertinoSearchTextField with glow on focus
 // ---------------------------------------------------------------------------
 
 class _AnimatedSearchBar extends StatefulWidget {
@@ -1234,19 +1175,6 @@ class _AnimatedSearchBarState extends State<_AnimatedSearchBar>
         return Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppColors.radiusL + 1),
-            gradient: _hasFocus
-                ? SweepGradient(
-                    center: Alignment.center,
-                    startAngle: _glowController.value * 6.28,
-                    colors: [
-                      AppColors.primary.withValues(alpha: 0.4),
-                      AppColors.primary.withValues(alpha: 0.0),
-                      AppColors.secondary.withValues(alpha: 0.2),
-                      AppColors.primary.withValues(alpha: 0.0),
-                      AppColors.primary.withValues(alpha: 0.4),
-                    ],
-                  )
-                : null,
             boxShadow: _hasFocus
                 ? [
                     BoxShadow(
@@ -1257,70 +1185,25 @@ class _AnimatedSearchBarState extends State<_AnimatedSearchBar>
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
+                      color: CupertinoColors.black.withValues(alpha: 0.1),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
                   ],
           ),
-          padding: EdgeInsets.all(_hasFocus ? 1.5 : 0),
-          child: TextField(
+          child: CupertinoSearchTextField(
             controller: widget.controller,
             focusNode: widget.focusNode,
-            style: const TextStyle(fontSize: 15),
-            decoration: InputDecoration(
-              hintText: 'Search businesses  ${_placeholders[_placeholderIndex]}',
-              hintStyle: TextStyle(
-                fontSize: 14,
-                color: AppColors.textTertiary,
-              ),
-              prefixIcon: Icon(
-                Icons.search_rounded,
-                color: _hasFocus
-                    ? AppColors.primary
-                    : AppColors.textTertiary,
-              ),
-              suffixIcon: widget.isSearching
-                  ? const Padding(
-                      padding: EdgeInsets.all(12),
-                      child: ForgeLoader(size: 20, strokeWidth: 2),
-                    )
-                  : widget.controller.text.isNotEmpty
-                      ? IconButton(
-                          icon: Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              gradient: AppColors.primaryGradient,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(Icons.arrow_forward_rounded,
-                                size: 16, color: AppColors.background),
-                          ),
-                          onPressed: () =>
-                              widget.onSubmitted(widget.controller.text),
-                        )
-                      : null,
-              filled: true,
-              fillColor: AppColors.surface,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppColors.radiusL),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppColors.radiusL),
-                borderSide: BorderSide(
-                  color: AppColors.border,
-                  width: 0.5,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppColors.radiusL),
-                borderSide: BorderSide.none,
-              ),
+            placeholder: 'Search businesses  ${_placeholders[_placeholderIndex]}',
+            prefixIcon: Icon(
+              CupertinoIcons.search,
+              color: _hasFocus
+                  ? AppColors.primary
+                  : AppColors.textTertiary,
             ),
+            suffixIcon: widget.isSearching
+                ? const Icon(CupertinoIcons.clock)
+                : const Icon(CupertinoIcons.xmark_circle_fill),
             onSubmitted: widget.onSubmitted,
             onChanged: (value) {
               setState(() {});
