@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
 import '../../models/business.dart';
 import '../../providers/businesses_provider.dart';
-import '../../widgets/brutal_card.dart';
 import '../../widgets/error_state.dart';
 import '../../widgets/skeleton_loaders.dart';
 
@@ -18,7 +17,8 @@ class MessagesScreen extends ConsumerWidget {
     final businessesAsync = ref.watch(businessesProvider);
 
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
+      backgroundColor:
+          CupertinoDynamicColor.resolve(AppColors.background, context),
       child: businessesAsync.when(
         data: (businesses) {
           if (businesses.isEmpty) {
@@ -30,24 +30,20 @@ class MessagesScreen extends ConsumerWidget {
                     Icon(
                       CupertinoIcons.clock,
                       size: 48,
-                      color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                      color: CupertinoDynamicColor.resolve(
+                          AppColors.textTertiary, context),
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'No activity yet',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: CupertinoColors.secondaryLabel.resolveFrom(context),
-                      ),
+                      style: AppTypography.titleMedium(context),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppConstants.contentGap),
                     Text(
                       'Your recent actions will appear here',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w400,
-                        color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                      style: AppTypography.labelLarge(context).copyWith(
+                        color: CupertinoDynamicColor.resolve(
+                            AppColors.textTertiary, context),
                       ),
                     ),
                   ],
@@ -66,7 +62,8 @@ class MessagesScreen extends ConsumerWidget {
 
           // Group by time period
           final now = DateTime.now();
-          DateTime eventDate(Business b) => b.updatedAt ?? b.createdAt ?? DateTime.now();
+          DateTime eventDate(Business b) =>
+              b.updatedAt ?? b.createdAt ?? DateTime.now();
 
           final today = sorted
               .where((b) => now.difference(eventDate(b)).inHours < 24)
@@ -79,67 +76,82 @@ class MessagesScreen extends ConsumerWidget {
               .where((b) => now.difference(eventDate(b)).inDays >= 7)
               .toList();
 
-          return SafeArea(
-            bottom: false,
-            child: CustomScrollView(
-              physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
-              ),
-              slivers: [
-                CupertinoSliverNavigationBar(
-                  largeTitle: const Text('Activity'),
-                  border: null,
-                ),
-
-                // Summary text
-                SliverToBoxAdapter(
+          return CustomScrollView(
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            slivers: [
+              // Custom title header
+              SliverToBoxAdapter(
+                child: SafeArea(
+                  bottom: false,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppConstants.pageHorizontal,
+                      16,
+                      AppConstants.pageHorizontal,
+                      0,
+                    ),
                     child: Text(
-                      _summaryText(today.length, thisWeek.length),
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: CupertinoColors.tertiaryLabel.resolveFrom(context),
-                      ),
+                      'Activity',
+                      style: AppTypography.displayLarge(context),
                     ),
                   ),
                 ),
+              ),
 
-                // Today group
-                if (today.isNotEmpty)
-                  ..._buildGroup(
-                    context,
-                    label: 'TODAY',
-                    items: today,
-                    density: _Density.full,
-                    animationOffset: 0,
+              // Summary text
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppConstants.pageHorizontal,
+                    AppConstants.contentGap,
+                    AppConstants.pageHorizontal,
+                    AppConstants.itemGap,
                   ),
-
-                // This week group
-                if (thisWeek.isNotEmpty)
-                  ..._buildGroup(
-                    context,
-                    label: 'THIS WEEK',
-                    items: thisWeek,
-                    density: _Density.medium,
-                    animationOffset: today.length,
+                  child: Text(
+                    _summaryText(today.length, thisWeek.length),
+                    style: AppTypography.labelLarge(context).copyWith(
+                      color: CupertinoDynamicColor.resolve(
+                          AppColors.textTertiary, context),
+                    ),
                   ),
+                ),
+              ),
 
-                // Earlier group
-                if (earlier.isNotEmpty)
-                  ..._buildGroup(
-                    context,
-                    label: 'EARLIER',
-                    items: earlier,
-                    density: _Density.compact,
-                    animationOffset: today.length + thisWeek.length,
-                  ),
+              // Today group
+              if (today.isNotEmpty)
+                ..._buildGroup(
+                  context,
+                  label: 'TODAY',
+                  items: today,
+                  density: _Density.full,
+                  animationOffset: 0,
+                ),
 
-                // Bottom spacing
-                const SliverToBoxAdapter(child: SizedBox(height: 100)),
-              ],
-            ),
+              // This week group
+              if (thisWeek.isNotEmpty)
+                ..._buildGroup(
+                  context,
+                  label: 'THIS WEEK',
+                  items: thisWeek,
+                  density: _Density.medium,
+                  animationOffset: today.length,
+                ),
+
+              // Earlier group
+              if (earlier.isNotEmpty)
+                ..._buildGroup(
+                  context,
+                  label: 'EARLIER',
+                  items: earlier,
+                  density: _Density.compact,
+                  animationOffset: today.length + thisWeek.length,
+                ),
+
+              // Bottom spacing
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
+            ],
           );
         },
         loading: () => const ActivitySkeleton(),
@@ -174,36 +186,28 @@ class MessagesScreen extends ConsumerWidget {
       // Section header
       SliverToBoxAdapter(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-          child: Row(
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
-                  color: CupertinoColors.tertiaryLabel.resolveFrom(context),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  items.length.toString(),
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
-            ],
+          padding: const EdgeInsets.fromLTRB(
+            AppConstants.pageHorizontal,
+            AppConstants.sectionGap,
+            AppConstants.pageHorizontal,
+            AppConstants.contentGap,
+          ),
+          child: Text(
+            label,
+            style: AppTypography.labelSmall(context),
+          ),
+        ),
+      ),
+
+      // Divider under section header
+      SliverToBoxAdapter(
+        child: Padding(
+          padding:
+              const EdgeInsets.symmetric(horizontal: AppConstants.pageHorizontal),
+          child: Container(
+            height: 0.5,
+            color:
+                CupertinoDynamicColor.resolve(AppColors.divider, context),
           ),
         ),
       ),
@@ -211,48 +215,39 @@ class MessagesScreen extends ConsumerWidget {
       // Featured first item (only for Today)
       if (featured && featuredBusiness != null)
         SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-            child: _FeaturedActivityCard(
-              business: featuredBusiness,
-              onTap: () => context.push('/business/${featuredBusiness.id}'),
-            ),
+          child: _FeaturedActivityRow(
+            business: featuredBusiness,
+            onTap: () => context.push('/business/${featuredBusiness.id}'),
           )
-              .animate(delay: Duration(milliseconds: 50 * animationOffset))
-              .fadeIn(duration: 300.ms)
-              .slideX(
-                begin: -0.03,
-                duration: 350.ms,
-                curve: Curves.easeOutCubic,
+              .animate(
+                  delay: AppConstants.staggerDelay * animationOffset)
+              .fadeIn(duration: AppConstants.standardAnimation)
+              .slideY(
+                begin: AppConstants.entranceSlideDistance / 100,
+                duration: AppConstants.standardAnimation,
+                curve: Curves.easeOut,
               ),
         ),
 
-      // Remaining items in grouped card
+      // Remaining items as flat rows with dividers
       if (remainingItems.isNotEmpty)
         SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: BrutalCard(
-              padding: EdgeInsets.zero,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: List.generate(remainingItems.length, (index) {
-                  final business = remainingItems[index];
-                  final isLast = index == remainingItems.length - 1;
-                  final globalIndex =
-                      animationOffset + (featured ? index + 1 : index);
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(remainingItems.length, (index) {
+              final business = remainingItems[index];
+              final isLast = index == remainingItems.length - 1;
+              final globalIndex =
+                  animationOffset + (featured ? index + 1 : index);
 
-                  return _ActivityTile(
-                    business: business,
-                    index: globalIndex,
-                    showDivider: !isLast,
-                    density: density,
-                    onTap: () =>
-                        context.push('/business/${business.id}'),
-                  );
-                }),
-              ),
-            ),
+              return _ActivityRow(
+                business: business,
+                index: globalIndex,
+                showDivider: !isLast,
+                density: density,
+                onTap: () => context.push('/business/${business.id}'),
+              );
+            }),
           ),
         ),
     ];
@@ -266,29 +261,30 @@ class MessagesScreen extends ConsumerWidget {
 enum _Density { full, medium, compact }
 
 // ---------------------------------------------------------------------------
-// Featured activity card — promoted first item of "Today"
+// Featured activity row -- promoted first item of "Today"
 // ---------------------------------------------------------------------------
 
-class _FeaturedActivityCard extends StatefulWidget {
+class _FeaturedActivityRow extends StatefulWidget {
   final Business business;
   final VoidCallback onTap;
 
-  const _FeaturedActivityCard({
+  const _FeaturedActivityRow({
     required this.business,
     required this.onTap,
   });
 
   @override
-  State<_FeaturedActivityCard> createState() => _FeaturedActivityCardState();
+  State<_FeaturedActivityRow> createState() => _FeaturedActivityRowState();
 }
 
-class _FeaturedActivityCardState extends State<_FeaturedActivityCard> {
+class _FeaturedActivityRowState extends State<_FeaturedActivityRow> {
   bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
     final business = widget.business;
-    final timeAgo = _timeAgo(business.updatedAt ?? business.createdAt ?? DateTime.now());
+    final timeAgo =
+        _timeAgo(business.updatedAt ?? business.createdAt ?? DateTime.now());
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
@@ -298,69 +294,57 @@ class _FeaturedActivityCardState extends State<_FeaturedActivityCard> {
       },
       onTapCancel: () => setState(() => _pressed = false),
       behavior: HitTestBehavior.opaque,
-      child: AnimatedScale(
-        scale: _pressed ? 0.98 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: BrutalCard(
-          padding: EdgeInsets.zero,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              border: Border(
-                left: BorderSide(
-                  color: business.statusColor,
-                  width: 3,
-                ),
+      child: AnimatedContainer(
+        duration: AppConstants.quickAnimation,
+        color: _pressed
+            ? CupertinoColors.systemFill.resolveFrom(context)
+            : const Color(0x00000000),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppConstants.pageHorizontal,
+          vertical: 14,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: business.statusColor.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(AppColors.radiusM),
+              ),
+              alignment: Alignment.center,
+              child: Icon(business.statusIcon,
+                  color: business.statusColor, size: 20),
+            ),
+            const SizedBox(width: AppConstants.itemGap),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    business.name,
+                    style: AppTypography.titleMedium(context),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${_statusDescription(business.status)} · $timeAgo',
+                    style: AppTypography.labelLarge(context).copyWith(
+                      color: CupertinoDynamicColor.resolve(
+                          AppColors.textSecondary, context),
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: business.statusColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  alignment: Alignment.center,
-                  child: Icon(business.statusIcon,
-                      color: business.statusColor, size: 20),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        business.name,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: CupertinoColors.label.resolveFrom(context),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        '${_statusDescription(business.status)} · $timeAgo',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: business.statusColor.withValues(alpha: 0.8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  CupertinoIcons.chevron_right,
-                  color: CupertinoColors.tertiaryLabel.resolveFrom(context),
-                  size: 20,
-                ),
-              ],
+            Icon(
+              CupertinoIcons.chevron_right,
+              color: CupertinoDynamicColor.resolve(
+                  AppColors.textTertiary, context),
+              size: 16,
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -368,17 +352,17 @@ class _FeaturedActivityCardState extends State<_FeaturedActivityCard> {
 }
 
 // ---------------------------------------------------------------------------
-// Activity tile — density-aware rendering
+// Activity row -- density-aware rendering
 // ---------------------------------------------------------------------------
 
-class _ActivityTile extends StatefulWidget {
+class _ActivityRow extends StatefulWidget {
   final Business business;
   final int index;
   final bool showDivider;
   final _Density density;
   final VoidCallback onTap;
 
-  const _ActivityTile({
+  const _ActivityRow({
     required this.business,
     required this.index,
     required this.onTap,
@@ -387,29 +371,19 @@ class _ActivityTile extends StatefulWidget {
   });
 
   @override
-  State<_ActivityTile> createState() => _ActivityTileState();
+  State<_ActivityRow> createState() => _ActivityRowState();
 }
 
-class _ActivityTileState extends State<_ActivityTile> {
+class _ActivityRowState extends State<_ActivityRow> {
   bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
     final business = widget.business;
-    final timeAgo = _timeAgo(business.updatedAt ?? business.createdAt ?? DateTime.now());
+    final timeAgo =
+        _timeAgo(business.updatedAt ?? business.createdAt ?? DateTime.now());
     final density = widget.density;
 
-    // Progressive density: padding, icon size, content
-    final hPad = switch (density) {
-      _Density.full => 14.0,
-      _Density.medium => 12.0,
-      _Density.compact => 10.0,
-    };
-    final vPad = switch (density) {
-      _Density.full => 12.0,
-      _Density.medium => 10.0,
-      _Density.compact => 8.0,
-    };
     final iconSize = switch (density) {
       _Density.full => 36.0,
       _Density.medium => 36.0,
@@ -419,6 +393,11 @@ class _ActivityTileState extends State<_ActivityTile> {
       _Density.full => 18.0,
       _Density.medium => 18.0,
       _Density.compact => 14.0,
+    };
+    final vPad = switch (density) {
+      _Density.full => 12.0,
+      _Density.medium => 10.0,
+      _Density.compact => 8.0,
     };
 
     return GestureDetector(
@@ -430,7 +409,7 @@ class _ActivityTileState extends State<_ActivityTile> {
       onTapCancel: () => setState(() => _pressed = false),
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 80),
+        duration: AppConstants.quickAnimation,
         color: _pressed
             ? CupertinoColors.systemFill.resolveFrom(context)
             : const Color(0x00000000),
@@ -438,53 +417,53 @@ class _ActivityTileState extends State<_ActivityTile> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
+              padding: EdgeInsets.symmetric(
+                horizontal: AppConstants.pageHorizontal,
+                vertical: vPad,
+              ),
               child: Row(
                 children: [
-                  // Icon — smaller for compact
                   Container(
                     width: iconSize,
                     height: iconSize,
                     decoration: BoxDecoration(
-                      color: business.statusColor.withValues(alpha: 0.12),
+                      color: business.statusColor.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(
-                          density == _Density.compact ? 6 : 8),
+                          density == _Density.compact
+                              ? AppColors.radiusS
+                              : AppColors.radiusM),
                     ),
                     alignment: Alignment.center,
                     child: Icon(business.statusIcon,
                         color: business.statusColor, size: iconInnerSize),
                   ),
-                  SizedBox(width: density == _Density.compact ? 8 : 12),
+                  SizedBox(
+                      width: density == _Density.compact ? 8 : AppConstants.itemGap),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           business.name,
-                          style: TextStyle(
-                            fontSize: density == _Density.compact ? 14 : 15,
-                            fontWeight: FontWeight.w600,
-                            color: CupertinoColors.label.resolveFrom(context),
-                          ),
+                          style: density == _Density.compact
+                              ? AppTypography.bodyMedium(context)
+                              : AppTypography.titleMedium(context),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        // Compact: only status dot, no full text
                         if (density != _Density.compact) ...[
                           const SizedBox(height: 2),
                           Text(
                             '${_statusLabel(business.status)} · $timeAgo',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w400,
-                              color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                            style: AppTypography.labelLarge(context).copyWith(
+                              color: CupertinoDynamicColor.resolve(
+                                  AppColors.textTertiary, context),
                             ),
                           ),
                         ],
                       ],
                     ),
                   ),
-                  // Compact: just a colored dot instead of chevron
                   if (density == _Density.compact)
                     Container(
                       width: 6,
@@ -497,28 +476,35 @@ class _ActivityTileState extends State<_ActivityTile> {
                   else
                     Icon(
                       CupertinoIcons.chevron_right,
-                      color: CupertinoColors.tertiaryLabel.resolveFrom(context),
-                      size: 18,
+                      color: CupertinoDynamicColor.resolve(
+                          AppColors.textTertiary, context),
+                      size: 16,
                     ),
                 ],
               ),
             ),
             if (widget.showDivider)
-              Container(
-                margin: const EdgeInsets.only(left: 16),
-                height: 0.5,
-                color: CupertinoColors.separator.resolveFrom(context),
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: AppConstants.pageHorizontal,
+                  right: AppConstants.pageHorizontal,
+                ),
+                child: Container(
+                  height: 0.5,
+                  color: CupertinoDynamicColor.resolve(
+                      AppColors.divider, context),
+                ),
               ),
           ],
         ),
       ),
     )
-        .animate(delay: Duration(milliseconds: 50 * widget.index))
-        .fadeIn(duration: 300.ms)
-        .slideX(
-          begin: -0.03,
-          duration: 350.ms,
-          curve: Curves.easeOutCubic,
+        .animate(delay: AppConstants.staggerDelay * widget.index)
+        .fadeIn(duration: AppConstants.standardAnimation)
+        .slideY(
+          begin: AppConstants.entranceSlideDistance / 100,
+          duration: AppConstants.standardAnimation,
+          curve: Curves.easeOut,
         );
   }
 }

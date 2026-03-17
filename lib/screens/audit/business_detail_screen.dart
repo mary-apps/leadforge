@@ -9,8 +9,8 @@ import '../../models/business.dart';
 import '../../models/audit_result.dart';
 import '../../services/audit_service.dart';
 import '../../providers/businesses_provider.dart';
-import '../../widgets/animated_score_gauge.dart';
-import '../../widgets/brutal_card.dart';
+import '../../widgets/inline_score.dart';
+import '../../widgets/app_button.dart';
 import '../../widgets/ios_toast.dart';
 import '../../widgets/share_business_sheet.dart';
 import '../../widgets/skeleton_loaders.dart';
@@ -51,7 +51,7 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isAuditing = false);
-        IosToast.show(context, 'Error: $e', icon: CupertinoIcons.exclamationmark_triangle);
+        IosToast.show(context, 'Error: $e');
       }
     }
   }
@@ -61,203 +61,249 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
     final businessAsync = ref.watch(businessProvider(widget.businessId));
 
     return businessAsync.when(
-        data: (business) {
-          if (business == null) {
-            return const CupertinoPageScaffold(
-              navigationBar: CupertinoNavigationBar(
-                previousPageTitle: 'Pipeline',
-                middle: Text('Not Found'),
-              ),
-              child: Center(child: Text('Business not found')),
-            );
-          }
-
+      data: (business) {
+        if (business == null) {
           return CupertinoPageScaffold(
-            navigationBar: CupertinoNavigationBar(
-              previousPageTitle: 'Pipeline',
-              middle: Text(business.name),
-              trailing: CupertinoButton(
-                padding: EdgeInsets.zero,
-                child: const Icon(CupertinoIcons.share),
-                onPressed: () {
-                  ShareBusinessSheet.show(context, business);
-                },
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppConstants.pageHorizontal),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 16),
+                    GestureDetector(
+                      onTap: () => context.pop(),
+                      child: Text(
+                        '\u2190 Pipeline',
+                        style: AppTypography.labelLarge(context),
+                      ),
+                    ),
+                    const Expanded(
+                      child: Center(child: Text('Business not found')),
+                    ),
+                  ],
+                ),
               ),
             ),
-            child: CustomScrollView(
-              physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
-              ),
-              slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      const SizedBox(height: 16),
+          );
+        }
 
-                      // Business info header
-                      CupertinoListSection.insetGrouped(
-                        margin: EdgeInsets.zero,
-                        children: [
-                          CupertinoListTile(
-                            leading: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: business.webPresenceColor
-                                    .withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              alignment: Alignment.center,
-                              child: Icon(business.webPresenceIcon,
-                                  color: business.webPresenceColor,
-                                  size: 22),
-                            ),
-                            title: Text(
-                              business.name,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            subtitle: business.address != null
-                                ? Text(business.address!)
-                                : null,
+        return CupertinoPageScaffold(
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppConstants.pageHorizontal),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    SizedBox(
+                        height: MediaQuery.of(context).padding.top + 16),
+
+                    // Back link + share row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        GestureDetector(
+                          onTap: () => context.pop(),
+                          child: Text(
+                            '\u2190 Pipeline',
+                            style: AppTypography.labelLarge(context),
                           ),
-                          if (business.rating != null)
-                            CupertinoListTile(
-                              leading: const Icon(
-                                CupertinoIcons.star_fill,
-                                color: AppColors.warning,
-                                size: 20,
-                              ),
-                              title: Row(
-                                children: [
-                                  ...List.generate(5, (i) {
-                                    final fill = (business.rating ?? 0) - i;
-                                    return Icon(
-                                      fill >= 1
-                                          ? CupertinoIcons.star_fill
-                                          : fill >= 0.5
-                                              ? CupertinoIcons.star_lefthalf_fill
-                                              : CupertinoIcons.star,
-                                      color: AppColors.warning,
-                                      size: 14,
-                                    );
-                                  }),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    '${business.rating} (${business.reviewsCount})',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: CupertinoColors.secondaryLabel
-                                          .resolveFrom(context),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            ShareBusinessSheet.show(context, business);
+                          },
+                          child: Icon(
+                            CupertinoIcons.share,
+                            size: 20,
+                            color: CupertinoDynamicColor.resolve(
+                                AppColors.accent, context),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppConstants.sectionGap),
+
+                    // Business name
+                    Text(
+                      business.name,
+                      style: AppTypography.headlineLarge(context),
+                    )
+                        .animate()
+                        .fadeIn(duration: 400.ms)
+                        .slideY(
+                          begin: AppConstants.entranceSlideDistance / 100,
+                          duration: 500.ms,
+                          curve: Curves.easeOutCubic,
+                        ),
+                    const SizedBox(height: AppConstants.contentGap),
+
+                    // Address
+                    if (business.address != null)
+                      Padding(
+                        padding: const EdgeInsets.only(
+                            bottom: AppConstants.contentGap),
+                        child: Text(
+                          business.address!,
+                          style: AppTypography.bodyMedium(context).copyWith(
+                            color: CupertinoDynamicColor.resolve(
+                                AppColors.textSecondary, context),
+                          ),
+                        ),
+                      ),
+
+                    // Rating stars
+                    if (business.rating != null)
+                      Row(
+                        children: [
+                          ...List.generate(5, (i) {
+                            final fill = (business.rating ?? 0) - i;
+                            return Icon(
+                              fill >= 1
+                                  ? CupertinoIcons.star_fill
+                                  : fill >= 0.5
+                                      ? CupertinoIcons.star_lefthalf_fill
+                                      : CupertinoIcons.star,
+                              color: CupertinoDynamicColor.resolve(
+                                  AppColors.scoreMid, context),
+                              size: 14,
+                            );
+                          }),
+                          const SizedBox(width: 6),
+                          Text(
+                            '${business.rating} (${business.reviewsCount})',
+                            style: AppTypography.bodyMedium(context).copyWith(
+                              color: CupertinoDynamicColor.resolve(
+                                  AppColors.textSecondary, context),
                             ),
+                          ),
                         ],
+                      ),
+                    const SizedBox(height: AppConstants.sectionGap),
+
+                    // Contact buttons — flat text links
+                    Row(
+                      children: [
+                        if (business.phone != null)
+                          _ContactLink(
+                            icon: CupertinoIcons.phone,
+                            label: 'Call',
+                            onTap: () => launchUrl(
+                                Uri.parse('tel:${business.phone}')),
+                          ),
+                        if (business.website != null) ...[
+                          if (business.phone != null)
+                            const SizedBox(width: 24),
+                          _ContactLink(
+                            icon: CupertinoIcons.globe,
+                            label: 'Website',
+                            onTap: () => launchUrl(
+                                Uri.parse(business.website!),
+                                mode: LaunchMode.externalApplication),
+                          ),
+                        ],
+                        if (business.address != null) ...[
+                          if (business.phone != null ||
+                              business.website != null)
+                            const SizedBox(width: 24),
+                          _ContactLink(
+                            icon: CupertinoIcons.map,
+                            label: 'Maps',
+                            onTap: () => launchUrl(
+                              Uri.parse(
+                                  'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(business.address!)}'),
+                              mode: LaunchMode.externalApplication,
+                            ),
+                          ),
+                        ],
+                      ],
+                    )
+                        .animate(delay: 200.ms)
+                        .fadeIn(duration: 300.ms)
+                        .slideX(
+                          begin: -0.03,
+                          duration: 350.ms,
+                          curve: Curves.easeOutCubic,
+                        ),
+                    const SizedBox(height: AppConstants.sectionGap),
+
+                    // Audit section
+                    if (!business.isAudited && !_isAuditing)
+                      AppButton(
+                        label: 'Analyze Business',
+                        onPressed: () => _runAudit(business),
                       )
-                          .animate()
+                          .animate(delay: 300.ms)
                           .fadeIn(duration: 400.ms)
                           .slideY(
-                            begin: 0.04,
+                            begin: AppConstants.entranceSlideDistance / 100,
+                            duration: 400.ms,
+                            curve: Curves.easeOutQuart,
+                          ),
+
+                    if (_isAuditing) _AnalyzingAnimation(),
+
+                    if (business.isAudited || _auditResult != null) ...[
+                      // Inline score
+                      InlineScore(
+                        score: _auditResult?.score ??
+                            business.auditScore ??
+                            0,
+                        description: _auditResult?.diagnosis ??
+                            business.auditDiagnosis,
+                      )
+                          .animate(delay: 100.ms)
+                          .fadeIn(duration: 400.ms)
+                          .slideY(
+                            begin: AppConstants.entranceSlideDistance / 100,
                             duration: 500.ms,
                             curve: Curves.easeOutCubic,
                           ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: AppConstants.sectionGap),
 
-                      // Contact buttons
-                      Row(
-                        children: [
-                          if (business.phone != null)
-                            Expanded(
-                              child: CupertinoButton(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                color: AppColors.success.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(AppColors.radiusL),
-                                onPressed: () => launchUrl(
-                                    Uri.parse('tel:${business.phone}')),
-                                child: Column(
-                                  children: [
-                                    Icon(CupertinoIcons.phone,
-                                        color: AppColors.success, size: 20),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Call',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.success,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                      // AI Analysis — flat layout with divider borders
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            top: BorderSide(
+                              color: CupertinoDynamicColor.resolve(
+                                  AppColors.divider, context),
+                              width: 1,
                             ),
-                          if (business.website != null) ...[
-                            if (business.phone != null)
-                              const SizedBox(width: 10),
-                            Expanded(
-                              child: CupertinoButton(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                color: AppColors.info.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(AppColors.radiusL),
-                                onPressed: () => launchUrl(
-                                    Uri.parse(business.website!),
-                                    mode: LaunchMode.externalApplication),
-                                child: Column(
-                                  children: [
-                                    Icon(CupertinoIcons.globe,
-                                        color: AppColors.info, size: 20),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Website',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.info,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                            bottom: BorderSide(
+                              color: CupertinoDynamicColor.resolve(
+                                  AppColors.divider, context),
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'AI ANALYSIS',
+                              style: AppTypography.labelSmall(context),
+                            ),
+                            const SizedBox(height: AppConstants.itemGap),
+                            Text(
+                              _auditResult?.diagnosis ??
+                                  business.auditDiagnosis ??
+                                  '',
+                              style:
+                                  AppTypography.bodyMedium(context).copyWith(
+                                color: CupertinoDynamicColor.resolve(
+                                    AppColors.textSecondary, context),
+                                height: 1.6,
                               ),
                             ),
                           ],
-                          if (business.address != null) ...[
-                            if (business.phone != null ||
-                                business.website != null)
-                              const SizedBox(width: 10),
-                            Expanded(
-                              child: CupertinoButton(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                color: AppColors.primary.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(AppColors.radiusL),
-                                onPressed: () => launchUrl(
-                                  Uri.parse(
-                                      'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(business.address!)}'),
-                                  mode: LaunchMode.externalApplication,
-                                ),
-                                child: Column(
-                                  children: [
-                                    Icon(CupertinoIcons.map,
-                                        color: AppColors.primary, size: 20),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Maps',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.primary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
+                        ),
                       )
                           .animate(delay: 200.ms)
                           .fadeIn(duration: 300.ms)
@@ -266,179 +312,76 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                             duration: 350.ms,
                             curve: Curves.easeOutCubic,
                           ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: AppConstants.sectionGap),
 
-                      // Audit section
-                      if (!business.isAudited && !_isAuditing)
-                        Center(
-                          child: CupertinoButton.filled(
-                            onPressed: () => _runAudit(business),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(CupertinoIcons.chart_bar, size: 18),
-                                SizedBox(width: 8),
-                                Text('Analyze Business'),
-                              ],
-                            ),
-                          ),
-                        )
-                            .animate(delay: 300.ms)
-                            .fadeIn(duration: 400.ms)
-                            .slideY(
-                              begin: 0.02,
-                              duration: 400.ms,
-                              curve: Curves.easeOutQuart,
-                            ),
-
-                      if (_isAuditing) _AnalyzingAnimation(),
-
-                      if (business.isAudited || _auditResult != null) ...[
-                        // Score gauge
-                        Center(
-                          child: AnimatedScoreGauge(
-                            score: _auditResult?.score ??
-                                business.auditScore ??
-                                0,
-                            onComplete: () => Haptics.medium(),
-                          ),
-                        )
-                            .animate(delay: 100.ms)
-                            .fadeIn(duration: 400.ms)
-                            .scale(
-                              begin: const Offset(0.95, 0.95),
-                              duration: 500.ms,
-                              curve: Curves.easeOutBack,
-                            ),
-                        const SizedBox(height: 28),
-
-                        // AI Analysis
-                        BrutalCard(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 28,
-                                    height: 28,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.info
-                                          .withValues(alpha: 0.12),
-                                      borderRadius:
-                                          BorderRadius.circular(8),
-                                    ),
-                                    child: const Icon(
-                                      CupertinoIcons.sparkles,
-                                      size: 14,
-                                      color: AppColors.info,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    'AI Analysis',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: CupertinoColors.label
-                                          .resolveFrom(context),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 14),
-                              Text(
-                                _auditResult?.diagnosis ??
-                                    business.auditDiagnosis ??
-                                    '',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: CupertinoColors.secondaryLabel
-                                      .resolveFrom(context),
-                                  height: 1.6,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                            .animate(delay: 200.ms)
-                            .fadeIn(duration: 300.ms)
-                            .slideX(
-                              begin: -0.03,
-                              duration: 350.ms,
-                              curve: Curves.easeOutCubic,
-                            ),
-                        const SizedBox(height: 20),
-
-                        // CTAs
-                        Row(
-                          children: [
-                            Expanded(
-                              child: CupertinoButton.filled(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 14),
-                                onPressed: () {
-                                  context.push(
-                                      '/business/${business.id}/build-demo');
-                                },
-                                child: const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(CupertinoIcons.globe, size: 18),
-                                    SizedBox(width: 8),
-                                    Text('Build Demo'),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: CupertinoButton(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 14),
-                                color: AppColors.success,
-                                borderRadius: BorderRadius.circular(8),
-                                onPressed: () {
-                                  context.push(
-                                      '/business/${business.id}/outreach');
-                                },
-                                child: const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(CupertinoIcons.paperplane,
-                                        size: 18,
-                                        color: CupertinoColors.white),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'Outreach',
-                                      style: TextStyle(
-                                          color: CupertinoColors.white),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        )
-                            .animate(delay: 300.ms)
-                            .slideY(
-                              begin: 0.02,
-                              duration: 400.ms,
-                              curve: Curves.easeOutQuart,
-                            ),
-                      ],
-                      const SizedBox(height: 120),
-                    ]),
-                  ),
+                      // CTA buttons
+                      AppButton(
+                        label: 'Create Demo',
+                        onPressed: () {
+                          context
+                              .push('/business/${business.id}/build-demo');
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      AppButton(
+                        label: 'Compose Outreach',
+                        variant: AppButtonVariant.secondary,
+                        onPressed: () {
+                          context.push('/business/${business.id}/outreach');
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: 120),
+                  ]),
                 ),
-              ],
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const SafeArea(child: BusinessDetailSkeleton()),
+      error: (error, _) => Center(child: Text('Error: $error')),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Contact link — flat icon + label pair
+// ---------------------------------------------------------------------------
+
+class _ContactLink extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _ContactLink({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final accentCol =
+        CupertinoDynamicColor.resolve(AppColors.accent, context);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: accentCol),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: AppTypography.labelLarge(context).copyWith(
+              color: accentCol,
+              fontWeight: FontWeight.w500,
             ),
-          );
-        },
-        loading: () => const SafeArea(child: BusinessDetailSkeleton()),
-        error: (error, _) => Center(child: Text('Error: $error')),
-      );
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -490,9 +433,26 @@ class _AnalyzingAnimationState extends State<_AnalyzingAnimation>
 
   @override
   Widget build(BuildContext context) {
+    final accentCol =
+        CupertinoDynamicColor.resolve(AppColors.accent, context);
+    final scoreGoodCol =
+        CupertinoDynamicColor.resolve(AppColors.scoreGood, context);
+    final dividerCol =
+        CupertinoDynamicColor.resolve(AppColors.divider, context);
+    final textPrimaryCol =
+        CupertinoDynamicColor.resolve(AppColors.textPrimary, context);
+    final textSecondaryCol =
+        CupertinoDynamicColor.resolve(AppColors.textSecondary, context);
+    final textTertiaryCol =
+        CupertinoDynamicColor.resolve(AppColors.textTertiary, context);
+
     return Center(
-      child: BrutalCard(
+      child: Container(
         padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          border: Border.all(color: dividerCol, width: 1),
+          borderRadius: BorderRadius.circular(AppColors.radiusM),
+        ),
         child: Column(
           children: [
             AnimatedBuilder(
@@ -510,12 +470,12 @@ class _AnalyzingAnimationState extends State<_AnalyzingAnimation>
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.12),
+                  color: accentCol.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(AppColors.radiusL),
                 ),
-                child: const Icon(
+                child: Icon(
                   CupertinoIcons.chart_bar,
-                  color: AppColors.primary,
+                  color: accentCol,
                   size: 24,
                 ),
               ),
@@ -533,7 +493,7 @@ class _AnalyzingAnimationState extends State<_AnalyzingAnimation>
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: isActive
-                      ? AppColors.primary.withValues(alpha: 0.06)
+                      ? accentCol.withValues(alpha: 0.04)
                       : const Color(0x00000000),
                   borderRadius: BorderRadius.circular(AppColors.radiusS),
                 ),
@@ -551,11 +511,10 @@ class _AnalyzingAnimationState extends State<_AnalyzingAnimation>
                         key: ValueKey('$index-$isDone-$isActive'),
                         size: 16,
                         color: isActive
-                            ? AppColors.primary
+                            ? accentCol
                             : isDone
-                                ? AppColors.success
-                                : CupertinoColors.tertiaryLabel
-                                    .resolveFrom(context),
+                                ? scoreGoodCol
+                                : textTertiaryCol,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -564,12 +523,10 @@ class _AnalyzingAnimationState extends State<_AnalyzingAnimation>
                       style: TextStyle(
                         fontSize: 15,
                         color: isActive
-                            ? CupertinoColors.label.resolveFrom(context)
+                            ? textPrimaryCol
                             : isDone
-                                ? CupertinoColors.secondaryLabel
-                                    .resolveFrom(context)
-                                : CupertinoColors.tertiaryLabel
-                                    .resolveFrom(context),
+                                ? textSecondaryCol
+                                : textTertiaryCol,
                         fontWeight:
                             isActive ? FontWeight.w600 : FontWeight.normal,
                       ),

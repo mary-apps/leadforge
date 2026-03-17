@@ -1,4 +1,3 @@
-import 'package:confetti/confetti.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,8 +14,7 @@ import '../../services/build_service.dart';
 import '../../providers/businesses_provider.dart';
 import '../../models/profile.dart';
 import '../../providers/profile_provider.dart';
-import '../../widgets/brutal_button.dart';
-import '../../widgets/brutal_card.dart';
+import '../../widgets/app_button.dart';
 import '../../widgets/ios_toast.dart';
 import '../../utils/haptics.dart';
 
@@ -35,14 +33,11 @@ class BuildDemoScreen extends ConsumerStatefulWidget {
 class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
   bool _isBuilding = false;
   Demo? _generatedDemo;
-  late ConfettiController _confettiController;
   final _notesController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _confettiController =
-        ConfettiController(duration: const Duration(seconds: 2));
     _loadExistingDemo();
   }
 
@@ -55,7 +50,6 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
 
   @override
   void dispose() {
-    _confettiController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -86,14 +80,13 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
           _isBuilding = false;
         });
         Haptics.medium();
-        _confettiController.play();
+        IosToast.show(context, 'Demo created!');
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isBuilding = false);
         Haptics.heavy();
-        IosToast.show(context, 'Error: $e',
-            icon: CupertinoIcons.exclamationmark_triangle);
+        IosToast.show(context, 'Error: $e');
       }
     }
   }
@@ -127,8 +120,7 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
   void _copyLink(String url) {
     Clipboard.setData(ClipboardData(text: url));
     Haptics.medium();
-    IosToast.show(context, 'Link copied to clipboard',
-        icon: CupertinoIcons.check_mark);
+    IosToast.show(context, 'Link copied to clipboard');
   }
 
   void _shareDemo() {
@@ -143,188 +135,131 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
   @override
   Widget build(BuildContext context) {
     final businessAsync = ref.watch(businessProvider(widget.businessId));
+    final bg = CupertinoDynamicColor.resolve(AppColors.background, context);
 
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('Build Demo Site'),
-      ),
-      child: Stack(
-        children: [
-          SafeArea(
-            child: businessAsync.when(
-              data: (business) {
-                if (business == null) {
-                  return const Center(child: Text('Business not found'));
-                }
+      backgroundColor: bg,
+      child: SafeArea(
+        child: businessAsync.when(
+          data: (business) {
+            if (business == null) {
+              return Center(
+                child: Text(
+                  'Business not found',
+                  style: AppTypography.bodyMedium(context),
+                ),
+              );
+            }
 
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'Create a demo website for',
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppColors.textTertiary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        business.name,
-                        style: AppTypography.headlineLarge.copyWith(
-                          fontSize: 22,
-                          letterSpacing: -0.5,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppConstants.pageHorizontal,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 12),
 
-                      // Business data summary
-                      _BusinessDataSummary(business: business),
-                      const SizedBox(height: 20),
-
-                      // Custom notes for AI
-                      Text(
-                        'CUSTOM INSTRUCTIONS',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.2,
-                          color: AppColors.textTertiary,
+                  // Back nav
+                  GestureDetector(
+                    onTap: () => context.pop(),
+                    child: Text(
+                      '\u2190 ${business.name}',
+                      style: AppTypography.bodyMedium(context).copyWith(
+                        color: CupertinoDynamicColor.resolve(
+                          AppColors.textSecondary,
+                          context,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      CupertinoTextField(
-                        controller: _notesController,
-                        maxLines: 3,
-                        maxLength: 200,
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppColors.textPrimary,
-                        ),
-                        placeholder:
-                            'e.g. "Highlight their new menu" or "Focus on premium services"',
-                        placeholderStyle: AppTypography.bodyMedium.copyWith(
-                          color: AppColors.textTertiary,
-                          fontSize: 13,
-                        ),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius:
-                              BorderRadius.circular(AppColors.radiusM),
-                          border: Border.all(
-                            color: AppColors.border,
-                            width: 0.5,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      if (_generatedDemo == null && !_isBuilding)
-                        _GradientCTA(
-                          label: 'Generate Demo Site',
-                          icon: CupertinoIcons.sparkles,
-                          onPressed: () => _buildDemo(business),
-                        ),
-
-                      if (_isBuilding) _BuildingAnimation(),
-
-                      if (_generatedDemo != null)
-                        _DemoResult(
-                          demo: _generatedDemo!,
-                          onCopyLink: _copyLink,
-                          onShare: _shareDemo,
-                        ),
-                    ],
+                    ),
                   ),
-                );
-              },
-              loading: () => const Center(child: CupertinoActivityIndicator()),
-              error: (error, _) => Center(child: Text('Error: $error')),
-            ),
-          ),
-          Align(
-            alignment: Alignment.topCenter,
-            child: ConfettiWidget(
-              confettiController: _confettiController,
-              blastDirectionality: BlastDirectionality.explosive,
-              numberOfParticles: 25,
-              maxBlastForce: 12,
-              minBlastForce: 4,
-              gravity: 0.15,
-              shouldLoop: false,
-              colors: const [
-                AppColors.primary,
-                AppColors.primaryLight,
-                AppColors.success,
-                AppColors.secondary,
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+                  const SizedBox(height: AppConstants.sectionGap),
 
-// Gradient CTA button
-class _GradientCTA extends StatefulWidget {
-  final String label;
-  final IconData icon;
-  final VoidCallback onPressed;
+                  // Title
+                  Text(
+                    'Create Demo',
+                    style: AppTypography.headlineLarge(context),
+                  ),
+                  const SizedBox(height: AppConstants.sectionGap),
 
-  const _GradientCTA({
-    required this.label,
-    required this.icon,
-    required this.onPressed,
-  });
+                  // Business data summary
+                  _BusinessDataSummary(business: business),
+                  const SizedBox(height: AppConstants.sectionGap),
 
-  @override
-  State<_GradientCTA> createState() => _GradientCTAState();
-}
+                  // Custom notes label
+                  Text(
+                    'CUSTOM INSTRUCTIONS',
+                    style: AppTypography.labelSmall(context).copyWith(
+                      color: CupertinoDynamicColor.resolve(
+                        AppColors.textTertiary,
+                        context,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppConstants.chipGap),
 
-class _GradientCTAState extends State<_GradientCTA> {
-  bool _pressed = false;
+                  // Notes field — search field styling, multi-line
+                  CupertinoTextField(
+                    controller: _notesController,
+                    maxLines: 3,
+                    maxLength: 200,
+                    style: AppTypography.bodyMedium(context).copyWith(
+                      color: CupertinoDynamicColor.resolve(
+                        AppColors.textPrimary,
+                        context,
+                      ),
+                    ),
+                    placeholder:
+                        'e.g. "Highlight their new menu" or "Focus on premium services"',
+                    placeholderStyle: AppTypography.bodyMedium(context).copyWith(
+                      color: CupertinoDynamicColor.resolve(
+                        AppColors.textTertiary,
+                        context,
+                      ),
+                      fontSize: 13,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: CupertinoDynamicColor.resolve(
+                        AppColors.searchField,
+                        context,
+                      ),
+                      borderRadius:
+                          BorderRadius.circular(AppColors.radiusM),
+                    ),
+                  ),
+                  const SizedBox(height: AppConstants.sectionGap),
 
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) {
-        setState(() => _pressed = false);
-        Haptics.medium();
-        widget.onPressed();
-      },
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedScale(
-        scale: _pressed ? 0.97 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            gradient: AppColors.primaryGradient,
-            borderRadius: BorderRadius.circular(AppColors.radiusM),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.3),
-                blurRadius: 16,
-                spreadRadius: -2,
-                offset: const Offset(0, 4),
+                  // Generate button
+                  if (_generatedDemo == null && !_isBuilding)
+                    AppButton(
+                      label: 'Generate Demo',
+                      onPressed: () => _buildDemo(business),
+                    ),
+
+                  if (_isBuilding) _BuildingAnimation(),
+
+                  if (_generatedDemo != null)
+                    _DemoResult(
+                      demo: _generatedDemo!,
+                      onCopyLink: _copyLink,
+                      onShare: _shareDemo,
+                    ),
+
+                  const SizedBox(height: 40),
+                ],
               ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(widget.icon, size: 20, color: AppColors.background),
-              const SizedBox(width: 8),
-              Text(
-                widget.label,
-                style: AppTypography.button
-                    .copyWith(color: AppColors.background, fontSize: 16),
-              ),
-            ],
+            );
+          },
+          loading: () => const Center(child: CupertinoActivityIndicator()),
+          error: (error, _) => Center(
+            child: Text(
+              'Error: $error',
+              style: AppTypography.bodyMedium(context),
+            ),
           ),
         ),
       ),
@@ -332,7 +267,7 @@ class _GradientCTAState extends State<_GradientCTA> {
   }
 }
 
-// Building animation card
+// Building animation
 class _BuildingAnimation extends StatefulWidget {
   @override
   State<_BuildingAnimation> createState() => _BuildingAnimationState();
@@ -366,8 +301,12 @@ class _BuildingAnimationState extends State<_BuildingAnimation> {
 
   @override
   Widget build(BuildContext context) {
-    return BrutalCard(
-      padding: const EdgeInsets.all(24),
+    return Container(
+      padding: const EdgeInsets.all(AppConstants.pageHorizontal),
+      decoration: BoxDecoration(
+        color: CupertinoDynamicColor.resolve(AppColors.surface, context),
+        borderRadius: BorderRadius.circular(AppColors.radiusM),
+      ),
       child: Column(
         children: [
           const CupertinoActivityIndicator(radius: 16),
@@ -388,23 +327,29 @@ class _BuildingAnimationState extends State<_BuildingAnimation> {
                           : CupertinoIcons.circle,
                       key: ValueKey('step-$index-$isDone'),
                       size: 18,
-                      color: isActive
-                          ? AppColors.primary
-                          : isDone
-                              ? AppColors.success
-                              : AppColors.textTertiary,
+                      color: CupertinoDynamicColor.resolve(
+                        isActive
+                            ? AppColors.accent
+                            : isDone
+                                ? AppColors.scoreGood
+                                : AppColors.textTertiary,
+                        context,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       _steps[index],
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: isActive
-                            ? AppColors.textPrimary
-                            : isDone
-                                ? AppColors.textSecondary
-                                : AppColors.textTertiary,
+                      style: AppTypography.bodyMedium(context).copyWith(
+                        color: CupertinoDynamicColor.resolve(
+                          isActive
+                              ? AppColors.textPrimary
+                              : isDone
+                                  ? AppColors.textSecondary
+                                  : AppColors.textTertiary,
+                          context,
+                        ),
                         fontWeight:
                             isActive ? FontWeight.w600 : FontWeight.normal,
                       ),
@@ -418,8 +363,7 @@ class _BuildingAnimationState extends State<_BuildingAnimation> {
       ),
     )
         .animate()
-        .fadeIn(duration: 300.ms)
-        .scale(begin: const Offset(0.97, 0.97), duration: 300.ms);
+        .fadeIn(duration: 300.ms);
   }
 }
 
@@ -437,8 +381,12 @@ class _DemoResult extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BrutalCard(
-      padding: const EdgeInsets.all(24),
+    return Container(
+      padding: const EdgeInsets.all(AppConstants.pageHorizontal),
+      decoration: BoxDecoration(
+        color: CupertinoDynamicColor.resolve(AppColors.surface, context),
+        borderRadius: BorderRadius.circular(AppColors.radiusM),
+      ),
       child: Column(
         children: [
           Container(
@@ -446,11 +394,17 @@ class _DemoResult extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.success.withValues(alpha: 0.15),
+              color: CupertinoDynamicColor.resolve(
+                AppColors.scoreGoodBg,
+                context,
+              ),
             ),
-            child: const Icon(
+            child: Icon(
               CupertinoIcons.check_mark_circled_solid,
-              color: AppColors.success,
+              color: CupertinoDynamicColor.resolve(
+                AppColors.scoreGood,
+                context,
+              ),
               size: 32,
             ),
           )
@@ -463,15 +417,21 @@ class _DemoResult extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             'Demo Site Created!',
-            style: AppTypography.titleMedium.copyWith(
-              color: AppColors.success,
+            style: AppTypography.titleMedium(context).copyWith(
+              color: CupertinoDynamicColor.resolve(
+                AppColors.scoreGood,
+                context,
+              ),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppConstants.contentGap),
           Text(
             'Share this link with your prospect',
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textTertiary,
+            style: AppTypography.bodyMedium(context).copyWith(
+              color: CupertinoDynamicColor.resolve(
+                AppColors.textTertiary,
+                context,
+              ),
             ),
           ),
           const SizedBox(height: 20),
@@ -480,20 +440,22 @@ class _DemoResult extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(AppColors.radiusM),
-              border: Border.all(
-                color: AppColors.success.withValues(alpha: 0.15),
-                width: 0.5,
+              color: CupertinoDynamicColor.resolve(
+                AppColors.background,
+                context,
               ),
+              borderRadius: BorderRadius.circular(AppColors.radiusM),
             ),
             child: Row(
               children: [
                 Expanded(
                   child: Text(
                     demo.publicUrl,
-                    style: AppTypography.mono.copyWith(
-                      color: AppColors.primary,
+                    style: AppTypography.mono(context).copyWith(
+                      color: CupertinoDynamicColor.resolve(
+                        AppColors.accent,
+                        context,
+                      ),
                       fontSize: 13,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -514,31 +476,52 @@ class _DemoResult extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.surfaceLight,
+              color: CupertinoDynamicColor.resolve(
+                AppColors.searchField,
+                context,
+              ),
               borderRadius: BorderRadius.circular(AppColors.radiusM),
             ),
             child: Row(
               children: [
-                const Icon(CupertinoIcons.eye, size: 16,
-                    color: AppColors.textTertiary),
+                Icon(
+                  CupertinoIcons.eye,
+                  size: 16,
+                  color: CupertinoDynamicColor.resolve(
+                    AppColors.textTertiary,
+                    context,
+                  ),
+                ),
                 const SizedBox(width: 6),
                 Text(
                   '${demo.views} view${demo.views == 1 ? '' : 's'}',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
+                  style: AppTypography.bodyMedium(context).copyWith(
+                    color: CupertinoDynamicColor.resolve(
+                      AppColors.textSecondary,
+                      context,
+                    ),
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 if (demo.lastViewedAt != null) ...[
                   const SizedBox(width: 16),
-                  const Icon(CupertinoIcons.clock, size: 16,
-                      color: AppColors.textTertiary),
+                  Icon(
+                    CupertinoIcons.clock,
+                    size: 16,
+                    color: CupertinoDynamicColor.resolve(
+                      AppColors.textTertiary,
+                      context,
+                    ),
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     _timeAgo(demo.lastViewedAt!),
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.textTertiary,
+                    style: AppTypography.bodyMedium(context).copyWith(
+                      color: CupertinoDynamicColor.resolve(
+                        AppColors.textTertiary,
+                        context,
+                      ),
                       fontSize: 13,
                     ),
                   ),
@@ -551,17 +534,16 @@ class _DemoResult extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: BrutalButton.secondary(
+                child: AppButton(
                   label: 'Share',
-                  icon: CupertinoIcons.share,
+                  variant: AppButtonVariant.secondary,
                   onPressed: onShare,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: BrutalButton(
+                child: AppButton(
                   label: 'Open',
-                  icon: CupertinoIcons.arrow_up_right_square,
                   onPressed: () {
                     launchUrl(Uri.parse(demo.publicUrl),
                         mode: LaunchMode.externalApplication);
@@ -575,7 +557,11 @@ class _DemoResult extends StatelessWidget {
     )
         .animate()
         .fadeIn(duration: 400.ms)
-        .slideY(begin: 0.08, duration: 400.ms, curve: Curves.easeOut);
+        .slideY(
+          begin: AppConstants.entranceSlideDistance / 100,
+          duration: 400.ms,
+          curve: Curves.easeOut,
+        );
   }
 
   static String _timeAgo(DateTime date) {
@@ -603,7 +589,6 @@ class _BusinessDataSummary extends StatelessWidget {
         icon: CupertinoIcons.tag,
         label: 'Categories',
         value: business.categories.take(3).join(', '),
-        color: AppColors.primary,
       ));
     }
 
@@ -612,7 +597,6 @@ class _BusinessDataSummary extends StatelessWidget {
         icon: CupertinoIcons.star_fill,
         label: 'Rating',
         value: '${business.rating}/5 (${business.reviewsCount} reviews)',
-        color: AppColors.warning,
       ));
     }
 
@@ -621,11 +605,6 @@ class _BusinessDataSummary extends StatelessWidget {
         icon: CupertinoIcons.chart_bar,
         label: 'Audit Score',
         value: '${business.auditScore}/100',
-        color: business.auditScore! >= 60
-            ? AppColors.success
-            : business.auditScore! >= 30
-                ? AppColors.warning
-                : AppColors.danger,
       ));
     }
 
@@ -634,7 +613,6 @@ class _BusinessDataSummary extends StatelessWidget {
         icon: CupertinoIcons.phone,
         label: 'Phone',
         value: business.phone!,
-        color: AppColors.success,
       ));
     }
 
@@ -643,16 +621,14 @@ class _BusinessDataSummary extends StatelessWidget {
         icon: CupertinoIcons.globe,
         label: 'Website',
         value: business.website!.replaceAll(RegExp(r'^https?://'), ''),
-        color: AppColors.info,
       ));
     }
 
     if (business.openingHours != null) {
-      items.add(_DataItem(
+      items.add(const _DataItem(
         icon: CupertinoIcons.clock,
         label: 'Hours',
         value: 'Available',
-        color: AppColors.secondary,
       ));
     }
 
@@ -663,48 +639,30 @@ class _BusinessDataSummary extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(
-              CupertinoIcons.sparkles,
-              size: 14,
-              color: AppColors.primary,
+        Text(
+          'AI WILL USE THIS DATA',
+          style: AppTypography.labelSmall(context).copyWith(
+            color: CupertinoDynamicColor.resolve(
+              AppColors.textTertiary,
+              context,
             ),
-            const SizedBox(width: 6),
-            Text(
-              'AI WILL USE THIS DATA',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.2,
-                color: AppColors.textTertiary,
-              ),
-            ),
-          ],
+          ),
         ),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppColors.radiusM),
-            border: Border.all(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              width: 0.5,
-            ),
-          ),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: items.map((item) => _DataChip(item: item)).toList(),
-          ),
+        const SizedBox(height: AppConstants.chipGap),
+        Wrap(
+          spacing: AppConstants.chipGap,
+          runSpacing: AppConstants.chipGap,
+          children: items.map((item) => _DataChip(item: item)).toList(),
         ),
         if (business.auditDiagnosis != null) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: AppConstants.itemGap),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.surfaceLight,
+              color: CupertinoDynamicColor.resolve(
+                AppColors.searchField,
+                context,
+              ),
               borderRadius: BorderRadius.circular(AppColors.radiusS),
             ),
             child: Row(
@@ -713,14 +671,20 @@ class _BusinessDataSummary extends StatelessWidget {
                 Icon(
                   CupertinoIcons.lightbulb,
                   size: 16,
-                  color: AppColors.warning,
+                  color: CupertinoDynamicColor.resolve(
+                    AppColors.scoreMid,
+                    context,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     business.auditDiagnosis!,
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
+                    style: AppTypography.bodyMedium(context).copyWith(
+                      color: CupertinoDynamicColor.resolve(
+                        AppColors.textSecondary,
+                        context,
+                      ),
                       fontSize: 12,
                       height: 1.4,
                     ),
@@ -739,13 +703,11 @@ class _DataItem {
   final IconData icon;
   final String label;
   final String value;
-  final Color color;
 
   const _DataItem({
     required this.icon,
     required this.label,
     required this.value,
-    required this.color,
   });
 }
 
@@ -757,27 +719,27 @@ class _DataChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: item.color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: item.color.withValues(alpha: 0.15),
-          width: 0.5,
-        ),
+        color: CupertinoDynamicColor.resolve(AppColors.chipInactive, context),
+        borderRadius: BorderRadius.circular(AppColors.radiusXL),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(item.icon, size: 14, color: item.color),
+          Icon(
+            item.icon,
+            size: 14,
+            color: CupertinoDynamicColor.resolve(
+              AppColors.textSecondary,
+              context,
+            ),
+          ),
           const SizedBox(width: 5),
           Flexible(
             child: Text(
               '${item.label}: ${item.value}',
-              style: AppTypography.bodyMedium.copyWith(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
+              style: AppTypography.chip(context),
               overflow: TextOverflow.ellipsis,
             ),
           ),

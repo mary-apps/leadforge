@@ -7,7 +7,7 @@ import '../../models/profile.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../providers/subscription_provider.dart';
-import '../../widgets/brutal_card.dart';
+import '../../widgets/app_button.dart';
 import '../../utils/haptics.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -17,24 +17,41 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(profileNotifierProvider);
     final isProAsync = ref.watch(subscriptionProvider);
+    final bg = CupertinoDynamicColor.resolve(AppColors.background, context);
 
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
+      backgroundColor: bg,
       child: CustomScrollView(
         physics: const BouncingScrollPhysics(
           parent: AlwaysScrollableScrollPhysics(),
         ),
         slivers: [
-          const CupertinoSliverNavigationBar(
-            largeTitle: Text('Settings'),
-            border: null,
+          // -- Title --
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppConstants.pageHorizontal,
+                MediaQuery.of(context).padding.top + 20,
+                AppConstants.pageHorizontal,
+                0,
+              ),
+              child: Text(
+                'Settings',
+                style: AppTypography.displayLarge(context),
+              ),
+            ),
           ),
 
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+            padding: const EdgeInsets.fromLTRB(
+              AppConstants.pageHorizontal,
+              AppConstants.sectionGap,
+              AppConstants.pageHorizontal,
+              100,
+            ),
             sliver: SliverList.list(
               children: [
-                // -- Profile card --
+                // -- Profile --
                 profileAsync.when(
                   data: (profile) {
                     if (profile == null) return const SizedBox();
@@ -45,126 +62,29 @@ class SettingsScreen extends ConsumerWidget {
                         .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '')
                         .join();
 
-                    return BrutalCard(
-                      padding: EdgeInsets.zero,
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            left: BorderSide(
-                              color: AppColors.primary,
-                              width: 3,
-                            ),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 52,
-                              height: 52,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: AppColors.primary,
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                initials,
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w800,
-                                  color: CupertinoColors.white,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    profile.displayName ?? 'User',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                      color: CupertinoColors.label.resolveFrom(context),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  if (profile.businessName != null &&
-                                      profile.businessName!.isNotEmpty)
-                                    Text(
-                                      profile.businessName!,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w400,
-                                        color: CupertinoColors.secondaryLabel.resolveFrom(context),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            isProAsync.when(
-                              data: (isPro) => isPro
-                                  ? Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primary,
-                                        borderRadius:
-                                            BorderRadius.circular(8),
-                                      ),
-                                      child: const Text(
-                                        'PRO',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: 1,
-                                          color: CupertinoColors.white,
-                                        ),
-                                      ),
-                                    )
-                                  : Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: CupertinoColors.tertiarySystemFill.resolveFrom(context),
-                                        borderRadius:
-                                            BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        'FREE',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
-                                          letterSpacing: 1,
-                                          color: CupertinoColors.tertiaryLabel.resolveFrom(context),
-                                        ),
-                                      ),
-                                    ),
-                              loading: () => const SizedBox(width: 40),
-                              error: (_, __) => const SizedBox(),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                        .animate()
-                        .fadeIn(duration: 300.ms)
-                        .slideY(
-                            begin: 0.03,
-                            duration: 400.ms,
-                            curve: Curves.easeOutCubic);
-                  },
-                  loading: () => BrutalCard(
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
+                    return Row(
                       children: [
                         Container(
                           width: 52,
                           height: 52,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: CupertinoColors.tertiarySystemFill.resolveFrom(context),
+                            color: CupertinoDynamicColor.resolve(
+                              AppColors.accent,
+                              context,
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            initials,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              color: CupertinoDynamicColor.resolve(
+                                AppColors.chipActiveFg,
+                                context,
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 14),
@@ -172,32 +92,49 @@ class SettingsScreen extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                width: 120,
-                                height: 16,
-                                decoration: BoxDecoration(
-                                  color: CupertinoColors.tertiarySystemFill.resolveFrom(context),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
+                              Text(
+                                profile.displayName ?? 'User',
+                                style: AppTypography.headlineLarge(context),
                               ),
-                              const SizedBox(height: 6),
-                              Container(
-                                width: 80,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  color: CupertinoColors.tertiarySystemFill.resolveFrom(context),
-                                  borderRadius: BorderRadius.circular(4),
+                              if (profile.businessName != null &&
+                                  profile.businessName!.isNotEmpty) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  profile.businessName!,
+                                  style: AppTypography.labelLarge(context),
                                 ),
-                              ),
+                              ],
                             ],
                           ),
                         ),
+                        isProAsync.when(
+                          data: (isPro) => Text(
+                            isPro ? 'Pro' : 'Free',
+                            style: AppTypography.labelLarge(context).copyWith(
+                              color: CupertinoDynamicColor.resolve(
+                                AppColors.textSecondary,
+                                context,
+                              ),
+                            ),
+                          ),
+                          loading: () => const SizedBox(width: 40),
+                          error: (_, __) => const SizedBox(),
+                        ),
                       ],
-                    ),
-                  ),
+                    )
+                        .animate()
+                        .fadeIn(duration: 300.ms)
+                        .slideY(
+                          begin: AppConstants.entranceSlideDistance / 100,
+                          duration: 350.ms,
+                          curve: Curves.easeOutCubic,
+                        );
+                  },
+                  loading: () => _ProfileSkeleton(context: context),
                   error: (_, __) => const SizedBox(),
                 ),
-                const SizedBox(height: 20),
+
+                const SizedBox(height: AppConstants.sectionGap),
 
                 // -- Usage section --
                 profileAsync.when(
@@ -208,154 +145,102 @@ class SettingsScreen extends ConsumerWidget {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.only(left: 4, bottom: 10),
-                          child: Text(
-                            'USAGE',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.2,
-                              color: CupertinoColors.tertiaryLabel.resolveFrom(context),
-                            ),
-                          ),
+                        Text(
+                          'USAGE',
+                          style: AppTypography.labelSmall(context),
                         ),
-                        _UsagePill(
+                        const SizedBox(height: AppConstants.itemGap),
+                        _UsageRow(
                           label: 'Searches',
                           used: profile.searchesThisMonth,
                           limit: isPro ? null : 5,
-                          color: AppColors.primary,
                         ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _UsagePill(
-                                label: 'Audits',
-                                used: profile.auditsThisMonth,
-                                limit: isPro ? null : 3,
-                                color: AppColors.info,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _UsagePill(
-                                label: 'Demos',
-                                used: profile.demosThisMonth,
-                                limit: isPro ? null : 1,
-                                color: AppColors.warning,
-                              ),
-                            ),
-                          ],
+                        _divider(context),
+                        _UsageRow(
+                          label: 'Audits',
+                          used: profile.auditsThisMonth,
+                          limit: isPro ? null : 3,
+                        ),
+                        _divider(context),
+                        _UsageRow(
+                          label: 'Demos',
+                          used: profile.demosThisMonth,
+                          limit: isPro ? null : 1,
                         ),
                       ],
                     )
-                        .animate(delay: 80.ms)
+                        .animate(
+                          delay: Duration(
+                            milliseconds:
+                                AppConstants.staggerDelay.inMilliseconds,
+                          ),
+                        )
                         .fadeIn(duration: 300.ms)
                         .slideY(
-                            begin: 0.03,
-                            duration: 400.ms,
-                            curve: Curves.easeOutCubic);
+                          begin: AppConstants.entranceSlideDistance / 100,
+                          duration: 350.ms,
+                          curve: Curves.easeOutCubic,
+                        );
                   },
                   loading: () => const SizedBox(),
                   error: (_, __) => const SizedBox(),
                 ),
-                const SizedBox(height: 24),
+
+                const SizedBox(height: AppConstants.sectionGap),
 
                 // -- Upgrade CTA (free users only) --
                 isProAsync.when(
                   data: (isPro) {
                     if (isPro) return const SizedBox();
-                    return BrutalCard(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(
-                              CupertinoIcons.bolt_fill,
-                              color: CupertinoColors.white,
-                              size: 22,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Upgrade to Pro',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: CupertinoColors.label.resolveFrom(context),
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Unlimited searches, audits & outreach',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w400,
-                                    color: CupertinoColors.secondaryLabel.resolveFrom(context),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Icon(
-                            CupertinoIcons.chevron_forward,
-                            size: 14,
-                            color: AppColors.primary,
-                          ),
-                        ],
-                      ),
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _SettingsRow(
+                          label: 'Upgrade to Pro',
+                          value: 'Unlimited searches, audits & outreach',
+                          showChevron: true,
+                          onTap: () {},
+                        ),
+                        const SizedBox(height: AppConstants.sectionGap),
+                      ],
                     )
-                        .animate(delay: 140.ms)
+                        .animate(
+                          delay: Duration(
+                            milliseconds:
+                                AppConstants.staggerDelay.inMilliseconds * 2,
+                          ),
+                        )
                         .fadeIn(duration: 300.ms)
                         .slideY(
-                            begin: 0.03,
-                            duration: 400.ms,
-                            curve: Curves.easeOutCubic);
+                          begin: AppConstants.entranceSlideDistance / 100,
+                          duration: 350.ms,
+                          curve: Curves.easeOutCubic,
+                        );
                   },
-                  loading: () => const SizedBox(),
-                  error: (_, __) => const SizedBox(),
-                ),
-                isProAsync.when(
-                  data: (isPro) =>
-                      SizedBox(height: isPro ? 0 : 24),
                   loading: () => const SizedBox(),
                   error: (_, __) => const SizedBox(),
                 ),
 
                 // -- Preferences --
-                CupertinoListSection.insetGrouped(
-                  header: Text(
-                    'PREFERENCES',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
-                      color: CupertinoColors.tertiaryLabel.resolveFrom(context),
-                    ),
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CupertinoListTile(
-                      leading: const Icon(CupertinoIcons.globe),
-                      title: const Text('Language'),
-                      additionalInfo: const Text('English'),
-                      trailing: const CupertinoListTileChevron(),
+                    Text(
+                      'PREFERENCES',
+                      style: AppTypography.labelSmall(context),
+                    ),
+                    const SizedBox(height: AppConstants.itemGap),
+                    _SettingsRow(
+                      label: 'Language',
+                      value: 'English',
+                      showChevron: true,
                       onTap: () {},
                     ),
-                    CupertinoListTile(
-                      leading: const Icon(CupertinoIcons.info),
-                      title: const Text('About'),
-                      trailing: const CupertinoListTileChevron(),
+                    _divider(context),
+                    _SettingsRow(
+                      label: 'About',
+                      value: 'v1.0.0',
+                      showChevron: true,
                       onTap: () {
                         showCupertinoDialog(
                           context: context,
@@ -374,62 +259,65 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                   ],
                 )
-                    .animate(delay: 200.ms)
+                    .animate(
+                      delay: Duration(
+                        milliseconds:
+                            AppConstants.staggerDelay.inMilliseconds * 3,
+                      ),
+                    )
                     .fadeIn(duration: 300.ms)
                     .slideY(
-                        begin: 0.03,
-                        duration: 400.ms,
-                        curve: Curves.easeOutCubic),
-                const SizedBox(height: 24),
+                      begin: AppConstants.entranceSlideDistance / 100,
+                      duration: 350.ms,
+                      curve: Curves.easeOutCubic,
+                    ),
+
+                const SizedBox(height: AppConstants.sectionGap),
 
                 // -- Sign Out --
-                CupertinoListSection.insetGrouped(
-                  children: [
-                    CupertinoListTile(
-                      title: Center(
-                        child: Text(
-                          'Sign Out',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: CupertinoColors.destructiveRed,
+                AppButton(
+                  variant: AppButtonVariant.ghost,
+                  label: 'Sign Out',
+                  onPressed: () {
+                    Haptics.medium();
+                    showCupertinoDialog(
+                      context: context,
+                      builder: (ctx) => CupertinoAlertDialog(
+                        title: const Text('Sign Out'),
+                        content:
+                            const Text('Are you sure you want to sign out?'),
+                        actions: [
+                          CupertinoDialogAction(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('Cancel'),
                           ),
-                        ),
+                          CupertinoDialogAction(
+                            isDestructiveAction: true,
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              Haptics.heavy();
+                              ref.read(authProvider.notifier).signOut();
+                            },
+                            child: const Text('Sign Out'),
+                          ),
+                        ],
                       ),
-                      onTap: () {
-                        Haptics.medium();
-                        showCupertinoDialog(
-                          context: context,
-                          builder: (ctx) => CupertinoAlertDialog(
-                            title: const Text('Sign Out'),
-                            content: const Text('Are you sure you want to sign out?'),
-                            actions: [
-                              CupertinoDialogAction(
-                                onPressed: () => Navigator.pop(ctx),
-                                child: const Text('Cancel'),
-                              ),
-                              CupertinoDialogAction(
-                                isDestructiveAction: true,
-                                onPressed: () {
-                                  Navigator.pop(ctx);
-                                  Haptics.heavy();
-                                  ref.read(authProvider.notifier).signOut();
-                                },
-                                child: const Text('Sign Out'),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+                    );
+                  },
                 )
-                    .animate(delay: 260.ms)
+                    .animate(
+                      delay: Duration(
+                        milliseconds:
+                            AppConstants.staggerDelay.inMilliseconds * 4,
+                      ),
+                    )
                     .fadeIn(duration: 300.ms)
                     .slideY(
-                        begin: 0.03,
-                        duration: 400.ms,
-                        curve: Curves.easeOutCubic),
+                      begin: AppConstants.entranceSlideDistance / 100,
+                      duration: 350.ms,
+                      curve: Curves.easeOutCubic,
+                    ),
+
                 const SizedBox(height: 32),
               ],
             ),
@@ -438,99 +326,159 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
   }
+
+  static Widget _divider(BuildContext context) {
+    return Container(
+      height: 0.5,
+      color: CupertinoDynamicColor.resolve(AppColors.divider, context),
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
-// Usage pill — compact stat with progress bar
+// Profile skeleton loader
 // ---------------------------------------------------------------------------
 
-class _UsagePill extends StatelessWidget {
+class _ProfileSkeleton extends StatelessWidget {
+  final BuildContext context;
+  const _ProfileSkeleton({required this.context});
+
+  @override
+  Widget build(BuildContext _) {
+    final fill = CupertinoDynamicColor.resolve(AppColors.divider, context);
+    return Row(
+      children: [
+        Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: fill,
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 120,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: fill,
+                  borderRadius: BorderRadius.circular(AppColors.radiusS),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                width: 80,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: fill,
+                  borderRadius: BorderRadius.circular(AppColors.radiusS),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Settings row — label + value / chevron
+// ---------------------------------------------------------------------------
+
+class _SettingsRow extends StatelessWidget {
+  final String label;
+  final String? value;
+  final bool showChevron;
+  final VoidCallback? onTap;
+
+  const _SettingsRow({
+    required this.label,
+    this.value,
+    this.showChevron = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: AppTypography.bodyLarge(context),
+              ),
+            ),
+            if (value != null)
+              Text(
+                value!,
+                style: AppTypography.labelLarge(context),
+              ),
+            if (showChevron) ...[
+              const SizedBox(width: 6),
+              Icon(
+                CupertinoIcons.chevron_forward,
+                size: 14,
+                color: CupertinoDynamicColor.resolve(
+                  AppColors.textTertiary,
+                  context,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Usage row — label + value inline
+// ---------------------------------------------------------------------------
+
+class _UsageRow extends StatelessWidget {
   final String label;
   final int used;
   final int? limit;
-  final Color color;
 
-  const _UsagePill({
+  const _UsageRow({
     required this.label,
     required this.used,
-    required this.limit,
-    required this.color,
+    this.limit,
   });
 
   @override
   Widget build(BuildContext context) {
     final isUnlimited = limit == null;
-    final progress = isUnlimited ? 1.0 : (used / limit!).clamp(0.0, 1.0);
     final isAtLimit = !isUnlimited && used >= limit!;
+    final valueText = isUnlimited ? '$used / \u221e' : '$used / $limit';
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(context),
-        borderRadius: BorderRadius.circular(AppColors.radiusL),
-        border: Border.all(
-          color: isAtLimit
-              ? AppColors.danger.withValues(alpha: 0.3)
-              : CupertinoColors.separator.resolveFrom(context),
-          width: 0.5,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: CupertinoColors.secondaryLabel.resolveFrom(context),
-                ),
-              ),
-              Text(
-                isUnlimited ? '\u221e' : '$used/$limit',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: isAtLimit ? AppColors.danger : color,
-                ),
-              ),
-            ],
+          Text(
+            label,
+            style: AppTypography.bodyLarge(context),
           ),
-          const SizedBox(height: 8),
-          TweenAnimationBuilder<double>(
-            tween: Tween<double>(begin: 0, end: progress),
-            duration: const Duration(milliseconds: 800),
-            curve: Curves.easeOutCubic,
-            builder: (context, animatedValue, _) {
-              return ClipRRect(
-                borderRadius: BorderRadius.circular(3),
-                child: SizedBox(
-                  height: 4,
-                  child: Stack(
-                    children: [
-                      Container(
-                        color: CupertinoColors.systemGroupedBackground.resolveFrom(context),
-                      ),
-                      FractionallySizedBox(
-                        widthFactor: animatedValue,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: isAtLimit
-                                  ? [AppColors.danger, AppColors.warning]
-                                  : [color, color.withValues(alpha: 0.5)],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
+          Text(
+            valueText,
+            style: AppTypography.titleMedium(context).copyWith(
+              color: CupertinoDynamicColor.resolve(
+                isAtLimit ? AppColors.scoreBad : AppColors.textSecondary,
+                context,
+              ),
+            ),
           ),
         ],
       ),

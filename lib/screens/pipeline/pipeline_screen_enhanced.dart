@@ -93,12 +93,12 @@ class _PipelineScreenEnhancedState
           .updateStatus(business.id, newStatus);
 
       if (mounted) {
-        IosToast.show(context, 'Moved to ${_getStatusTitle(newStatus)}', icon: CupertinoIcons.check_mark);
+        IosToast.show(context, 'Moved to ${_getStatusTitle(newStatus)}');
       }
     } catch (e) {
       Haptics.heavy();
       if (mounted) {
-        IosToast.show(context, 'Error: $e', icon: CupertinoIcons.exclamationmark_triangle);
+        IosToast.show(context, 'Error: $e');
       }
     }
   }
@@ -131,11 +131,11 @@ class _PipelineScreenEnhancedState
             .deleteBusiness(business.id);
 
         if (mounted) {
-          IosToast.show(context, 'Business removed', icon: CupertinoIcons.check_mark);
+          IosToast.show(context, 'Business removed');
         }
       } catch (e) {
         if (mounted) {
-          IosToast.show(context, 'Error: $e', icon: CupertinoIcons.exclamationmark_triangle);
+          IosToast.show(context, 'Error: $e');
         }
       }
     }
@@ -146,6 +146,8 @@ class _PipelineScreenEnhancedState
     final pipelineAsync = ref.watch(pipelineProvider);
 
     return CupertinoPageScaffold(
+      backgroundColor:
+          CupertinoDynamicColor.resolve(AppColors.background, context),
       child: pipelineAsync.when(
         data: (pipeline) {
           return CustomScrollView(
@@ -153,61 +155,94 @@ class _PipelineScreenEnhancedState
               parent: AlwaysScrollableScrollPhysics(),
             ),
             slivers: [
-              CupertinoSliverNavigationBar(
-                largeTitle: const Text('Pipeline'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CupertinoButton(
-                      padding: EdgeInsets.zero,
-                      onPressed: _showFilterSheet,
-                      child: Text(
-                        _filterStatus != null ? 'Filtered' : 'Filter',
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
+              // Custom title header
+              SliverToBoxAdapter(
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      AppConstants.pageHorizontal,
+                      16,
+                      AppConstants.pageHorizontal,
+                      AppConstants.itemGap,
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Pipeline',
+                            style: AppTypography.displayLarge(context),
+                          ),
                         ),
-                      ),
+                        CupertinoButton(
+                          padding: EdgeInsets.zero,
+                          minSize: 0,
+                          onPressed: _showFilterSheet,
+                          child: Text(
+                            _filterStatus != null ? 'Filtered' : 'Filter',
+                            style:
+                                AppTypography.titleMedium(context).copyWith(
+                              color: CupertinoDynamicColor.resolve(
+                                _filterStatus != null
+                                    ? AppColors.accent
+                                    : AppColors.textSecondary,
+                                context,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        CupertinoButton(
+                          padding: EdgeInsets.zero,
+                          minSize: 0,
+                          onPressed: () {
+                            final data =
+                                ref.read(pipelineProvider).valueOrNull;
+                            if (data != null) _exportPipeline(data);
+                          },
+                          child: Icon(
+                            CupertinoIcons.share,
+                            size: 20,
+                            color: CupertinoDynamicColor.resolve(
+                                AppColors.textSecondary, context),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        CupertinoButton(
+                          padding: EdgeInsets.zero,
+                          minSize: 0,
+                          onPressed: () {
+                            Haptics.light();
+                            ref.read(businessesProvider.notifier).load();
+                          },
+                          child: Icon(
+                            CupertinoIcons.refresh,
+                            size: 20,
+                            color: CupertinoDynamicColor.resolve(
+                                AppColors.textSecondary, context),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    CupertinoButton(
-                      padding: EdgeInsets.zero,
-                      onPressed: () {
-                        final data =
-                            ref.read(pipelineProvider).valueOrNull;
-                        if (data != null) _exportPipeline(data);
-                      },
-                      child: const Icon(
-                        CupertinoIcons.share,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    CupertinoButton(
-                      padding: EdgeInsets.zero,
-                      onPressed: () {
-                        Haptics.light();
-                        ref.read(businessesProvider.notifier).load();
-                      },
-                      child: const Icon(
-                        CupertinoIcons.refresh,
-                        size: 20,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
 
               if (_filterStatus != null)
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
+                    padding: EdgeInsets.fromLTRB(
+                      AppConstants.pageHorizontal,
+                      0,
+                      AppConstants.pageHorizontal,
+                      AppConstants.itemGap,
+                    ),
                     child: Text(
-                      _getStatusTitle(_filterStatus!),
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textSecondary,
+                      'SHOWING: ${_getStatusTitle(_filterStatus!).toUpperCase()}',
+                      style: AppTypography.labelSmall(context).copyWith(
+                        color: CupertinoDynamicColor.resolve(
+                            AppColors.textSecondary, context),
                       ),
                     ),
                   ),
@@ -215,7 +250,12 @@ class _PipelineScreenEnhancedState
 
               // Pipeline sections
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                padding: EdgeInsets.fromLTRB(
+                  AppConstants.pageHorizontal,
+                  0,
+                  AppConstants.pageHorizontal,
+                  AppConstants.sectionGap,
+                ),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     if (_filterStatus == null ||
@@ -224,7 +264,6 @@ class _PipelineScreenEnhancedState
                         'Found',
                         BusinessStatus.found,
                         pipeline[BusinessStatus.found] ?? [],
-                        AppColors.textTertiary,
                       ),
                     if (_filterStatus == null ||
                         _filterStatus == BusinessStatus.audited)
@@ -232,7 +271,6 @@ class _PipelineScreenEnhancedState
                         'Audited',
                         BusinessStatus.audited,
                         pipeline[BusinessStatus.audited] ?? [],
-                        AppColors.warning,
                       ),
                     if (_filterStatus == null ||
                         _filterStatus == BusinessStatus.demoCreated)
@@ -240,7 +278,6 @@ class _PipelineScreenEnhancedState
                         'Demo Created',
                         BusinessStatus.demoCreated,
                         pipeline[BusinessStatus.demoCreated] ?? [],
-                        AppColors.primary,
                       ),
                     if (_filterStatus == null ||
                         _filterStatus == BusinessStatus.contacted)
@@ -248,7 +285,6 @@ class _PipelineScreenEnhancedState
                         'Contacted',
                         BusinessStatus.contacted,
                         pipeline[BusinessStatus.contacted] ?? [],
-                        AppColors.success,
                       ),
                     if (_filterStatus == null ||
                         _filterStatus == BusinessStatus.interested)
@@ -256,7 +292,6 @@ class _PipelineScreenEnhancedState
                         'Interested',
                         BusinessStatus.interested,
                         pipeline[BusinessStatus.interested] ?? [],
-                        AppColors.info,
                       ),
                     if (_filterStatus == null ||
                         _filterStatus == BusinessStatus.closed)
@@ -264,7 +299,6 @@ class _PipelineScreenEnhancedState
                         'Closed',
                         BusinessStatus.closed,
                         pipeline[BusinessStatus.closed] ?? [],
-                        AppColors.success,
                       ),
                     if (_filterStatus == null ||
                         _filterStatus == BusinessStatus.lost)
@@ -272,7 +306,6 @@ class _PipelineScreenEnhancedState
                         'Lost',
                         BusinessStatus.lost,
                         pipeline[BusinessStatus.lost] ?? [],
-                        AppColors.danger,
                       ),
                   ]),
                 ),
@@ -290,164 +323,117 @@ class _PipelineScreenEnhancedState
     String title,
     BusinessStatus status,
     List<Business> businesses,
-    Color color,
   ) {
     final isExpanded = _expandedSections[status] ?? false;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppColors.radiusL),
-          border: businesses.isNotEmpty
-              ? Border.all(
-                  color: color.withValues(alpha: 0.1),
-                  width: 0.5,
-                )
-              : null,
-          boxShadow: businesses.isNotEmpty
-              ? [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.04),
-                    blurRadius: 12,
-                    spreadRadius: -4,
-                  ),
-                ]
-              : null,
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          children: [
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _expandedSections[status] = !isExpanded;
-                });
-                Haptics.light();
-              },
-              behavior: HitTestBehavior.opaque,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        businesses.length.toString(),
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: color,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    AnimatedRotation(
-                      turns: isExpanded ? 0.5 : 0.0,
-                      duration: const Duration(milliseconds: 200),
-                      child: const Icon(
-                        CupertinoIcons.chevron_down,
-                        color: AppColors.textTertiary,
-                        size: 20,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (isExpanded) ...[
-              Container(
-                height: 0.5,
-                color: AppColors.divider,
-              ),
-              if (businesses.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    children: [
-                      Icon(
-                        CupertinoIcons.tray,
-                        size: 36,
-                        color: AppColors.textTertiary.withValues(alpha: 0.5),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'No businesses in this stage',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else ...[
-                ...List.generate(businesses.length, (index) {
-                  final business = businesses[index];
-                  return Column(
-                    children: [
-                      _DraggableBusinessCard(
-                        business: business,
-                        currentStatus: status,
-                        onMoveToStatus: (newStatus) =>
-                            _moveBusinessToStatus(business, newStatus),
-                        onDelete: () => _deleteBusiness(business),
-                        onTap: () =>
-                            context.push('/business/${business.id}'),
-                        stageColor: color,
-                      ),
-                      if (index < businesses.length - 1)
-                        Padding(
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: 16),
-                          child: Container(
-                            height: 0.5,
-                            color: AppColors.divider,
-                          ),
-                        ),
-                    ],
-                  );
-                }),
-                const Padding(
-                  padding: EdgeInsets.only(top: 4, bottom: 12),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section header
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              _expandedSections[status] = !isExpanded;
+            });
+            Haptics.light();
+          },
+          behavior: HitTestBehavior.opaque,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              children: [
+                Expanded(
                   child: Text(
-                    'Swipe right to advance, left to remove',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: AppColors.textTertiary,
+                    title.toUpperCase(),
+                    style: AppTypography.labelSmall(context).copyWith(
+                      color: CupertinoDynamicColor.resolve(
+                          AppColors.textTertiary, context),
                     ),
+                  ),
+                ),
+                Text(
+                  businesses.length.toString(),
+                  style: AppTypography.labelLarge(context).copyWith(
+                    color: CupertinoDynamicColor.resolve(
+                        AppColors.textTertiary, context),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                AnimatedRotation(
+                  turns: isExpanded ? 0.5 : 0.0,
+                  duration: AppConstants.standardAnimation,
+                  child: Icon(
+                    CupertinoIcons.chevron_down,
+                    color: CupertinoDynamicColor.resolve(
+                        AppColors.textTertiary, context),
+                    size: 14,
                   ),
                 ),
               ],
-            ],
-          ],
+            ),
+          ),
         ),
-      ),
+
+        // Divider below header
+        Container(
+          height: 0.5,
+          color: CupertinoDynamicColor.resolve(AppColors.divider, context),
+        ),
+
+        if (isExpanded) ...[
+          if (businesses.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: Text(
+                  'No businesses in this stage',
+                  style: AppTypography.labelLarge(context).copyWith(
+                    color: CupertinoDynamicColor.resolve(
+                        AppColors.textTertiary, context),
+                  ),
+                ),
+              ),
+            )
+          else ...[
+            ...List.generate(businesses.length, (index) {
+              final business = businesses[index];
+              return Column(
+                children: [
+                  _DraggableBusinessCard(
+                    business: business,
+                    currentStatus: status,
+                    onMoveToStatus: (newStatus) =>
+                        _moveBusinessToStatus(business, newStatus),
+                    onDelete: () => _deleteBusiness(business),
+                    onTap: () => context.push('/business/${business.id}'),
+                  ),
+                  if (index < businesses.length - 1)
+                    Container(
+                      height: 0.5,
+                      color: CupertinoDynamicColor.resolve(
+                          AppColors.divider, context),
+                    ),
+                ],
+              );
+            }),
+            Padding(
+              padding: const EdgeInsets.only(top: 4, bottom: 12),
+              child: Center(
+                child: Text(
+                  'Swipe right to advance, left to remove',
+                  style: AppTypography.chip(context).copyWith(
+                    color: CupertinoDynamicColor.resolve(
+                        AppColors.textTertiary, context),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+
+        // Bottom spacing between sections
+        SizedBox(height: AppConstants.itemGap),
+      ],
     );
   }
 
@@ -478,7 +464,6 @@ class _DraggableBusinessCard extends StatefulWidget {
   final Function(BusinessStatus) onMoveToStatus;
   final VoidCallback onDelete;
   final VoidCallback onTap;
-  final Color stageColor;
 
   const _DraggableBusinessCard({
     required this.business,
@@ -486,7 +471,6 @@ class _DraggableBusinessCard extends StatefulWidget {
     required this.onMoveToStatus,
     required this.onDelete,
     required this.onTap,
-    required this.stageColor,
   });
 
   @override
@@ -499,6 +483,11 @@ class _DraggableBusinessCardState extends State<_DraggableBusinessCard> {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedScoreGood =
+        CupertinoDynamicColor.resolve(AppColors.scoreGood, context);
+    final resolvedScoreBad =
+        CupertinoDynamicColor.resolve(AppColors.scoreBad, context);
+
     return Dismissible(
       key: Key(widget.business.id),
       direction: DismissDirection.horizontal,
@@ -519,15 +508,19 @@ class _DraggableBusinessCardState extends State<_DraggableBusinessCard> {
           return true;
         }
       },
-      background: _buildSwipeBackground(
-        CupertinoIcons.arrow_right,
-        AppColors.success,
-        Alignment.centerLeft,
+      background: Container(
+        color: resolvedScoreGood.withValues(alpha: 0.08),
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Icon(CupertinoIcons.arrow_right,
+            color: resolvedScoreGood, size: 28),
       ),
-      secondaryBackground: _buildSwipeBackground(
-        CupertinoIcons.delete,
-        AppColors.danger,
-        Alignment.centerRight,
+      secondaryBackground: Container(
+        color: resolvedScoreBad.withValues(alpha: 0.08),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child:
+            Icon(CupertinoIcons.delete, color: resolvedScoreBad, size: 28),
       ),
       child: GestureDetector(
         onTapDown: (_) => setState(() => _isPressed = true),
@@ -539,24 +532,14 @@ class _DraggableBusinessCardState extends State<_DraggableBusinessCard> {
         onTapCancel: () => setState(() => _isPressed = false),
         behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 100),
+          duration: AppConstants.quickAnimation,
           color: _isPressed
-              ? CupertinoColors.white.withValues(alpha: 0.04)
+              ? CupertinoDynamicColor.resolve(AppColors.divider, context)
+                  .withValues(alpha: 0.5)
               : const Color(0x00000000),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
           child: Row(
             children: [
-              // Dot indicator
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: widget.stageColor,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 12),
-
               // Info
               Expanded(
                 child: Column(
@@ -564,20 +547,13 @@ class _DraggableBusinessCardState extends State<_DraggableBusinessCard> {
                   children: [
                     Text(
                       widget.business.name,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
+                      style: AppTypography.titleMedium(context),
                     ),
                     if (widget.business.shortAddress != null) ...[
                       const SizedBox(height: 2),
                       Text(
                         widget.business.shortAddress!,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textTertiary,
-                        ),
+                        style: AppTypography.labelLarge(context),
                       ),
                     ],
                   ],
@@ -586,55 +562,29 @@ class _DraggableBusinessCardState extends State<_DraggableBusinessCard> {
 
               if (widget.business.auditScore != null) ...[
                 const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: AppColors.scoreGradient(widget.business.auditScore!),
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(6),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.scoreColor(widget.business.auditScore!)
-                            .withValues(alpha: 0.2),
-                        blurRadius: 6,
-                        spreadRadius: -1,
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    widget.business.auditScore.toString(),
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.background,
+                Text(
+                  widget.business.auditScore.toString(),
+                  style: AppTypography.titleMedium(context).copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: CupertinoDynamicColor.resolve(
+                      AppColors.scoreColor(widget.business.auditScore!),
+                      context,
                     ),
                   ),
                 ),
               ],
 
               const SizedBox(width: 6),
-              const Icon(
+              Icon(
                 CupertinoIcons.chevron_forward,
-                color: AppColors.textTertiary,
+                color: CupertinoDynamicColor.resolve(
+                    AppColors.textTertiary, context),
                 size: 18,
               ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildSwipeBackground(
-      IconData icon, Color color, Alignment alignment) {
-    return Container(
-      color: color.withValues(alpha: 0.08),
-      alignment: alignment,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Icon(icon, color: color, size: 28),
     );
   }
 

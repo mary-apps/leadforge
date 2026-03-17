@@ -23,10 +23,8 @@ dependencies:
   
   # UI & Animations
   flutter_animate: ^4.3.0
-  shimmer: ^3.0.0
   fl_chart: ^0.66.0
   cached_network_image: ^3.3.0
-  confetti: ^0.7.0
   google_fonts: ^6.1.0
   
   # Web & Content
