@@ -138,6 +138,26 @@ extension BusinessX on Business {
     }
   }
 
+  /// Returns a human-readable label for the pipeline status
+  String get statusLabel {
+    switch (status) {
+      case BusinessStatus.found:
+        return 'Found';
+      case BusinessStatus.audited:
+        return 'Audited';
+      case BusinessStatus.demoCreated:
+        return 'Demo Created';
+      case BusinessStatus.contacted:
+        return 'Contacted';
+      case BusinessStatus.interested:
+        return 'Interested';
+      case BusinessStatus.closed:
+        return 'Closed';
+      case BusinessStatus.lost:
+        return 'Lost';
+    }
+  }
+
   /// Returns a color for web-presence status
   Color get webPresenceColor {
     switch (webPresence) {
