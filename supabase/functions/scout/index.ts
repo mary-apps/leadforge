@@ -103,20 +103,28 @@ serve(async (req) => {
         onConflict: 'user_id,place_id',
         ignoreDuplicates: true
       })
-    
+
+    // 8. Fetch inserted businesses from DB (with generated IDs)
+    const placeIds = businesses.map(b => b.place_id)
+    const { data: dbBusinesses } = await supabase
+      .from('businesses')
+      .select('*')
+      .eq('user_id', user.id)
+      .in('place_id', placeIds)
+
     // 9. Increment usage
     await supabase
       .from('profiles')
       .update({ searches_this_month: profile.searches_this_month + 1 })
       .eq('id', user.id)
-    
-    // 10. Sort results
-    const sorted = businesses.sort((a, b) => {
+
+    // 10. Sort results — no website first, then by rating
+    const sorted = (dbBusinesses || []).sort((a: any, b: any) => {
       if (a.web_presence === 'none' && b.web_presence !== 'none') return -1
       if (a.web_presence !== 'none' && b.web_presence === 'none') return 1
       return (a.rating || 0) - (b.rating || 0)
     })
-    
+
     return new Response(JSON.stringify({ businesses: sorted }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })

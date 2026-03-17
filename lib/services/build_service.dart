@@ -3,48 +3,43 @@ import 'package:http/http.dart' as http;
 
 import '../config/constants.dart';
 import '../models/demo.dart';
+import '../utils/network.dart';
 import 'supabase_service.dart';
 
 class BuildService {
-  /// Generate demo site for a business
+  /// Generate unique AI-powered demo site for a business
   static Future<Demo> generateDemo({
     required String businessId,
-    required DemoTemplate template,
+    String? customNotes,
   }) async {
     final token = await SupabaseService.getAuthToken();
-    
+
     if (token == null) {
       throw Exception('Not authenticated');
     }
-    
-    final response = await http.post(
+
+    final body = <String, dynamic>{
+      'business_id': businessId,
+    };
+    if (customNotes != null && customNotes.trim().isNotEmpty) {
+      body['custom_notes'] = customNotes.trim();
+    }
+
+    await httpWithRetry(() => http.post(
       Uri.parse(AppConstants.buildDemoEndpoint),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
-      body: json.encode({
-        'business_id': businessId,
-        'template': template.toString().split('.').last,
-      }),
-    );
-    
-    if (response.statusCode == 402) {
-      throw LimitReachedException('Free tier demo limit reached');
-    }
-    
-    if (response.statusCode != 200) {
-      throw Exception('Demo generation failed: ${response.body}');
-    }
-    
-    final data = json.decode(response.body);
-    
+      body: json.encode(body),
+    ));
+
     // Fetch the created demo from database
     final demo = await fetchDemo(businessId);
     if (demo == null) {
       throw Exception('Demo was created but could not be fetched');
     }
-    
+
     return demo;
   }
   
@@ -86,10 +81,4 @@ class BuildService {
   }
 }
 
-class LimitReachedException implements Exception {
-  final String message;
-  LimitReachedException(this.message);
-  
-  @override
-  String toString() => message;
-}
+// LimitReachedException is in utils/network.dart

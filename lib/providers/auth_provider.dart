@@ -121,6 +121,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   
   Future<void> signOut() async {
     await SupabaseService.signOut();
+    // Ensure state is cleared even if the stream event is delayed
+    state = AuthState(user: null, isLoading: false, needsOnboarding: false);
   }
 
   Future<void> resetPassword(String email) async {

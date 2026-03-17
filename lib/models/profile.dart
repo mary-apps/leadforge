@@ -15,7 +15,7 @@ class Profile with _$Profile {
     @Default(0) int auditsThisMonth,
     @Default(0) int demosThisMonth,
     DateTime? monthResetAt,
-    required DateTime createdAt,
+    DateTime? createdAt,
   }) = _Profile;
 
   factory Profile.fromJson(Map<String, dynamic> json) =>

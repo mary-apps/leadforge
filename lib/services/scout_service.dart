@@ -3,18 +3,19 @@ import 'package:http/http.dart' as http;
 
 import '../config/constants.dart';
 import '../models/business.dart';
+import '../utils/network.dart';
 import 'supabase_service.dart';
 
 class ScoutService {
   /// Search for businesses using Google Places API via Edge Function
   static Future<List<Business>> searchBusinesses(String query) async {
     final token = await SupabaseService.getAuthToken();
-    
+
     if (token == null) {
       throw Exception('Not authenticated');
     }
-    
-    final response = await http.post(
+
+    final response = await httpWithRetry(() => http.post(
       Uri.parse(AppConstants.scoutEndpoint),
       headers: {
         'Authorization': 'Bearer $token',
@@ -23,19 +24,11 @@ class ScoutService {
       body: json.encode({
         'query': query,
       }),
-    );
-    
-    if (response.statusCode == 402) {
-      throw LimitReachedException('Free tier search limit reached');
-    }
-    
-    if (response.statusCode != 200) {
-      throw Exception('Search failed: ${response.body}');
-    }
-    
+    ));
+
     final data = json.decode(response.body);
     final businessesJson = data['businesses'] as List;
-    
+
     return businessesJson
         .map((json) => Business.fromJson(json as Map<String, dynamic>))
         .toList();
@@ -116,10 +109,4 @@ class ScoutService {
   }
 }
 
-class LimitReachedException implements Exception {
-  final String message;
-  LimitReachedException(this.message);
-  
-  @override
-  String toString() => message;
-}
+// LimitReachedException is in utils/network.dart
