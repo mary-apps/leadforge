@@ -1,10 +1,11 @@
 import 'package:flutter/cupertino.dart';
 
+import '../config/theme.dart';
+
 class IosToast {
   static void show(
     BuildContext context,
     String message, {
-    IconData? icon,
     Duration duration = const Duration(seconds: 2),
   }) {
     final overlay = Navigator.of(context).overlay;
@@ -14,7 +15,6 @@ class IosToast {
     entry = OverlayEntry(
       builder: (context) => _ToastWidget(
         message: message,
-        icon: icon,
         duration: duration,
         onDismiss: () => entry.remove(),
       ),
@@ -26,13 +26,11 @@ class IosToast {
 
 class _ToastWidget extends StatefulWidget {
   final String message;
-  final IconData? icon;
   final Duration duration;
   final VoidCallback onDismiss;
 
   const _ToastWidget({
     required this.message,
-    this.icon,
     required this.duration,
     required this.onDismiss,
   });
@@ -79,6 +77,11 @@ class _ToastWidgetState extends State<_ToastWidget>
 
   @override
   Widget build(BuildContext context) {
+    final bgColor =
+        CupertinoDynamicColor.resolve(AppColors.textPrimary, context);
+    final fgColor =
+        CupertinoDynamicColor.resolve(AppColors.background, context);
+
     return Positioned(
       top: MediaQuery.of(context).padding.top + 8,
       left: 16,
@@ -88,27 +91,15 @@ class _ToastWidgetState extends State<_ToastWidget>
         child: FadeTransition(
           opacity: _opacity,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: CupertinoColors.secondarySystemGroupedBackground
-                  .resolveFrom(context),
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: CupertinoColors.black.withValues(alpha: 0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              color: bgColor,
+              borderRadius: BorderRadius.circular(AppColors.radiusL),
             ),
-            child: Row(
-              children: [
-                if (widget.icon != null) ...[
-                  Icon(widget.icon, size: 20, color: CupertinoColors.systemBlue.resolveFrom(context)),
-                  const SizedBox(width: 12),
-                ],
-                Expanded(child: Text(widget.message, style: const TextStyle(fontSize: 15))),
-              ],
+            child: Text(
+              widget.message,
+              style: TextStyle(fontSize: 15, color: fgColor),
             ),
           ),
         ),

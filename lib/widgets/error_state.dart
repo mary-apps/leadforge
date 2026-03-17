@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
+
+import '../config/theme.dart';
 import '../utils/network.dart';
-import 'brutal_button.dart';
+import 'app_button.dart';
 
 class ErrorState extends StatelessWidget {
   final Object error;
@@ -34,13 +36,33 @@ class ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 48, color: CupertinoColors.secondaryLabel.resolveFrom(context)),
+            Icon(
+              icon,
+              size: 32,
+              color: CupertinoDynamicColor.resolve(
+                  AppColors.textTertiary, context),
+            ),
             const SizedBox(height: 16),
-            Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+            Text(
+              title,
+              style: AppTypography.titleMedium(context),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 8),
-            Text(subtitle, style: TextStyle(fontSize: 15, color: CupertinoColors.secondaryLabel.resolveFrom(context)), textAlign: TextAlign.center),
+            Text(
+              subtitle,
+              style: AppTypography.bodyMedium(context).copyWith(
+                color: CupertinoDynamicColor.resolve(
+                    AppColors.textSecondary, context),
+              ),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 24),
-            BrutalButton.secondary(label: 'Try Again', icon: CupertinoIcons.refresh, onPressed: onRetry, compact: true),
+            AppButton(
+              label: 'Try Again',
+              onPressed: onRetry,
+              variant: AppButtonVariant.ghost,
+            ),
           ],
         ),
       ),

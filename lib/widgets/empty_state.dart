@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
-import 'brutal_button.dart';
+
+import '../config/theme.dart';
+import 'app_button.dart';
 
 class EmptyState extends StatelessWidget {
   final IconData icon;
@@ -63,14 +65,35 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 48, color: CupertinoColors.secondaryLabel.resolveFrom(context)),
+            Icon(
+              icon,
+              size: 32,
+              color: CupertinoDynamicColor.resolve(
+                  AppColors.textTertiary, context),
+            ),
             const SizedBox(height: 16),
-            Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+            Text(
+              title,
+              style: AppTypography.titleMedium(context),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 8),
-            Text(subtitle, style: TextStyle(fontSize: 15, color: CupertinoColors.secondaryLabel.resolveFrom(context)), textAlign: TextAlign.center),
+            Text(
+              subtitle,
+              style: AppTypography.bodyMedium(context).copyWith(
+                color: CupertinoDynamicColor.resolve(
+                    AppColors.textSecondary, context),
+              ),
+              textAlign: TextAlign.center,
+            ),
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 24),
-              BrutalButton(label: actionLabel!, onPressed: onAction, compact: true),
+              AppButton(
+                label: actionLabel!,
+                onPressed: onAction,
+                variant: AppButtonVariant.ghost,
+                compact: true,
+              ),
             ],
           ],
         ),

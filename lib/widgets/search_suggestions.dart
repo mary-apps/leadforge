@@ -22,27 +22,15 @@ class SearchSuggestions extends StatelessWidget {
 
     if (!hasRecent && !hasTrending) return const SizedBox.shrink();
 
-    final resolvedSurface = CupertinoColors.secondarySystemGroupedBackground.resolveFrom(context);
-    final resolvedBorder = CupertinoColors.separator.resolveFrom(context);
-    final resolvedSecondaryLabel = CupertinoColors.secondaryLabel.resolveFrom(context);
-    final resolvedPrimary = CupertinoColors.systemBlue.resolveFrom(context);
-    final resolvedSuccess = CupertinoColors.systemGreen.resolveFrom(context);
-    final resolvedDivider = CupertinoColors.opaqueSeparator.resolveFrom(context);
+    final resolvedDivider =
+        CupertinoDynamicColor.resolve(AppColors.divider, context);
+    final resolvedAccent =
+        CupertinoDynamicColor.resolve(AppColors.accent, context);
+    final resolvedSecondary =
+        CupertinoDynamicColor.resolve(AppColors.textSecondary, context);
 
-    return Container(
+    return Padding(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: resolvedSurface,
-        borderRadius: BorderRadius.circular(AppColors.radiusL),
-        border: Border.all(color: resolvedBorder, width: 0.5),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0x00000000).withValues(alpha: 0.15),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -50,27 +38,16 @@ class SearchSuggestions extends StatelessWidget {
           if (hasRecent) ...[
             Row(
               children: [
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: resolvedPrimary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Icon(CupertinoIcons.clock, size: 14, color: resolvedPrimary),
-                ),
+                Icon(CupertinoIcons.clock, size: 14, color: resolvedSecondary),
                 const SizedBox(width: 8),
                 Text(
                   'Recent',
-                  style: AppTypography.labelLarge.copyWith(
-                    color: resolvedSecondaryLabel,
-                  ),
+                  style: AppTypography.labelLarge(context),
                 ),
               ],
             ),
             const SizedBox(height: 10),
             ...recentSearches.map((search) => _SuggestionTile(
-                  icon: CupertinoIcons.clock,
                   text: search,
                   onTap: () => onSelected(search),
                 )),
@@ -83,29 +60,18 @@ class SearchSuggestions extends StatelessWidget {
           if (hasTrending) ...[
             Row(
               children: [
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: resolvedSuccess.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Icon(CupertinoIcons.flame, size: 14, color: resolvedSuccess),
-                ),
+                Icon(CupertinoIcons.flame, size: 14, color: resolvedAccent),
                 const SizedBox(width: 8),
                 Text(
                   'Trending',
-                  style: AppTypography.labelLarge.copyWith(
-                    color: resolvedSecondaryLabel,
-                  ),
+                  style: AppTypography.labelLarge(context),
                 ),
               ],
             ),
             const SizedBox(height: 10),
             ...trendingSearches.map((search) => _SuggestionTile(
-                  icon: CupertinoIcons.flame,
                   text: search,
-                  color: resolvedSuccess,
+                  accentColor: resolvedAccent,
                   onTap: () => onSelected(search),
                 )),
           ],
@@ -116,16 +82,14 @@ class SearchSuggestions extends StatelessWidget {
 }
 
 class _SuggestionTile extends StatefulWidget {
-  final IconData icon;
   final String text;
   final VoidCallback onTap;
-  final Color? color;
+  final Color? accentColor;
 
   const _SuggestionTile({
-    required this.icon,
     required this.text,
     required this.onTap,
-    this.color,
+    this.accentColor,
   });
 
   @override
@@ -137,8 +101,6 @@ class _SuggestionTileState extends State<_SuggestionTile> {
 
   @override
   Widget build(BuildContext context) {
-    final resolvedTertiary = CupertinoColors.tertiaryLabel.resolveFrom(context);
-
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
       onTapUp: (_) {
@@ -153,28 +115,23 @@ class _SuggestionTileState extends State<_SuggestionTile> {
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
         decoration: BoxDecoration(
           color: _pressed
-              ? CupertinoColors.label.resolveFrom(context).withValues(alpha: 0.04)
+              ? CupertinoDynamicColor.resolve(AppColors.divider, context)
               : const Color(0x00000000),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           children: [
-            Icon(
-              widget.icon,
-              size: 16,
-              color: widget.color ?? resolvedTertiary,
-            ),
-            const SizedBox(width: 12),
             Expanded(
               child: Text(
                 widget.text,
-                style: AppTypography.bodyMedium,
+                style: AppTypography.bodyLarge(context),
               ),
             ),
             Icon(
               CupertinoIcons.arrow_up_left,
               size: 12,
-              color: resolvedTertiary,
+              color: CupertinoDynamicColor.resolve(
+                  AppColors.textTertiary, context),
             ),
           ],
         ),

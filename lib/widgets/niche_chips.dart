@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
-import '../config/constants.dart';
+
+import '../config/constants.dart' as consts;
+import '../config/theme.dart';
 
 class NicheChips extends StatelessWidget {
   final Function(String) onSelected;
@@ -14,10 +16,10 @@ class NicheChips extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: AppConstants.suggestedNiches.length,
+        itemCount: consts.AppConstants.suggestedNiches.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
-          final niche = AppConstants.suggestedNiches[index];
+          final niche = consts.AppConstants.suggestedNiches[index];
           final isSelected = selectedNiche == niche;
           return GestureDetector(
             onTap: () => onSelected(niche),
@@ -26,19 +28,22 @@ class NicheChips extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: isSelected
-                    ? CupertinoColors.systemBlue.resolveFrom(context)
-                    : CupertinoColors.tertiarySystemFill.resolveFrom(context),
-                borderRadius: BorderRadius.circular(19),
+                color: CupertinoDynamicColor.resolve(
+                  isSelected ? AppColors.chipActive : AppColors.chipInactive,
+                  context,
+                ),
+                borderRadius: BorderRadius.circular(AppColors.radiusXL),
               ),
               child: Text(
                 niche,
-                style: TextStyle(
-                  fontSize: 14,
+                style: AppTypography.chip(context).copyWith(
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                  color: isSelected
-                      ? CupertinoColors.white
-                      : CupertinoColors.label.resolveFrom(context),
+                  color: CupertinoDynamicColor.resolve(
+                    isSelected
+                        ? AppColors.chipActiveFg
+                        : AppColors.textSecondary,
+                    context,
+                  ),
                 ),
               ),
             ),
