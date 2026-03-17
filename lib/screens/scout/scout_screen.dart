@@ -5,14 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../config/theme.dart';
-import '../../providers/businesses_provider.dart';
 import '../../models/profile.dart';
+import '../../providers/businesses_provider.dart';
 import '../../providers/profile_provider.dart';
-import '../../widgets/business_card.dart';
+import '../../widgets/lead_item.dart';
 import '../../widgets/skeleton_loaders.dart';
 import '../../widgets/search_suggestions.dart';
-import '../../widgets/brutal_button.dart';
-import '../../widgets/brutal_card.dart';
+import '../../widgets/app_button.dart';
 import '../../utils/haptics.dart';
 import '../../utils/network.dart';
 
@@ -142,24 +141,49 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
           parent: AlwaysScrollableScrollPhysics(),
         ),
         slivers: [
-          CupertinoSliverNavigationBar(
-            largeTitle: const Text('Scout'),
-            trailing: CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed: () =>
-                  ref.read(businessesProvider.notifier).load(),
-              child: const Icon(CupertinoIcons.refresh, size: 20),
+          // Custom title area
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppConstants.pageHorizontal,
+                MediaQuery.of(context).padding.top + 20,
+                AppConstants.pageHorizontal,
+                0,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Scout',
+                    style: AppTypography.displayLarge(context),
+                  ),
+                  const SizedBox(height: AppConstants.contentGap),
+                  Text(
+                    'Find businesses to help',
+                    style: AppTypography.bodyLarge(context).copyWith(
+                      color: CupertinoDynamicColor.resolve(
+                        AppColors.textSecondary,
+                        context,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
-          // Search bar (below nav bar)
+          // Search bar
           SliverToBoxAdapter(
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              padding: const EdgeInsets.fromLTRB(
+                AppConstants.pageHorizontal,
+                AppConstants.sectionGap,
+                AppConstants.pageHorizontal,
+                0,
+              ),
               child: Column(
                 children: [
-                  _AnimatedSearchBar(
+                  _StyledSearchBar(
                     controller: _searchController,
                     focusNode: _focusNode,
                     isSearching: _isSearching,
@@ -225,24 +249,21 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
                 slivers: [
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                      padding: const EdgeInsets.fromLTRB(
+                        AppConstants.pageHorizontal,
+                        AppConstants.itemGap,
+                        AppConstants.pageHorizontal,
+                        0,
+                      ),
                       child: Row(
                         children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: AppColors.success,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
                           Text(
-                            '${businesses.length} results',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
+                            '${businesses.length} RESULTS',
+                            style: AppTypography.labelSmall(context).copyWith(
+                              color: CupertinoDynamicColor.resolve(
+                                AppColors.textTertiary,
+                                context,
+                              ),
                             ),
                           ),
                           const Spacer(),
@@ -256,12 +277,13 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
                                   .read(scoutResultsProvider.notifier)
                                   .clear();
                             },
-                            child: const Text(
+                            child: Text(
                               'Clear',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.primary,
+                              style: AppTypography.labelLarge(context).copyWith(
+                                color: CupertinoDynamicColor.resolve(
+                                  AppColors.accent,
+                                  context,
+                                ),
                               ),
                             ),
                           ),
@@ -270,25 +292,31 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
                     ),
                   ),
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppConstants.pageHorizontal,
+                      AppConstants.itemGap,
+                      AppConstants.pageHorizontal,
+                      100,
+                    ),
                     sliver: SliverList.builder(
                       itemCount: businesses.length,
                       itemBuilder: (context, index) {
                         final business = businesses[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: BusinessCard(
-                            business: business,
-                            onTap: () => context
-                                .push('/business/${business.id}'),
-                          ),
+                        return LeadItem(
+                          business: business,
+                          showChevron: true,
+                          showDivider: index < businesses.length - 1,
+                          onTap: () => context
+                              .push('/business/${business.id}'),
                         )
                             .animate(
                                 delay: Duration(
-                                    milliseconds: 50 * index))
+                                    milliseconds:
+                                        AppConstants.staggerDelay.inMilliseconds *
+                                            index))
                             .fadeIn(duration: 300.ms)
-                            .slideX(
-                                begin: -0.03,
+                            .slideY(
+                                begin: AppConstants.entranceSlideDistance / 100,
                                 duration: 350.ms,
                                 curve: Curves.easeOutCubic);
                       },
@@ -329,22 +357,27 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(icon,
-                            size: 56, color: AppColors.textTertiary),
+                            size: 56,
+                            color: CupertinoDynamicColor.resolve(
+                                AppColors.textTertiary, context)),
                         const SizedBox(height: 16),
                         Text(title,
-                            style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textSecondary)),
+                            style: AppTypography.titleMedium(context).copyWith(
+                              fontSize: 18,
+                              color: CupertinoDynamicColor.resolve(
+                                  AppColors.textSecondary, context),
+                            )),
                         const SizedBox(height: 8),
                         Text(subtitle,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
-                                fontSize: 13,
-                                color: AppColors.textTertiary)),
+                            style: AppTypography.labelLarge(context).copyWith(
+                              color: CupertinoDynamicColor.resolve(
+                                  AppColors.textTertiary, context),
+                            )),
                         const SizedBox(height: 24),
-                        BrutalButton(
+                        AppButton(
                           label: 'Retry',
+                          compact: true,
                           onPressed: () => _handleSearch(
                               _searchController.text),
                         ),
@@ -375,10 +408,10 @@ class _DiscoveryView extends StatelessWidget {
   });
 
   static const _categories = [
-    _Category('Dentists', CupertinoIcons.heart, AppColors.info),
-    _Category('Restaurants', CupertinoIcons.cart, AppColors.primary),
-    _Category('Plumbers', CupertinoIcons.wrench, AppColors.success),
-    _Category('Lawyers', CupertinoIcons.book, AppColors.warning),
+    _Category('Dentists', CupertinoIcons.heart, Color(0xFF6366F1)),
+    _Category('Restaurants', CupertinoIcons.cart, Color(0xFF18181B)),
+    _Category('Plumbers', CupertinoIcons.wrench, Color(0xFF166534)),
+    _Category('Lawyers', CupertinoIcons.book, Color(0xFF92400E)),
     _Category('Hair Salons', CupertinoIcons.scissors, Color(0xFFFF6B9D)),
     _Category('Gyms', CupertinoIcons.sportscourt, Color(0xFF38BDF8)),
     _Category('Cafes', CupertinoIcons.drop, Color(0xFFFFD166)),
@@ -398,29 +431,32 @@ class _DiscoveryView extends StatelessWidget {
       delegate: SliverChildListDelegate([
         // Hero message
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+          padding: const EdgeInsets.fromLTRB(
+            AppConstants.pageHorizontal,
+            AppConstants.sectionGap,
+            AppConstants.pageHorizontal,
+            0,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Find your\nnext client',
-                style: TextStyle(
-                  fontFamily: AppTypography.displayLarge.fontFamily,
+                style: AppTypography.displayLarge(context).copyWith(
                   fontSize: 36,
-                  fontWeight: FontWeight.w800,
                   height: 1.1,
                   letterSpacing: -1.5,
-                  color: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Search any business niche and city to discover leads with weak web presence.',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w400,
+                style: AppTypography.bodyLarge(context).copyWith(
                   height: 1.5,
-                  color: AppColors.textSecondary,
+                  color: CupertinoDynamicColor.resolve(
+                    AppColors.textSecondary,
+                    context,
+                  ),
                 ),
               ),
             ],
@@ -428,25 +464,31 @@ class _DiscoveryView extends StatelessWidget {
         )
             .animate()
             .fadeIn(duration: 400.ms)
-            .slideY(begin: 0.05, duration: 500.ms, curve: Curves.easeOutCubic),
+            .slideY(
+              begin: AppConstants.entranceSlideDistance / 100,
+              duration: 500.ms,
+              curve: Curves.easeOutCubic,
+            ),
 
         // Categories label
-        const Padding(
-          padding: EdgeInsets.fromLTRB(20, 28, 20, 12),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppConstants.pageHorizontal,
+            AppConstants.sectionGap,
+            AppConstants.pageHorizontal,
+            12,
+          ),
           child: Text(
             'POPULAR NICHES',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
-              color: AppColors.textTertiary,
-            ),
+            style: AppTypography.labelSmall(context),
           ),
         ),
 
         // Featured category — full width
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.pageHorizontal,
+          ),
           child: _FeaturedCategoryCard(
             category: _categories[0],
             onTap: () => onCategoryTap(_categories[0].name),
@@ -464,7 +506,9 @@ class _DiscoveryView extends StatelessWidget {
 
         // Remaining categories — 2 column grid
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.pageHorizontal,
+          ),
           child: GridView.count(
             crossAxisCount: 2,
             mainAxisSpacing: 10,
@@ -485,7 +529,12 @@ class _DiscoveryView extends StatelessWidget {
 
         // Trending section
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
+          padding: const EdgeInsets.fromLTRB(
+            AppConstants.pageHorizontal,
+            AppConstants.sectionGap,
+            AppConstants.pageHorizontal,
+            12,
+          ),
           child: Row(
             children: [
               Container(
@@ -494,24 +543,23 @@ class _DiscoveryView extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppColors.success.withValues(alpha: 0.2),
-                      AppColors.success.withValues(alpha: 0.05),
+                      CupertinoDynamicColor.resolve(AppColors.scoreGood, context)
+                          .withValues(alpha: 0.2),
+                      CupertinoDynamicColor.resolve(AppColors.scoreGood, context)
+                          .withValues(alpha: 0.05),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(5),
                 ),
-                child: const Icon(CupertinoIcons.graph_square,
-                    size: 12, color: AppColors.success),
+                child: Icon(CupertinoIcons.graph_square,
+                    size: 12,
+                    color: CupertinoDynamicColor.resolve(
+                        AppColors.scoreGood, context)),
               ),
               const SizedBox(width: 8),
-              const Text(
+              Text(
                 'TRENDING SEARCHES',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
-                  color: AppColors.textTertiary,
-                ),
+                style: AppTypography.labelSmall(context),
               ),
             ],
           ),
@@ -519,12 +567,17 @@ class _DiscoveryView extends StatelessWidget {
 
         // Trending list
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.pageHorizontal,
+          ),
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: CupertinoDynamicColor.resolve(AppColors.surface, context),
               borderRadius: BorderRadius.circular(AppColors.radiusL),
-              border: Border.all(color: AppColors.border, width: 0.5),
+              border: Border.all(
+                color: CupertinoDynamicColor.resolve(AppColors.border, context),
+                width: 0.5,
+              ),
             ),
             clipBehavior: Clip.antiAlias,
             child: Column(
@@ -543,23 +596,32 @@ class _DiscoveryView extends StatelessWidget {
         )
             .animate(delay: 400.ms)
             .fadeIn(duration: 400.ms)
-            .slideY(begin: 0.04, duration: 450.ms, curve: Curves.easeOutCubic),
+            .slideY(
+              begin: AppConstants.entranceSlideDistance / 100,
+              duration: 450.ms,
+              curve: Curves.easeOutCubic,
+            ),
 
         // How it works
-        const Padding(
-          padding: EdgeInsets.fromLTRB(20, 32, 20, 0),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppConstants.pageHorizontal,
+            AppConstants.sectionGap + 4,
+            AppConstants.pageHorizontal,
+            0,
+          ),
           child: Text(
             'HOW IT WORKS',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
-              color: AppColors.textTertiary,
-            ),
+            style: AppTypography.labelSmall(context),
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
+          padding: const EdgeInsets.fromLTRB(
+            AppConstants.pageHorizontal,
+            12,
+            AppConstants.pageHorizontal,
+            120,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -574,7 +636,8 @@ class _DiscoveryView extends StatelessWidget {
                       child: _StepCircle(
                         step: '1',
                         icon: CupertinoIcons.search,
-                        color: AppColors.primary,
+                        color: CupertinoDynamicColor.resolve(
+                            AppColors.accent, context),
                         size: 56,
                       ),
                     ),
@@ -584,7 +647,8 @@ class _DiscoveryView extends StatelessWidget {
                       child: _StepCircle(
                         step: '2',
                         icon: CupertinoIcons.chart_bar,
-                        color: AppColors.info,
+                        color: CupertinoDynamicColor.resolve(
+                            AppColors.scoreMid, context),
                         size: 52,
                       ),
                     ),
@@ -594,7 +658,8 @@ class _DiscoveryView extends StatelessWidget {
                       child: _StepCircle(
                         step: '3',
                         icon: CupertinoIcons.paperplane,
-                        color: AppColors.success,
+                        color: CupertinoDynamicColor.resolve(
+                            AppColors.scoreGood, context),
                         size: 48,
                       ),
                     ),
@@ -611,7 +676,8 @@ class _DiscoveryView extends StatelessWidget {
                         style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.primary),
+                            color: CupertinoDynamicColor.resolve(
+                                AppColors.accent, context)),
                         textAlign: TextAlign.center),
                   ),
                   const SizedBox(width: 24 - 16),
@@ -621,7 +687,8 @@ class _DiscoveryView extends StatelessWidget {
                         style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.info),
+                            color: CupertinoDynamicColor.resolve(
+                                AppColors.scoreMid, context)),
                         textAlign: TextAlign.center),
                   ),
                   const SizedBox(width: 28 - 12),
@@ -631,7 +698,8 @@ class _DiscoveryView extends StatelessWidget {
                         style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.success),
+                            color: CupertinoDynamicColor.resolve(
+                                AppColors.scoreGood, context)),
                         textAlign: TextAlign.center),
                   ),
                 ],
@@ -689,23 +757,16 @@ class _CategoryCardState extends State<_CategoryCard> {
       onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedScale(
         scale: _pressed ? 0.95 : 1.0,
-        duration: const Duration(milliseconds: 100),
+        duration: AppConstants.quickAnimation,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: CupertinoDynamicColor.resolve(AppColors.surface, context),
             borderRadius: BorderRadius.circular(AppColors.radiusL),
             border: Border.all(
               color: cat.color.withValues(alpha: 0.12),
               width: 0.5,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: cat.color.withValues(alpha: 0.05),
-                blurRadius: 12,
-                spreadRadius: -4,
-              ),
-            ],
           ),
           child: Row(
             children: [
@@ -729,24 +790,33 @@ class _CategoryCardState extends State<_CategoryCard> {
               Expanded(
                 child: Text(
                   cat.name,
-                  style: const TextStyle(
+                  style: AppTypography.titleMedium(context).copyWith(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Icon(CupertinoIcons.chevron_forward,
-                  size: 12, color: AppColors.textTertiary),
+              Icon(CupertinoIcons.chevron_forward,
+                  size: 12,
+                  color: CupertinoDynamicColor.resolve(
+                      AppColors.textTertiary, context)),
             ],
           ),
         ),
       ),
     )
-        .animate(delay: Duration(milliseconds: 200 + widget.index * 50))
+        .animate(
+          delay: Duration(
+            milliseconds: 200 +
+                widget.index * AppConstants.staggerDelay.inMilliseconds,
+          ),
+        )
         .fadeIn(duration: 300.ms)
-        .slideY(begin: 0.08, duration: 350.ms, curve: Curves.easeOutCubic);
+        .slideY(
+          begin: AppConstants.entranceSlideDistance / 100,
+          duration: 350.ms,
+          curve: Curves.easeOutCubic,
+        );
   }
 }
 
@@ -788,29 +858,30 @@ class _TrendingTileState extends State<_TrendingTile> {
       child: Column(
         children: [
           AnimatedContainer(
-            duration: const Duration(milliseconds: 80),
+            duration: AppConstants.quickAnimation,
             color: _pressed
-                ? AppColors.textPrimary.withValues(alpha: 0.04)
+                ? CupertinoDynamicColor.resolve(AppColors.textPrimary, context)
+                    .withValues(alpha: 0.04)
                 : const Color(0x00000000),
             padding: EdgeInsets.fromLTRB(
                 widget.index.isOdd ? 24 : 14, 12, 14, 12),
             child: Row(
               children: [
-                const Icon(CupertinoIcons.graph_square,
-                    size: 16, color: AppColors.success),
+                Icon(CupertinoIcons.graph_square,
+                    size: 16,
+                    color: CupertinoDynamicColor.resolve(
+                        AppColors.scoreGood, context)),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     widget.query,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.textPrimary,
-                    ),
+                    style: AppTypography.bodyMedium(context),
                   ),
                 ),
-                const Icon(CupertinoIcons.arrow_up_left,
-                    size: 12, color: AppColors.textTertiary),
+                Icon(CupertinoIcons.arrow_up_left,
+                    size: 12,
+                    color: CupertinoDynamicColor.resolve(
+                        AppColors.textTertiary, context)),
               ],
             ),
           ),
@@ -818,7 +889,7 @@ class _TrendingTileState extends State<_TrendingTile> {
             Container(
               height: 0.5,
               margin: const EdgeInsets.only(left: 42),
-              color: AppColors.divider,
+              color: CupertinoDynamicColor.resolve(AppColors.divider, context),
             ),
         ],
       ),
@@ -827,7 +898,7 @@ class _TrendingTileState extends State<_TrendingTile> {
 }
 
 // ---------------------------------------------------------------------------
-// Featured category card — full-width dominant card
+// Featured category card — full-width dominant card (no BrutalCard)
 // ---------------------------------------------------------------------------
 
 class _FeaturedCategoryCard extends StatefulWidget {
@@ -860,57 +931,64 @@ class _FeaturedCategoryCardState extends State<_FeaturedCategoryCard> {
       onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedScale(
         scale: _pressed ? 0.97 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: BrutalCard(
+        duration: AppConstants.quickAnimation,
+        child: Container(
           padding: const EdgeInsets.all(16),
-          child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        cat.color.withValues(alpha: 0.2),
-                        cat.color.withValues(alpha: 0.06),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(cat.icon, size: 22, color: cat.color),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        cat.name,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Most popular niche',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: cat.color.withValues(alpha: 0.7),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(CupertinoIcons.chevron_forward,
-                    size: 14, color: cat.color),
-              ],
+          decoration: BoxDecoration(
+            color: CupertinoDynamicColor.resolve(AppColors.surface, context),
+            borderRadius: BorderRadius.circular(AppColors.radiusL),
+            border: Border.all(
+              color: CupertinoDynamicColor.resolve(AppColors.border, context),
+              width: 0.5,
             ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      cat.color.withValues(alpha: 0.2),
+                      cat.color.withValues(alpha: 0.06),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(cat.icon, size: 22, color: cat.color),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      cat.name,
+                      style: AppTypography.titleMedium(context).copyWith(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Most popular niche',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: cat.color.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(CupertinoIcons.chevron_forward,
+                  size: 14, color: cat.color),
+            ],
+          ),
         ),
       ),
     );
@@ -970,10 +1048,11 @@ class _StepCircle extends StatelessWidget {
               alignment: Alignment.center,
               child: Text(
                 step,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.background,
+                  color: CupertinoDynamicColor.resolve(
+                      AppColors.background, context),
                 ),
               ),
             ),
@@ -1001,6 +1080,9 @@ class _NoResultsState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final accentColor =
+        CupertinoDynamicColor.resolve(AppColors.accent, context);
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -1014,8 +1096,8 @@ class _NoResultsState extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.primary.withValues(alpha: 0.1),
-                    AppColors.primary.withValues(alpha: 0.0),
+                    accentColor.withValues(alpha: 0.1),
+                    accentColor.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -1027,37 +1109,34 @@ class _NoResultsState extends StatelessWidget {
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
                       colors: [
-                        AppColors.primary.withValues(alpha: 0.12),
-                        AppColors.primary.withValues(alpha: 0.04),
+                        accentColor.withValues(alpha: 0.12),
+                        accentColor.withValues(alpha: 0.04),
                       ],
                     ),
                     border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.1),
+                      color: accentColor.withValues(alpha: 0.1),
                     ),
                   ),
                   child: Icon(CupertinoIcons.search,
                       size: 24,
-                      color: AppColors.primary.withValues(alpha: 0.6)),
+                      color: accentColor.withValues(alpha: 0.6)),
                 ),
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               'No businesses found',
-              style: TextStyle(
+              style: AppTypography.titleMedium(context).copyWith(
                 fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Try a different niche or city combination.\nFor example: "dentists Austin"',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
+              style: AppTypography.bodyMedium(context).copyWith(
                 height: 1.5,
-                color: AppColors.textTertiary,
+                color: CupertinoDynamicColor.resolve(
+                    AppColors.textTertiary, context),
               ),
               textAlign: TextAlign.center,
             ),
@@ -1065,15 +1144,16 @@ class _NoResultsState extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                BrutalButton.secondary(
+                AppButton(
                   label: 'Back',
-                  icon: CupertinoIcons.arrow_left,
+                  variant: AppButtonVariant.secondary,
+                  compact: true,
                   onPressed: onClear,
                 ),
                 const SizedBox(width: 12),
-                BrutalButton(
+                AppButton(
                   label: 'Retry',
-                  icon: CupertinoIcons.refresh,
+                  compact: true,
                   onPressed: onRetry,
                 ),
               ],
@@ -1090,17 +1170,17 @@ class _NoResultsState extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Animated Search Bar — CupertinoSearchTextField with glow on focus
+// Styled Search Bar — CupertinoTextField with custom styling
 // ---------------------------------------------------------------------------
 
-class _AnimatedSearchBar extends StatefulWidget {
+class _StyledSearchBar extends StatefulWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final bool isSearching;
   final ValueChanged<String> onSubmitted;
   final ValueChanged<String> onChanged;
 
-  const _AnimatedSearchBar({
+  const _StyledSearchBar({
     required this.controller,
     required this.focusNode,
     required this.isSearching,
@@ -1109,32 +1189,26 @@ class _AnimatedSearchBar extends StatefulWidget {
   });
 
   @override
-  State<_AnimatedSearchBar> createState() => _AnimatedSearchBarState();
+  State<_StyledSearchBar> createState() => _StyledSearchBarState();
 }
 
-class _AnimatedSearchBarState extends State<_AnimatedSearchBar>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _glowController;
+class _StyledSearchBarState extends State<_StyledSearchBar> {
   bool _hasFocus = false;
 
   int _placeholderIndex = 0;
   Timer? _placeholderTimer;
 
   static const _placeholders = [
-    '"dentists Austin"',
-    '"restaurants Miami"',
-    '"plumbers Chicago"',
-    '"hair salons NYC"',
-    '"gyms San Diego"',
+    'dentists Austin',
+    'restaurants Miami',
+    'plumbers Chicago',
+    'hair salons NYC',
+    'gyms San Diego',
   ];
 
   @override
   void initState() {
     super.initState();
-    _glowController = AnimationController(
-      duration: const Duration(seconds: 3),
-      vsync: this,
-    );
     widget.focusNode.addListener(_onFocusChange);
 
     _placeholderTimer = Timer.periodic(
@@ -1152,16 +1226,10 @@ class _AnimatedSearchBarState extends State<_AnimatedSearchBar>
 
   void _onFocusChange() {
     setState(() => _hasFocus = widget.focusNode.hasFocus);
-    if (widget.focusNode.hasFocus) {
-      _glowController.repeat();
-    } else {
-      _glowController.stop();
-    }
   }
 
   @override
   void dispose() {
-    _glowController.dispose();
     _placeholderTimer?.cancel();
     widget.focusNode.removeListener(_onFocusChange);
     super.dispose();
@@ -1169,49 +1237,55 @@ class _AnimatedSearchBarState extends State<_AnimatedSearchBar>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _glowController,
-      builder: (context, child) {
-        return Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppColors.radiusL + 1),
-            boxShadow: _hasFocus
-                ? [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.12),
-                      blurRadius: 24,
-                      spreadRadius: -4,
-                    ),
-                  ]
-                : [
-                    BoxShadow(
-                      color: CupertinoColors.black.withValues(alpha: 0.1),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-          ),
-          child: CupertinoSearchTextField(
-            controller: widget.controller,
-            focusNode: widget.focusNode,
-            placeholder: 'Search businesses  ${_placeholders[_placeholderIndex]}',
-            prefixIcon: Icon(
-              CupertinoIcons.search,
-              color: _hasFocus
-                  ? AppColors.primary
-                  : AppColors.textTertiary,
-            ),
-            suffixIcon: widget.isSearching
-                ? const Icon(CupertinoIcons.clock)
-                : const Icon(CupertinoIcons.xmark_circle_fill),
-            onSubmitted: widget.onSubmitted,
-            onChanged: (value) {
-              setState(() {});
-              widget.onChanged(value);
-            },
-          ),
-        );
+    return CupertinoTextField(
+      controller: widget.controller,
+      focusNode: widget.focusNode,
+      placeholder: 'Search  ${_placeholders[_placeholderIndex]}',
+      placeholderStyle: TextStyle(
+        color: CupertinoDynamicColor.resolve(AppColors.textTertiary, context),
+        fontSize: 15,
+      ),
+      prefix: Padding(
+        padding: const EdgeInsets.only(left: 16),
+        child: widget.isSearching
+            ? const CupertinoActivityIndicator(radius: 8)
+            : Icon(
+                CupertinoIcons.search,
+                size: 18,
+                color: CupertinoDynamicColor.resolve(
+                  _hasFocus ? AppColors.accent : AppColors.textTertiary,
+                  context,
+                ),
+              ),
+      ),
+      suffix: widget.controller.text.isNotEmpty
+          ? Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: GestureDetector(
+                onTap: () {
+                  widget.controller.clear();
+                  widget.onChanged('');
+                },
+                child: Icon(
+                  CupertinoIcons.xmark_circle_fill,
+                  size: 18,
+                  color: CupertinoDynamicColor.resolve(
+                      AppColors.textTertiary, context),
+                ),
+              ),
+            )
+          : null,
+      padding: const EdgeInsets.fromLTRB(12, 12, 16, 12),
+      decoration: BoxDecoration(
+        color: CupertinoDynamicColor.resolve(AppColors.searchField, context),
+        borderRadius: BorderRadius.circular(AppColors.radiusM),
+      ),
+      onSubmitted: widget.onSubmitted,
+      onChanged: (value) {
+        setState(() {});
+        widget.onChanged(value);
       },
+      textInputAction: TextInputAction.search,
     );
   }
 }
