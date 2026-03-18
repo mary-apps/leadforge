@@ -18,6 +18,7 @@ class StatCell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           value,
@@ -25,7 +26,6 @@ class StatCell extends StatelessWidget {
             color: valueColor,
           ),
         ),
-        const SizedBox(height: 2),
         Text(
           label,
           style: AppTypography.labelSmall(context),

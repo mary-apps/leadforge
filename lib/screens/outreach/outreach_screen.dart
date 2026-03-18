@@ -34,7 +34,7 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
   bool _isGenerating = false;
   Message? _generatedMessage;
 
-  final List<String> _tones = ['professional', 'friendly', 'direct'];
+  final List<String> _tones = ['professional', 'casual', 'direct'];
   static const _languages = {
     'en': 'English',
     'es': 'Espanol',
@@ -122,18 +122,6 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
     IosToast.show(context, 'Message copied to clipboard');
   }
 
-  Future<void> _markAsSent(Message message) async {
-    try {
-      await OutreachService.markSent(message.id);
-      if (!mounted) return;
-      Haptics.medium();
-      IosToast.show(context, 'Marked as sent');
-    } catch (e) {
-      if (!mounted) return;
-      IosToast.show(context, 'Error: $e');
-    }
-  }
-
   void _regenerate(Business business) {
     Haptics.light();
     _generateMessage(business);
@@ -142,71 +130,57 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
   @override
   Widget build(BuildContext context) {
     final businessAsync = ref.watch(businessProvider(widget.businessId));
-    final bgColor =
-        CupertinoDynamicColor.resolve(AppColors.background, context);
 
     return CupertinoPageScaffold(
-      backgroundColor: bgColor,
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text('Create Outreach'),
+      ),
       child: SafeArea(
         child: businessAsync.when(
           data: (business) {
             if (business == null) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppConstants.pageHorizontal),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 16),
-                    GestureDetector(
-                      onTap: () => context.pop(),
-                      child: Text(
-                        '\u2190 Back',
-                        style: AppTypography.labelLarge(context),
-                      ),
-                    ),
-                    const Expanded(
-                      child: Center(child: Text('Business not found')),
-                    ),
-                  ],
-                ),
-              );
+              return const Center(child: Text('Business not found'));
             }
 
             return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppConstants.pageHorizontal),
+              padding: const EdgeInsets.all(20),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 16),
-
-                  // Back nav
-                  GestureDetector(
-                    onTap: () => context.pop(),
-                    child: Text(
-                      '\u2190 ${business.name}',
-                      style: AppTypography.labelLarge(context),
-                    ),
-                  ),
-                  const SizedBox(height: AppConstants.sectionGap),
-
-                  // Title
                   Text(
-                    'Compose Outreach',
-                    style: AppTypography.headlineLarge(context),
+                    'Generate message for',
+                    style: AppTypography.bodyMedium(context).copyWith(
+                      color: CupertinoDynamicColor.resolve(
+                          AppColors.textTertiary, context),
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: AppConstants.sectionGap),
+                  const SizedBox(height: 6),
+                  Text(
+                    business.name,
+                    style: AppTypography.headlineLarge(context).copyWith(
+                      fontSize: 22,
+                      letterSpacing: -0.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
 
                   // Channel selector
                   Text(
                     'CHANNEL',
-                    style: AppTypography.labelSmall(context),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                      color: CupertinoDynamicColor.resolve(
+                          AppColors.textTertiary, context),
+                    ),
                   ),
-                  const SizedBox(height: AppConstants.itemGap),
+                  const SizedBox(height: 12),
                   Wrap(
-                    spacing: AppConstants.chipGap,
-                    runSpacing: AppConstants.chipGap,
+                    spacing: 10,
+                    runSpacing: 10,
                     children: OutreachChannel.values.map((channel) {
                       final isSelected = channel == _selectedChannel;
                       return _ChannelChip(
@@ -219,17 +193,23 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: AppConstants.sectionGap),
+                  const SizedBox(height: 24),
 
                   // Tone selector
                   Text(
                     'TONE',
-                    style: AppTypography.labelSmall(context),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                      color: CupertinoDynamicColor.resolve(
+                          AppColors.textTertiary, context),
+                    ),
                   ),
-                  const SizedBox(height: AppConstants.itemGap),
+                  const SizedBox(height: 12),
                   Wrap(
-                    spacing: AppConstants.chipGap,
-                    runSpacing: AppConstants.chipGap,
+                    spacing: 10,
+                    runSpacing: 10,
                     children: _tones.map((tone) {
                       final isSelected = tone == _selectedTone;
                       return _ToneChip(
@@ -242,16 +222,22 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: AppConstants.sectionGap),
+                  const SizedBox(height: 24),
 
                   // Language selector
                   Text(
                     'LANGUAGE',
-                    style: AppTypography.labelSmall(context),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                      color: CupertinoDynamicColor.resolve(
+                          AppColors.textTertiary, context),
+                    ),
                   ),
-                  const SizedBox(height: AppConstants.itemGap),
+                  const SizedBox(height: 12),
                   Wrap(
-                    spacing: AppConstants.chipGap,
+                    spacing: 10,
                     children: _languages.entries.map((entry) {
                       final isSelected = entry.key == _selectedLanguage;
                       return _ToneChip(
@@ -264,25 +250,23 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: AppConstants.sectionGap),
+                  const SizedBox(height: 32),
 
                   if (_generatedMessage == null && !_isGenerating)
-                    AppButton(
+                    _GradientCTA(
                       label: 'Generate Message',
+                      icon: CupertinoIcons.sparkles,
                       onPressed: () => _generateMessage(business),
                     ),
 
-                  if (_isGenerating) _GeneratingAnimation(),
+                  if (_isGenerating) const _GeneratingAnimation(),
 
                   if (_generatedMessage != null)
                     _MessageResult(
                       message: _generatedMessage!,
                       onCopy: _copyMessage,
                       onRegenerate: () => _regenerate(business),
-                      onMarkSent: () => _markAsSent(_generatedMessage!),
                     ),
-
-                  const SizedBox(height: 40),
                 ],
               ),
             );
@@ -295,7 +279,7 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
   }
 }
 
-// Channel chip using editorial design system
+// Channel chip with selected state
 class _ChannelChip extends StatelessWidget {
   final OutreachChannel channel;
   final bool isSelected;
@@ -309,51 +293,104 @@ class _ChannelChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = _getChannelLabel(channel);
+    final info = _getChannelInfo(channel, context);
+    final color = info['color'] as Color;
 
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: AppConstants.quickAnimation,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
-          color: CupertinoDynamicColor.resolve(
-            isSelected ? AppColors.chipActive : AppColors.chipInactive,
-            context,
-          ),
-          borderRadius: BorderRadius.circular(AppColors.radiusXL),
+          color: isSelected
+              ? color
+              : CupertinoDynamicColor.resolve(AppColors.surface, context),
+          borderRadius: BorderRadius.circular(20),
+          border: isSelected
+              ? null
+              : Border.all(
+                  color: CupertinoDynamicColor.resolve(
+                      AppColors.border, context),
+                  width: 0.5),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.25),
+                    blurRadius: 8,
+                    spreadRadius: -2,
+                  ),
+                ]
+              : null,
         ),
-        child: Text(
-          label,
-          style: AppTypography.chip(context).copyWith(
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-            color: CupertinoDynamicColor.resolve(
-              isSelected ? AppColors.chipActiveFg : AppColors.textSecondary,
-              context,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              info['icon'] as IconData,
+              color: isSelected
+                  ? CupertinoColors.white
+                  : CupertinoDynamicColor.resolve(
+                      AppColors.textTertiary, context),
+              size: 18,
             ),
-          ),
+            const SizedBox(width: 6),
+            Text(
+              info['name'] as String,
+              style: AppTypography.bodyMedium(context).copyWith(
+                color: isSelected
+                    ? CupertinoColors.white
+                    : CupertinoDynamicColor.resolve(
+                        AppColors.textPrimary, context),
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                fontSize: 14,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  String _getChannelLabel(OutreachChannel channel) {
+  Map<String, dynamic> _getChannelInfo(
+      OutreachChannel channel, BuildContext context) {
     switch (channel) {
       case OutreachChannel.email:
-        return 'Email';
+        return {
+          'name': 'Email',
+          'icon': CupertinoIcons.mail,
+          'color': CupertinoDynamicColor.resolve(AppColors.accent, context),
+        };
       case OutreachChannel.whatsapp:
-        return 'WhatsApp';
+        return {
+          'name': 'WhatsApp',
+          'icon': CupertinoIcons.chat_bubble,
+          'color': CupertinoDynamicColor.resolve(AppColors.scoreGood, context),
+        };
       case OutreachChannel.instagram:
-        return 'Instagram';
+        return {
+          'name': 'Instagram',
+          'icon': CupertinoIcons.camera,
+          'color':
+              CupertinoDynamicColor.resolve(AppColors.textSecondary, context),
+        };
       case OutreachChannel.phone:
-        return 'Phone';
+        return {
+          'name': 'Phone',
+          'icon': CupertinoIcons.phone,
+          'color': CupertinoDynamicColor.resolve(AppColors.accent, context),
+        };
       case OutreachChannel.other:
-        return 'Other';
+        return {
+          'name': 'Other',
+          'icon': CupertinoIcons.ellipsis,
+          'color':
+              CupertinoDynamicColor.resolve(AppColors.textSecondary, context),
+        };
     }
   }
 }
 
-// Tone chip using editorial design system
+// Tone chip
 class _ToneChip extends StatelessWidget {
   final String tone;
   final bool isSelected;
@@ -370,23 +407,112 @@ class _ToneChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: AppConstants.quickAnimation,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
-          color: CupertinoDynamicColor.resolve(
-            isSelected ? AppColors.chipActive : AppColors.chipInactive,
-            context,
-          ),
-          borderRadius: BorderRadius.circular(AppColors.radiusXL),
+          color: isSelected
+              ? CupertinoDynamicColor.resolve(AppColors.chipActive, context)
+              : CupertinoDynamicColor.resolve(AppColors.surface, context),
+          borderRadius: BorderRadius.circular(20),
+          border: isSelected
+              ? null
+              : Border.all(
+                  color: CupertinoDynamicColor.resolve(
+                      AppColors.border, context),
+                  width: 0.5),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: CupertinoDynamicColor.resolve(
+                            AppColors.accent, context)
+                        .withValues(alpha: 0.25),
+                    blurRadius: 8,
+                    spreadRadius: -2,
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           tone[0].toUpperCase() + tone.substring(1),
-          style: AppTypography.chip(context).copyWith(
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-            color: CupertinoDynamicColor.resolve(
-              isSelected ? AppColors.chipActiveFg : AppColors.textSecondary,
-              context,
-            ),
+          style: AppTypography.bodyMedium(context).copyWith(
+            color: isSelected
+                ? CupertinoDynamicColor.resolve(
+                    AppColors.chipActiveFg, context)
+                : CupertinoDynamicColor.resolve(
+                    AppColors.textPrimary, context),
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Gradient CTA button
+class _GradientCTA extends StatefulWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _GradientCTA({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  State<_GradientCTA> createState() => _GradientCTAState();
+}
+
+class _GradientCTAState extends State<_GradientCTA> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        Haptics.medium();
+        widget.onPressed();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: CupertinoDynamicColor.resolve(AppColors.accent, context),
+            borderRadius: BorderRadius.circular(AppColors.radiusM),
+            boxShadow: [
+              BoxShadow(
+                color: CupertinoDynamicColor.resolve(
+                        AppColors.accent, context)
+                    .withValues(alpha: 0.3),
+                blurRadius: 16,
+                spreadRadius: -2,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(widget.icon,
+                  size: 20,
+                  color: CupertinoDynamicColor.resolve(
+                      AppColors.chipActiveFg, context)),
+              const SizedBox(width: 8),
+              Text(
+                widget.label,
+                style: AppTypography.button(context).copyWith(
+                    color: CupertinoDynamicColor.resolve(
+                        AppColors.chipActiveFg, context),
+                    fontSize: 16),
+              ),
+            ],
           ),
         ),
       ),
@@ -396,6 +522,8 @@ class _ToneChip extends StatelessWidget {
 
 // Generating animation
 class _GeneratingAnimation extends StatefulWidget {
+  const _GeneratingAnimation();
+
   @override
   State<_GeneratingAnimation> createState() => _GeneratingAnimationState();
 }
@@ -427,19 +555,20 @@ class _GeneratingAnimationState extends State<_GeneratingAnimation> {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor =
-        CupertinoDynamicColor.resolve(AppColors.divider, context);
-
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        border: Border.all(color: borderColor),
+        color: CupertinoDynamicColor.resolve(AppColors.surface, context),
         borderRadius: BorderRadius.circular(AppColors.radiusL),
+        border: Border.all(
+          color: CupertinoDynamicColor.resolve(AppColors.border, context),
+          width: 0.5,
+        ),
       ),
       child: Column(
         children: [
-          const CupertinoActivityIndicator(radius: 14),
-          const SizedBox(height: 20),
+          const CupertinoActivityIndicator(radius: 16),
+          const SizedBox(height: 24),
           ...List.generate(_steps.length, (index) {
             final isActive = index == _currentStep;
             final isDone = index < _currentStep;
@@ -449,19 +578,21 @@ class _GeneratingAnimationState extends State<_GeneratingAnimation> {
               child: Row(
                 children: [
                   AnimatedSwitcher(
-                    duration: AppConstants.quickAnimation,
+                    duration: const Duration(milliseconds: 200),
                     child: Icon(
                       isDone
                           ? CupertinoIcons.check_mark_circled_solid
                           : CupertinoIcons.circle,
                       key: ValueKey('gen-$index-$isDone'),
-                      size: 16,
-                      color: CupertinoDynamicColor.resolve(
-                        isActive || isDone
-                            ? AppColors.textPrimary
-                            : AppColors.textTertiary,
-                        context,
-                      ),
+                      size: 18,
+                      color: isActive
+                          ? CupertinoDynamicColor.resolve(
+                              AppColors.textSecondary, context)
+                          : isDone
+                              ? CupertinoDynamicColor.resolve(
+                                  AppColors.scoreGood, context)
+                              : CupertinoDynamicColor.resolve(
+                                  AppColors.textTertiary, context),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -469,14 +600,14 @@ class _GeneratingAnimationState extends State<_GeneratingAnimation> {
                     child: Text(
                       _steps[index],
                       style: AppTypography.bodyMedium(context).copyWith(
-                        color: CupertinoDynamicColor.resolve(
-                          isActive
-                              ? AppColors.textPrimary
-                              : isDone
-                                  ? AppColors.textSecondary
-                                  : AppColors.textTertiary,
-                          context,
-                        ),
+                        color: isActive
+                            ? CupertinoDynamicColor.resolve(
+                                AppColors.textPrimary, context)
+                            : isDone
+                                ? CupertinoDynamicColor.resolve(
+                                    AppColors.textSecondary, context)
+                                : CupertinoDynamicColor.resolve(
+                                    AppColors.textTertiary, context),
                         fontWeight:
                             isActive ? FontWeight.w600 : FontWeight.normal,
                       ),
@@ -488,82 +619,115 @@ class _GeneratingAnimationState extends State<_GeneratingAnimation> {
           }),
         ],
       ),
-    ).animate().fadeIn(duration: 200.ms);
+    )
+        .animate()
+        .fadeIn(duration: 300.ms)
+        .scale(begin: const Offset(0.97, 0.97), duration: 300.ms);
   }
 }
 
-// Message result
+// Message result card
 class _MessageResult extends StatelessWidget {
   final Message message;
   final Function(String) onCopy;
   final VoidCallback onRegenerate;
-  final VoidCallback onMarkSent;
 
   const _MessageResult({
     required this.message,
     required this.onCopy,
     required this.onRegenerate,
-    required this.onMarkSent,
   });
 
   @override
   Widget build(BuildContext context) {
-    final dividerColor =
-        CupertinoDynamicColor.resolve(AppColors.divider, context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Generated label
-        Text(
-          'GENERATED MESSAGE',
-          style: AppTypography.labelSmall(context),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: CupertinoDynamicColor.resolve(AppColors.surface, context),
+        borderRadius: BorderRadius.circular(AppColors.radiusL),
+        border: Border.all(
+          color: CupertinoDynamicColor.resolve(AppColors.border, context),
+          width: 0.5,
         ),
-        const SizedBox(height: AppConstants.itemGap),
-
-        // Message content with divider borders
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: dividerColor),
-              bottom: BorderSide(color: dividerColor),
-            ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: CupertinoDynamicColor.resolve(
+                          AppColors.scoreGood, context)
+                      .withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(CupertinoIcons.sparkles,
+                    color: CupertinoDynamicColor.resolve(
+                        AppColors.scoreGood, context),
+                    size: 14),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Message Generated',
+                style: AppTypography.labelLarge(context).copyWith(
+                  color: CupertinoDynamicColor.resolve(
+                      AppColors.scoreGood, context),
+                ),
+              ),
+            ],
           ),
-          child: Text(
-            message.content,
-            style: AppTypography.bodyMedium(context).copyWith(
-              height: 1.6,
+          const SizedBox(height: 16),
+
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
               color: CupertinoDynamicColor.resolve(
-                  AppColors.textSecondary, context),
+                  AppColors.background, context),
+              borderRadius: BorderRadius.circular(AppColors.radiusL),
+              border: Border.all(
+                color: CupertinoDynamicColor.resolve(
+                        AppColors.scoreGood, context)
+                    .withValues(alpha: 0.1),
+                width: 0.5,
+              ),
+            ),
+            child: Text(
+              message.content,
+              style: AppTypography.bodyLarge(context).copyWith(
+                height: 1.6,
+                color: CupertinoDynamicColor.resolve(
+                    AppColors.textSecondary, context),
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: AppConstants.sectionGap),
+          const SizedBox(height: 16),
 
-        // Copy button — primary
-        AppButton(
-          label: 'Copy Message',
-          onPressed: () => onCopy(message.content),
-        ),
-        const SizedBox(height: AppConstants.itemGap),
-
-        // Mark as sent — ghost
-        AppButton(
-          label: 'Mark as Sent',
-          variant: AppButtonVariant.ghost,
-          onPressed: onMarkSent,
-        ),
-        const SizedBox(height: AppConstants.itemGap),
-
-        // Regenerate — secondary
-        AppButton(
-          label: 'Regenerate',
-          variant: AppButtonVariant.secondary,
-          onPressed: onRegenerate,
-        ),
-      ],
-    ).animate().fadeIn(duration: 200.ms);
+          Row(
+            children: [
+              Expanded(
+                child: AppButton(
+                  label: 'Regenerate',
+                  variant: AppButtonVariant.secondary,
+                  onPressed: onRegenerate,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: AppButton(
+                  label: 'Copy',
+                  onPressed: () => onCopy(message.content),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(duration: 400.ms)
+        .slideY(begin: 0.08, duration: 400.ms, curve: Curves.easeOut);
   }
 }

@@ -101,8 +101,8 @@ class _OnboardingScreenEnhancedState
           );
 
       Haptics.heavy();
-      await Future.delayed(const Duration(milliseconds: 600));
 
+      // Simple slide transition to dashboard
       if (mounted) {
         context.go('/scout');
       }
@@ -120,13 +120,6 @@ class _OnboardingScreenEnhancedState
 
   @override
   Widget build(BuildContext context) {
-    final accentColor =
-        CupertinoDynamicColor.resolve(AppColors.accent, context);
-    final dividerColor =
-        CupertinoDynamicColor.resolve(AppColors.divider, context);
-    final tertiaryColor =
-        CupertinoDynamicColor.resolve(AppColors.textTertiary, context);
-
     return CupertinoPageScaffold(
       child: SafeArea(
         child: Column(
@@ -140,25 +133,33 @@ class _OnboardingScreenEnhancedState
                   Haptics.light();
                 },
                 children: [
-                  _OnboardingPage(
+                  const _OnboardingPage(
+                    icon: CupertinoIcons.search,
                     title: 'Find Hidden Opportunities',
                     description:
                         'Search for businesses with poor or no web presence in any niche.',
+                    pageIndex: 0,
                   ),
-                  _OnboardingPage(
+                  const _OnboardingPage(
+                    icon: CupertinoIcons.chart_bar,
                     title: 'AI-Powered Analysis',
                     description:
                         'Get instant insights on website quality, SEO gaps, and online reputation.',
+                    pageIndex: 1,
                   ),
-                  _OnboardingPage(
+                  const _OnboardingPage(
+                    icon: CupertinoIcons.globe,
                     title: 'Generate Demo Sites',
                     description:
                         'Create professional demo websites in seconds to showcase your work.',
+                    pageIndex: 2,
                   ),
-                  _OnboardingPage(
+                  const _OnboardingPage(
+                    icon: CupertinoIcons.bubble_left_bubble_right,
                     title: 'Personalized Outreach',
                     description:
                         'AI writes custom messages for email, WhatsApp, Instagram, or phone.',
+                    pageIndex: 3,
                   ),
                   _ProfileSetupPage(
                     nameController: _nameController,
@@ -170,60 +171,61 @@ class _OnboardingScreenEnhancedState
               ),
             ),
 
-            // Page indicator
+            // Page indicator dots
             if (_currentPage < 4)
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
                   4,
                   (index) => AnimatedContainer(
-                    duration: const Duration(milliseconds: 350),
+                    duration: AppConstants.standardAnimation,
                     curve: Curves.easeOutCubic,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
                     width: 6,
                     height: 6,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: index == _currentPage
-                          ? accentColor
-                          : dividerColor,
+                          ? CupertinoDynamicColor.resolve(
+                              AppColors.accent, context)
+                          : CupertinoDynamicColor.resolve(
+                              AppColors.divider, context),
                     ),
                   ),
                 ),
               ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppConstants.sectionGap),
 
             // Navigation buttons
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppConstants.pageHorizontal, 0, AppConstants.pageHorizontal, 24,
+                AppConstants.pageHorizontal,
+                0,
+                AppConstants.pageHorizontal,
+                AppConstants.pageHorizontal,
               ),
               child: _currentPage < 4
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  ? Column(
                       children: [
-                        GestureDetector(
-                          onTap: _skipConfirmation,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 12, horizontal: 8),
-                            child: Text(
-                              'Skip',
-                              style: AppTypography.bodyMedium(context).copyWith(
-                                color: tertiaryColor,
-                              ),
-                            ),
-                          ),
-                        ),
                         AppButton(
                           label: 'Next',
-                          compact: true,
                           onPressed: () {
                             _pageController.nextPage(
                               duration: const Duration(milliseconds: 400),
                               curve: Curves.easeInOutCubic,
                             );
                           },
+                        ),
+                        const SizedBox(height: AppConstants.itemGap),
+                        GestureDetector(
+                          onTap: _skipConfirmation,
+                          child: Text(
+                            'Skip',
+                            style: AppTypography.bodyMedium(context).copyWith(
+                              color: CupertinoDynamicColor.resolve(
+                                  AppColors.textTertiary, context),
+                            ),
+                          ),
                         ),
                       ],
                     )
@@ -243,47 +245,103 @@ class _OnboardingScreenEnhancedState
   }
 }
 
-/// Text-only onboarding page — editorial minimalism
-class _OnboardingPage extends StatelessWidget {
+/// Animated onboarding page
+class _OnboardingPage extends StatefulWidget {
+  final IconData icon;
   final String title;
   final String description;
+  final int pageIndex;
 
   const _OnboardingPage({
+    required this.icon,
     required this.title,
     required this.description,
+    required this.pageIndex,
   });
 
   @override
+  State<_OnboardingPage> createState() => _OnboardingPageState();
+}
+
+class _OnboardingPageState extends State<_OnboardingPage>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final secondaryColor =
-        CupertinoDynamicColor.resolve(AppColors.textSecondary, context);
+    final accentColor =
+        CupertinoDynamicColor.resolve(AppColors.accent, context);
 
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // Icon with subtle background
+          Container(
+            width: 96,
+            height: 96,
+            decoration: BoxDecoration(
+              color: CupertinoDynamicColor.resolve(
+                  AppColors.chipInactive, context),
+              borderRadius: BorderRadius.circular(AppColors.radiusXL),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              widget.icon,
+              size: 48,
+              color: accentColor,
+            ),
+          )
+              .animate(controller: _controller)
+              .scale(
+                begin: const Offset(0.7, 0.7),
+                duration: 500.ms,
+                curve: Curves.easeOutBack,
+              )
+              .fadeIn(duration: 400.ms),
+          const SizedBox(height: 36),
+
+          // Title
           Text(
-            title,
+            widget.title,
             style: AppTypography.displayLarge(context),
             textAlign: TextAlign.center,
           )
               .animate()
               .fadeIn(delay: 200.ms, duration: 400.ms)
-              .slideY(begin: 0.08, delay: 200.ms, duration: 400.ms),
+              .slideY(begin: 0.15, delay: 200.ms, duration: 400.ms),
           const SizedBox(height: 12),
 
+          // Description
           Text(
-            description,
+            widget.description,
             style: AppTypography.bodyLarge(context).copyWith(
-              color: secondaryColor,
+              color: CupertinoDynamicColor.resolve(
+                  AppColors.textSecondary, context),
               height: 1.5,
             ),
             textAlign: TextAlign.center,
           )
               .animate()
               .fadeIn(delay: 400.ms, duration: 400.ms)
-              .slideY(begin: 0.08, delay: 400.ms, duration: 400.ms),
+              .slideY(begin: 0.15, delay: 400.ms, duration: 400.ms),
         ],
       ),
     );
@@ -306,15 +364,6 @@ class _ProfileSetupPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final searchFieldColor =
-        CupertinoDynamicColor.resolve(AppColors.searchField, context);
-    final tertiaryColor =
-        CupertinoDynamicColor.resolve(AppColors.textTertiary, context);
-    final scoreGoodColor =
-        CupertinoDynamicColor.resolve(AppColors.scoreGood, context);
-    final secondaryColor =
-        CupertinoDynamicColor.resolve(AppColors.textSecondary, context);
-
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -327,76 +376,85 @@ class _ProfileSetupPage extends StatelessWidget {
           )
               .animate()
               .fadeIn(duration: 400.ms)
-              .slideY(begin: -0.08, duration: 400.ms),
+              .slideY(begin: -0.15, duration: 400.ms),
           const SizedBox(height: 8),
           Text(
             'This helps us personalize your experience',
-            style: AppTypography.bodyLarge(context).copyWith(
-              color: secondaryColor,
+            style: AppTypography.bodyMedium(context).copyWith(
+              color: CupertinoDynamicColor.resolve(
+                  AppColors.textTertiary, context),
             ),
             textAlign: TextAlign.center,
           )
               .animate()
               .fadeIn(delay: 100.ms, duration: 400.ms)
-              .slideY(begin: -0.08, delay: 100.ms, duration: 400.ms),
+              .slideY(begin: -0.15, delay: 100.ms, duration: 400.ms),
           const SizedBox(height: 32),
 
           // Name field
           CupertinoTextField(
             controller: nameController,
             placeholder: 'Your Name',
-            placeholderStyle: TextStyle(color: tertiaryColor),
             prefix: Padding(
               padding: const EdgeInsets.only(left: 12),
               child: Icon(CupertinoIcons.person,
-                  color: tertiaryColor, size: 20),
+                  color: CupertinoDynamicColor.resolve(
+                      AppColors.textTertiary, context),
+                  size: 20),
             ),
             suffix: nameValid
                 ? Padding(
                     padding: const EdgeInsets.only(right: 12),
                     child: Icon(CupertinoIcons.check_mark_circled_solid,
-                        color: scoreGoodColor, size: 20),
+                        color: CupertinoDynamicColor.resolve(
+                            AppColors.scoreGood, context),
+                        size: 20),
                   )
                 : null,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             decoration: BoxDecoration(
-              color: searchFieldColor,
+              color: CupertinoDynamicColor.resolve(
+                  AppColors.searchField, context),
               borderRadius: BorderRadius.circular(AppColors.radiusM),
             ),
             onTap: () => Haptics.light(),
           )
               .animate()
               .fadeIn(delay: 300.ms, duration: 400.ms)
-              .slideX(begin: -0.05, delay: 300.ms, duration: 400.ms),
+              .slideX(begin: -0.1, delay: 300.ms, duration: 400.ms),
           const SizedBox(height: 16),
 
           // Business field
           CupertinoTextField(
             controller: businessController,
             placeholder: 'Business / Agency Name',
-            placeholderStyle: TextStyle(color: tertiaryColor),
             prefix: Padding(
               padding: const EdgeInsets.only(left: 12),
               child: Icon(CupertinoIcons.building_2_fill,
-                  color: tertiaryColor, size: 20),
+                  color: CupertinoDynamicColor.resolve(
+                      AppColors.textTertiary, context),
+                  size: 20),
             ),
             suffix: businessValid
                 ? Padding(
                     padding: const EdgeInsets.only(right: 12),
                     child: Icon(CupertinoIcons.check_mark_circled_solid,
-                        color: scoreGoodColor, size: 20),
+                        color: CupertinoDynamicColor.resolve(
+                            AppColors.scoreGood, context),
+                        size: 20),
                   )
                 : null,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             decoration: BoxDecoration(
-              color: searchFieldColor,
+              color: CupertinoDynamicColor.resolve(
+                  AppColors.searchField, context),
               borderRadius: BorderRadius.circular(AppColors.radiusM),
             ),
             onTap: () => Haptics.light(),
           )
               .animate()
               .fadeIn(delay: 400.ms, duration: 400.ms)
-              .slideX(begin: -0.05, delay: 400.ms, duration: 400.ms),
+              .slideX(begin: -0.1, delay: 400.ms, duration: 400.ms),
         ],
       ),
     );
