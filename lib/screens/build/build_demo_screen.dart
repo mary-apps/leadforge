@@ -17,6 +17,7 @@ import '../../providers/businesses_provider.dart';
 import '../../models/profile.dart';
 import '../../providers/profile_provider.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/error_state.dart';
 import '../../widgets/ios_toast.dart';
 import '../../utils/haptics.dart';
 
@@ -261,7 +262,10 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
             );
           },
           loading: () => const Center(child: CupertinoActivityIndicator()),
-          error: (error, _) => Center(child: Text('Error: $error')),
+          error: (error, _) => ErrorState(
+            error: error,
+            onRetry: () => ref.invalidate(businessProvider(widget.businessId)),
+          ),
         ),
       ),
     );

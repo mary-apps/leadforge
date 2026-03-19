@@ -21,6 +21,7 @@ import '../../widgets/inline_score.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/ios_toast.dart';
 import '../../widgets/share_business_sheet.dart';
+import '../../widgets/error_state.dart';
 import '../../widgets/skeleton_loaders.dart';
 import '../../utils/haptics.dart';
 
@@ -380,7 +381,13 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
         );
       },
       loading: () => const SafeArea(child: BusinessDetailSkeleton()),
-      error: (error, _) => Center(child: Text('Error: $error')),
+      error: (error, _) => CupertinoPageScaffold(
+        navigationBar: const CupertinoNavigationBar(middle: Text('Error')),
+        child: ErrorState(
+          error: error,
+          onRetry: () => ref.invalidate(businessProvider(widget.businessId)),
+        ),
+      ),
     );
   }
 }
