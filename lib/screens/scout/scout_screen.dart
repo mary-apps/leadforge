@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../config/theme.dart';
+import '../../models/business.dart';
 import '../../models/profile.dart';
+import '../../providers/auto_audit_provider.dart';
 import '../../providers/businesses_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../widgets/lead_item.dart';
@@ -306,8 +308,20 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
                           business: business,
                           showChevron: true,
                           showDivider: index < businesses.length - 1,
-                          onTap: () => context
-                              .push('/business/${business.id}'),
+                          onTap: () {
+                            // Fire auto-audit in background if enabled and business not yet audited
+                            final autoAudit = ref.read(autoAuditProvider);
+                            if (autoAudit && !business.isAudited) {
+                              final profile = ref.read(profileNotifierProvider).value;
+                              final canAudit = profile == null ||
+                                  profile.isPro ||
+                                  profile.auditsThisMonth < 3;
+                              if (canAudit) {
+                                triggerAutoAudit(ref, business.id);
+                              }
+                            }
+                            context.push('/business/${business.id}');
+                          },
                         )
                             .animate(
                                 delay: Duration(
