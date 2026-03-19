@@ -145,7 +145,20 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                   child: DailyDigest(
                     businesses: businesses,
-                    onNavigate: (route) => context.go(route),
+                    onNavigate: (route) {
+                      final uri = Uri.parse(route);
+                      final filter = uri.queryParameters['filter'];
+                      if (uri.path == '/pipeline' && filter != null) {
+                        final status = BusinessStatus.values.firstWhere(
+                          (s) => s.name == filter,
+                          orElse: () => BusinessStatus.found,
+                        );
+                        ref.read(pipelineFilterProvider.notifier).state = status;
+                        context.go('/pipeline');
+                      } else {
+                        context.go(route);
+                      }
+                    },
                   ),
                 ),
               ),

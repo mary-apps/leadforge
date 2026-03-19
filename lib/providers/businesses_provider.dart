@@ -97,6 +97,9 @@ final pipelineProvider = FutureProvider<Map<BusinessStatus, List<Business>>>((re
   return grouped;
 });
 
+/// Shared filter state for pipeline, settable from dashboard digest
+final pipelineFilterProvider = StateProvider<BusinessStatus?>((ref) => null);
+
 /// Fire audit in background and manage provider invalidation chain.
 Future<void> triggerAutoAudit(WidgetRef ref, String businessId) async {
   // Mark as loading

@@ -32,6 +32,18 @@ class _PipelineScreenEnhancedState
 
   BusinessStatus? _filterStatus;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final sharedFilter = ref.read(pipelineFilterProvider);
+      if (sharedFilter != null) {
+        setState(() => _filterStatus = sharedFilter);
+        ref.read(pipelineFilterProvider.notifier).state = null;
+      }
+    });
+  }
+
   void _showFilterSheet() {
     Haptics.light();
     showCupertinoModalPopup(
@@ -150,6 +162,7 @@ class _PipelineScreenEnhancedState
           CupertinoDynamicColor.resolve(AppColors.background, context),
       child: pipelineAsync.when(
         data: (pipeline) {
+          final needsAction = _computeNeedsAction(pipeline);
           return CustomScrollView(
             physics: const BouncingScrollPhysics(
               parent: AlwaysScrollableScrollPhysics(),
@@ -248,6 +261,19 @@ class _PipelineScreenEnhancedState
                   ),
                 ),
 
+              if (needsAction.isNotEmpty && _filterStatus == null)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      AppConstants.pageHorizontal,
+                      0,
+                      AppConstants.pageHorizontal,
+                      AppConstants.itemGap,
+                    ),
+                    child: _buildNeedsActionSection(needsAction),
+                  ),
+                ),
+
               // Pipeline sections
               SliverPadding(
                 padding: EdgeInsets.fromLTRB(
@@ -319,6 +345,106 @@ class _PipelineScreenEnhancedState
     );
   }
 
+  List<(Business, String)> _computeNeedsAction(
+      Map<BusinessStatus, List<Business>> pipeline) {
+    final now = DateTime.now();
+    final result = <(Business, String)>[];
+
+    for (final b in pipeline[BusinessStatus.found] ?? []) {
+      if (now.difference(b.createdAt ?? now).inHours >= 24) {
+        result.add((b, 'Audit this lead'));
+      }
+    }
+    for (final b in pipeline[BusinessStatus.audited] ?? []) {
+      final ts = b.auditedAt ?? b.updatedAt ?? b.createdAt ?? now;
+      if (now.difference(ts).inHours >= 48) {
+        result.add((b, 'Create demo'));
+      }
+    }
+    for (final b in pipeline[BusinessStatus.demoCreated] ?? []) {
+      final ts = b.updatedAt ?? b.createdAt ?? now;
+      if (now.difference(ts).inHours >= 48) {
+        result.add((b, 'Send outreach'));
+      }
+    }
+    for (final b in pipeline[BusinessStatus.contacted] ?? []) {
+      final ts = b.updatedAt ?? b.createdAt ?? now;
+      if (now.difference(ts).inHours >= 72) {
+        result.add((b, 'Follow up'));
+      }
+    }
+    return result;
+  }
+
+  Widget _buildNeedsActionSection(List<(Business, String)> items) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'NEEDS ACTION',
+                  style: AppTypography.labelSmall(context).copyWith(
+                    color: CupertinoDynamicColor.resolve(
+                        AppColors.scoreMid, context),
+                  ),
+                ),
+              ),
+              Text(
+                items.length.toString(),
+                style: AppTypography.labelLarge(context).copyWith(
+                  color: CupertinoDynamicColor.resolve(
+                      AppColors.scoreMid, context),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          height: 0.5,
+          color: CupertinoDynamicColor.resolve(AppColors.divider, context),
+        ),
+        ...items.map((item) {
+          final (business, action) = item;
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => context.push('/business/${business.id}'),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(business.name,
+                            style: AppTypography.titleMedium(context)),
+                        const SizedBox(height: 2),
+                        Text(action,
+                            style: AppTypography.labelLarge(context).copyWith(
+                              color: CupertinoDynamicColor.resolve(
+                                  AppColors.scoreMid, context),
+                            )),
+                      ],
+                    ),
+                  ),
+                  Icon(CupertinoIcons.chevron_right,
+                      size: 14,
+                      color: CupertinoDynamicColor.resolve(
+                          AppColors.textTertiary, context)),
+                ],
+              ),
+            ),
+          );
+        }),
+        SizedBox(height: AppConstants.itemGap),
+      ],
+    );
+  }
+
   Widget _buildSection(
     String title,
     BusinessStatus status,
@@ -347,7 +473,7 @@ class _PipelineScreenEnhancedState
                     title.toUpperCase(),
                     style: AppTypography.labelSmall(context).copyWith(
                       color: CupertinoDynamicColor.resolve(
-                          AppColors.textTertiary, context),
+                          AppColors.textSecondary, context),
                     ),
                   ),
                 ),
