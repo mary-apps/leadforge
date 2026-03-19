@@ -1,16 +1,22 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../config/theme.dart';
 import '../../models/business.dart';
 import '../../models/audit_result.dart';
+import '../../models/demo.dart';
+import '../../models/message.dart';
 import '../../services/audit_service.dart';
 import '../../providers/auto_audit_provider.dart';
 import '../../providers/audit_state_provider.dart';
 import '../../providers/businesses_provider.dart';
+import '../../providers/demo_provider.dart';
+import '../../providers/outreach_provider.dart';
 import '../../widgets/inline_score.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/ios_toast.dart';
@@ -93,6 +99,10 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
         final auditState = ref.watch(auditStateProvider(widget.businessId));
         final autoAuditEnabled = ref.watch(autoAuditProvider);
         final isAutoAuditing = auditState is AsyncLoading;
+        final demoAsync = ref.watch(demoForBusinessProvider(business.id));
+        final outreachAsync = ref.watch(outreachForBusinessProvider(business.id));
+        final demo = demoAsync.valueOrNull;
+        final outreach = outreachAsync.valueOrNull;
 
         return CupertinoPageScaffold(
           child: CustomScrollView(
@@ -331,22 +341,64 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                           ),
                       const SizedBox(height: AppConstants.sectionGap),
 
-                      // CTA buttons
-                      AppButton(
-                        label: 'Create Demo',
-                        onPressed: () {
-                          context
-                              .push('/business/${business.id}/build-demo');
-                        },
-                      ),
+                      // Demo action
+                      if (demo == null)
+                        AppButton(
+                          label: 'Generate Demo Site',
+                          onPressed: () async {
+                            await context.push('/business/${business.id}/build-demo');
+                            ref.invalidate(demoForBusinessProvider(business.id));
+                          },
+                        )
+                      else
+                        _DemoStatusCard(
+                          demo: demo,
+                          onPreview: () => launchUrl(Uri.parse(demo.publicUrl),
+                              mode: LaunchMode.externalApplication),
+                          onShare: () => Share.share(
+                              'Check out this demo: ${demo.publicUrl}',
+                              subject: 'Demo Website'),
+                          onRegenerate: () async {
+                            await context.push('/business/${business.id}/build-demo');
+                            ref.invalidate(demoForBusinessProvider(business.id));
+                          },
+                        ),
                       const SizedBox(height: 12),
-                      AppButton(
-                        label: 'Compose Outreach',
-                        variant: AppButtonVariant.secondary,
-                        onPressed: () {
-                          context.push('/business/${business.id}/outreach');
-                        },
-                      ),
+
+                      // Outreach action
+                      if (outreach == null) ...[
+                        AppButton(
+                          label: 'Compose Outreach',
+                          variant: AppButtonVariant.secondary,
+                          onPressed: () async {
+                            await context.push('/business/${business.id}/outreach');
+                            ref.invalidate(outreachForBusinessProvider(business.id));
+                          },
+                        ),
+                        if (demo == null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(
+                              'Generate demo first for best results',
+                              style: AppTypography.chip(context).copyWith(
+                                color: CupertinoDynamicColor.resolve(
+                                    AppColors.textTertiary, context),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                      ] else
+                        _OutreachStatusCard(
+                          message: outreach,
+                          onCopy: () {
+                            Clipboard.setData(ClipboardData(text: outreach.content));
+                            HapticFeedback.mediumImpact();
+                          },
+                          onRegenerate: () async {
+                            await context.push('/business/${business.id}/outreach');
+                            ref.invalidate(outreachForBusinessProvider(business.id));
+                          },
+                        ),
                     ],
                     const SizedBox(height: 120),
                   ]),
@@ -569,4 +621,175 @@ class _AnalysisStep {
   final IconData icon;
   final String label;
   const _AnalysisStep(this.icon, this.label);
+}
+
+// ---------------------------------------------------------------------------
+// Demo Status Card
+// ---------------------------------------------------------------------------
+
+class _DemoStatusCard extends StatelessWidget {
+  final Demo demo;
+  final VoidCallback onPreview;
+  final VoidCallback onShare;
+  final VoidCallback onRegenerate;
+
+  const _DemoStatusCard({
+    required this.demo,
+    required this.onPreview,
+    required this.onShare,
+    required this.onRegenerate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: CupertinoDynamicColor.resolve(AppColors.divider, context),
+            width: 1,
+          ),
+          bottom: BorderSide(
+            color: CupertinoDynamicColor.resolve(AppColors.divider, context),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(CupertinoIcons.checkmark_circle_fill,
+                  size: 16,
+                  color: CupertinoDynamicColor.resolve(
+                      AppColors.scoreGood, context)),
+              const SizedBox(width: 6),
+              Text('Demo ready',
+                  style: AppTypography.labelLarge(context).copyWith(
+                    color: CupertinoDynamicColor.resolve(
+                        AppColors.scoreGood, context),
+                    fontWeight: FontWeight.w600,
+                  )),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: AppButton(
+                    label: 'Preview',
+                    compact: true,
+                    onPressed: onPreview),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: AppButton(
+                    label: 'Share',
+                    compact: true,
+                    variant: AppButtonVariant.secondary,
+                    onPressed: onShare),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: AppButton(
+                    label: 'Redo',
+                    compact: true,
+                    variant: AppButtonVariant.ghost,
+                    onPressed: onRegenerate),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Outreach Status Card
+// ---------------------------------------------------------------------------
+
+class _OutreachStatusCard extends StatelessWidget {
+  final Message message;
+  final VoidCallback onCopy;
+  final VoidCallback onRegenerate;
+
+  const _OutreachStatusCard({
+    required this.message,
+    required this.onCopy,
+    required this.onRegenerate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: CupertinoDynamicColor.resolve(AppColors.divider, context),
+            width: 1,
+          ),
+          bottom: BorderSide(
+            color: CupertinoDynamicColor.resolve(AppColors.divider, context),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(CupertinoIcons.checkmark_circle_fill,
+                  size: 16,
+                  color: CupertinoDynamicColor.resolve(
+                      AppColors.scoreGood, context)),
+              const SizedBox(width: 6),
+              Text('Outreach ready',
+                  style: AppTypography.labelLarge(context).copyWith(
+                    color: CupertinoDynamicColor.resolve(
+                        AppColors.scoreGood, context),
+                    fontWeight: FontWeight.w600,
+                  )),
+              const Spacer(),
+              Text(message.channel.name,
+                  style: AppTypography.chip(context)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message.content,
+            style: AppTypography.bodyMedium(context).copyWith(
+              color: CupertinoDynamicColor.resolve(
+                  AppColors.textSecondary, context),
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: AppButton(
+                    label: 'Copy',
+                    compact: true,
+                    onPressed: onCopy),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: AppButton(
+                    label: 'Regenerate',
+                    compact: true,
+                    variant: AppButtonVariant.ghost,
+                    onPressed: onRegenerate),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
