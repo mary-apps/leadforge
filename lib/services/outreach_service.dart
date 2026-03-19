@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../config/constants.dart';
@@ -41,8 +42,8 @@ class OutreachService {
       if (data['message'] != null) {
         return Message.fromJson(data['message'] as Map<String, dynamic>);
       }
-    } catch (_) {
-      // Fallback: fetch from database if response parsing fails
+    } catch (e) {
+      debugPrint('Outreach response parsing failed: $e, falling back to DB fetch');
     }
 
     final messages = await fetchMessages(businessId);

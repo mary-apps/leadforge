@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../config/constants.dart';
@@ -43,8 +44,8 @@ class BuildService {
       if (data['demo'] != null) {
         return Demo.fromJson(data['demo'] as Map<String, dynamic>);
       }
-    } catch (_) {
-      // Fallback: fetch from database if response parsing fails
+    } catch (e) {
+      debugPrint('Build demo response parsing failed: $e, falling back to DB fetch');
     }
 
     final demo = await fetchDemo(businessId);
