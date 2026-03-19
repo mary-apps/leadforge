@@ -8,6 +8,8 @@ import '../../config/theme.dart';
 import '../../models/business.dart';
 import '../../models/audit_result.dart';
 import '../../services/audit_service.dart';
+import '../../providers/auto_audit_provider.dart';
+import '../../providers/audit_state_provider.dart';
 import '../../providers/businesses_provider.dart';
 import '../../widgets/inline_score.dart';
 import '../../widgets/app_button.dart';
@@ -37,7 +39,6 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
     setState(() => _isAuditing = true);
 
     try {
-      await Future.delayed(const Duration(seconds: 2));
       final result = await AuditService.auditBusiness(business.id);
 
       if (mounted) {
@@ -88,6 +89,10 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
             ),
           );
         }
+
+        final auditState = ref.watch(auditStateProvider(widget.businessId));
+        final autoAuditEnabled = ref.watch(autoAuditProvider);
+        final isAutoAuditing = auditState is AsyncLoading;
 
         return CupertinoPageScaffold(
           child: CustomScrollView(
@@ -198,7 +203,7 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                           ),
                         if (business.website != null) ...[
                           if (business.phone != null)
-                            const SizedBox(width: 24),
+                            const SizedBox(width: AppConstants.pageHorizontal),
                           _ContactLink(
                             icon: CupertinoIcons.globe,
                             label: 'Website',
@@ -210,7 +215,7 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                         if (business.address != null) ...[
                           if (business.phone != null ||
                               business.website != null)
-                            const SizedBox(width: 24),
+                            const SizedBox(width: AppConstants.pageHorizontal),
                           _ContactLink(
                             icon: CupertinoIcons.map,
                             label: 'Maps',
@@ -233,18 +238,30 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                     const SizedBox(height: AppConstants.sectionGap),
 
                     // Audit section
-                    if (!business.isAudited && !_isAuditing)
+                    if (!business.isAudited && !_isAuditing && !isAutoAuditing)
+                      autoAuditEnabled
+                          ? const SizedBox.shrink()
+                          : AppButton(
+                              label: 'Analyze Business',
+                              onPressed: () => _runAudit(business),
+                            )
+                                .animate(delay: 300.ms)
+                                .fadeIn(duration: 400.ms)
+                                .slideY(
+                                  begin: AppConstants.entranceSlideDistance / 100,
+                                  duration: 400.ms,
+                                  curve: Curves.easeOutQuart,
+                                ),
+
+                    // Show shimmer while auto-auditing
+                    if (isAutoAuditing) _AnalyzingAnimation(),
+
+                    // Show retry if auto-audit failed
+                    if (auditState is AsyncError && !business.isAudited)
                       AppButton(
-                        label: 'Analyze Business',
-                        onPressed: () => _runAudit(business),
-                      )
-                          .animate(delay: 300.ms)
-                          .fadeIn(duration: 400.ms)
-                          .slideY(
-                            begin: AppConstants.entranceSlideDistance / 100,
-                            duration: 400.ms,
-                            curve: Curves.easeOutQuart,
-                          ),
+                        label: 'Retry Analysis',
+                        onPressed: () => triggerAutoAudit(ref, business.id),
+                      ),
 
                     if (_isAuditing) _AnalyzingAnimation(),
 
