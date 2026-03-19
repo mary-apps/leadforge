@@ -58,6 +58,19 @@ class OutreachService {
         .toList();
   }
 
+  /// Fetch the most recent outreach message for a business
+  static Future<Message?> fetchLatestOutreach(String businessId) async {
+    final response = await SupabaseService.client
+        .from('messages')
+        .select()
+        .eq('business_id', businessId)
+        .order('created_at', ascending: false)
+        .limit(1);
+
+    if (response.isEmpty) return null;
+    return Message.fromJson(response.first);
+  }
+
   /// Mark message as copied
   static Future<void> markCopied(String messageId) async {
     await SupabaseService.client
