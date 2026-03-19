@@ -76,10 +76,14 @@ async function scrapeBusinessWebsite(url: string): Promise<string | null> {
   if (!url) return null
   try {
     const cleanUrl = url.startsWith('http') ? url : `https://${url}`
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 5000)
     const response = await fetch(cleanUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LeadForge/1.0)' },
       redirect: 'follow',
+      signal: controller.signal,
     })
+    clearTimeout(timeout)
     if (!response.ok) return null
     const html = await response.text()
 
@@ -475,7 +479,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[build-demo] FATAL:', error.message)
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: 'Something went wrong. Please try again.' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }

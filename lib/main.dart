@@ -32,7 +32,7 @@ void main() async {
   );
   
   // Initialize RevenueCat
-  await Purchases.setLogLevel(LogLevel.debug);
+  await Purchases.setLogLevel(LogLevel.error);
   PurchasesConfiguration configuration;
   configuration = PurchasesConfiguration(AppConstants.revenueCatApiKey);
   await Purchases.configure(configuration);

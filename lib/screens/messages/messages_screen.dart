@@ -93,6 +93,11 @@ class MessagesScreen extends ConsumerWidget {
                 parent: AlwaysScrollableScrollPhysics(),
               ),
               slivers: [
+                CupertinoSliverRefreshControl(
+                  onRefresh: () async {
+                    await ref.read(businessesProvider.notifier).load();
+                  },
+                ),
                 const CupertinoSliverNavigationBar(
                   largeTitle: Text('Activity'),
                   border: null,

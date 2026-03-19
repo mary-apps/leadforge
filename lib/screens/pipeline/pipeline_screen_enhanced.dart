@@ -169,6 +169,11 @@ class _PipelineScreenEnhancedState
               parent: AlwaysScrollableScrollPhysics(),
             ),
             slivers: [
+              CupertinoSliverRefreshControl(
+                onRefresh: () async {
+                  await ref.read(businessesProvider.notifier).load();
+                },
+              ),
               // Custom title header
               SliverToBoxAdapter(
                 child: SafeArea(

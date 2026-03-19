@@ -224,4 +224,5 @@ class AppConstants {
   static const double navPillH = 16.0;
   static const double navPillV = 6.0;
   static const double scrollBottomPadding = 100.0;
+  static const String appVersion = '1.0.0';
 }

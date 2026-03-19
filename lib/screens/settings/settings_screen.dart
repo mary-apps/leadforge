@@ -403,7 +403,7 @@ class SettingsScreen extends ConsumerWidget {
                           context: context,
                           builder: (context) => CupertinoAlertDialog(
                             title: const Text('LeadForge'),
-                            content: const Text('Version 1.0.0'),
+                            content: Text('Version ${AppConstants.appVersion}'),
                             actions: [
                               CupertinoDialogAction(
                                 onPressed: () => Navigator.pop(context),
