@@ -12,6 +12,7 @@ import '../../widgets/lead_item.dart';
 import '../../widgets/stat_cell.dart';
 import '../../widgets/skeleton_loaders.dart';
 import '../../widgets/error_state.dart';
+import '../../widgets/daily_digest.dart';
 import '../../widgets/weekly_activity_graph.dart';
 
 
@@ -31,9 +32,9 @@ class DashboardScreen extends ConsumerWidget {
     final profileAsync = ref.watch(profileNotifierProvider);
 
     final displayName = profileAsync.when(
-      data: (p) => p?.displayName ?? 'there',
-      loading: () => '...',
-      error: (_, __) => 'there',
+      data: (p) => p?.displayName,
+      loading: () => null,
+      error: (_, __) => null,
     );
 
     return CupertinoPageScaffold(
@@ -74,7 +75,9 @@ class DashboardScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: AppConstants.contentGap),
                       Text(
-                        '${_timeAwareGreeting()}, $displayName',
+                        displayName != null
+                            ? '${_timeAwareGreeting()}, $displayName'
+                            : _timeAwareGreeting(),
                         style: AppTypography.bodyLarge(context).copyWith(
                           color: CupertinoDynamicColor.resolve(
                             AppColors.textSecondary,
@@ -131,6 +134,22 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ),
 
+              // Daily Digest
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppConstants.pageHorizontal,
+                    AppConstants.sectionGap,
+                    AppConstants.pageHorizontal,
+                    0,
+                  ),
+                  child: DailyDigest(
+                    businesses: businesses,
+                    onNavigate: (route) => context.go(route),
+                  ),
+                ),
+              ),
+
               // Weekly Activity Graph
               SliverToBoxAdapter(
                 child: Padding(
@@ -160,7 +179,12 @@ class DashboardScreen extends ConsumerWidget {
                     children: [
                       Text(
                         'RECENT',
-                        style: AppTypography.labelSmall(context),
+                        style: AppTypography.labelSmall(context).copyWith(
+                          color: CupertinoDynamicColor.resolve(
+                            AppColors.textSecondary,
+                            context,
+                          ),
+                        ),
                       ),
                       if (recentLeads.isNotEmpty)
                         GestureDetector(
@@ -188,7 +212,7 @@ class DashboardScreen extends ConsumerWidget {
                     AppConstants.pageHorizontal,
                     AppConstants.itemGap,
                     AppConstants.pageHorizontal,
-                    100,
+                    AppConstants.scrollBottomPadding,
                   ),
                   sliver: SliverList.builder(
                     itemCount: recentLeads.length,
@@ -208,10 +232,10 @@ class DashboardScreen extends ConsumerWidget {
                                       index,
                             ),
                           )
-                          .fadeIn(duration: 300.ms)
+                          .fadeIn(duration: AppConstants.standardAnimation)
                           .slideY(
                             begin: AppConstants.entranceSlideDistance / 100,
-                            duration: 350.ms,
+                            duration: AppConstants.standardAnimation + const Duration(milliseconds: 100),
                             curve: Curves.easeOutCubic,
                           );
                     },
@@ -219,7 +243,7 @@ class DashboardScreen extends ConsumerWidget {
                 ),
 
               if (recentLeads.isEmpty)
-                const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                const SliverToBoxAdapter(child: SizedBox(height: AppConstants.scrollBottomPadding)),
             ],
           );
         },
@@ -391,7 +415,12 @@ class _HeroStatState extends State<_HeroStat>
         ),
         Text(
           'leads this month',
-          style: AppTypography.labelLarge(context),
+          style: AppTypography.labelLarge(context).copyWith(
+            color: CupertinoDynamicColor.resolve(
+              AppColors.textSecondary,
+              context,
+            ),
+          ),
         ),
       ],
     );
