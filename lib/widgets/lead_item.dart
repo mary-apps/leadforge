@@ -12,7 +12,7 @@ class LeadItem extends StatelessWidget {
     super.key,
     required this.business,
     this.onTap,
-    this.showChevron = false,
+    this.showChevron = true,
     this.showDivider = true,
   });
 
@@ -87,14 +87,20 @@ class LeadItem extends StatelessWidget {
 
   Widget _buildTag(BuildContext context, String label) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: CupertinoDynamicColor.resolve(AppColors.chipInactive, context),
         borderRadius: BorderRadius.circular(AppColors.radiusS),
       ),
       child: Text(
         label,
-        style: AppTypography.chip(context).copyWith(fontSize: 10),
+        style: AppTypography.chip(context).copyWith(
+          fontSize: 11,
+          color: CupertinoDynamicColor.resolve(
+            AppColors.textSecondary,
+            context,
+          ),
+        ),
       ),
     );
   }

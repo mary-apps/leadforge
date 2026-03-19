@@ -3,9 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../config/theme.dart';
 import '../../models/business.dart';
@@ -80,7 +82,7 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
           _isBuilding = false;
         });
         Haptics.medium();
-        IosToast.show(context, 'Demo created!');
+        _openPreview(demo);
       }
     } catch (e) {
       if (mounted) {
@@ -129,6 +131,24 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
     Share.share(
       'Check out this demo website I built for you: ${_generatedDemo!.publicUrl}',
       subject: 'Demo Website',
+    );
+  }
+
+  void _openPreview(Demo demo) {
+    Navigator.of(context).push(
+      CupertinoPageRoute(
+        builder: (_) => _DemoPreviewScreen(
+          demo: demo,
+          onRegenerate: () {
+            Navigator.of(context).pop();
+            final businessAsync = ref.read(businessProvider(widget.businessId));
+            final business = businessAsync.value;
+            if (business != null) _buildDemo(business);
+          },
+          onShare: _shareDemo,
+          onCopyLink: _copyLink,
+        ),
+      ),
     );
   }
 
@@ -227,12 +247,15 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
 
                   if (_isBuilding) _BuildingAnimation(),
 
-                  if (_generatedDemo != null)
-                    _DemoResult(
+                  if (_generatedDemo != null) ...[
+                    _DemoReadyCard(
                       demo: _generatedDemo!,
-                      onCopyLink: _copyLink,
+                      onPreview: () => _openPreview(_generatedDemo!),
                       onShare: _shareDemo,
+                      onCopyLink: _copyLink,
+                      onRegenerate: () => _buildDemo(business),
                     ),
+                  ],
                 ],
               ),
             );
@@ -415,189 +438,246 @@ class _BuildingAnimationState extends State<_BuildingAnimation> {
   }
 }
 
-// Demo result card
-class _DemoResult extends StatelessWidget {
+// Compact card shown when demo exists — primary action is Preview
+class _DemoReadyCard extends StatelessWidget {
   final Demo demo;
-  final Function(String) onCopyLink;
+  final VoidCallback onPreview;
   final VoidCallback onShare;
+  final Function(String) onCopyLink;
+  final VoidCallback onRegenerate;
 
-  const _DemoResult({
+  const _DemoReadyCard({
     required this.demo,
-    required this.onCopyLink,
+    required this.onPreview,
     required this.onShare,
+    required this.onCopyLink,
+    required this.onRegenerate,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: CupertinoDynamicColor.resolve(AppColors.surface, context),
-        borderRadius: BorderRadius.circular(AppColors.radiusM),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: CupertinoDynamicColor.resolve(
-                      AppColors.scoreGood, context)
-                  .withValues(alpha: 0.15),
-            ),
-            child: Icon(
-              CupertinoIcons.check_mark_circled_solid,
-              color: CupertinoDynamicColor.resolve(
-                  AppColors.scoreGood, context),
-              size: 32,
-            ),
-          )
-              .animate()
-              .scale(
-                delay: 100.ms,
-                duration: 400.ms,
-                curve: Curves.easeOutBack,
-              ),
-          const SizedBox(height: 16),
-          Text(
-            'Demo Site Created!',
-            style: AppTypography.titleMedium(context).copyWith(
-              color: CupertinoDynamicColor.resolve(
-                  AppColors.scoreGood, context),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Share this link with your prospect',
-            style: AppTypography.bodyMedium(context).copyWith(
-              color: CupertinoDynamicColor.resolve(
-                  AppColors.textTertiary, context),
-            ),
-          ),
-          const SizedBox(height: 20),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Preview CTA — the hero action
+        _GradientCTA(
+          label: 'Preview Demo Site',
+          icon: CupertinoIcons.eye,
+          onPressed: onPreview,
+        ),
+        const SizedBox(height: 16),
 
-          // URL display
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: CupertinoDynamicColor.resolve(
-                  AppColors.background, context),
-              borderRadius: BorderRadius.circular(AppColors.radiusM),
-              border: Border.all(
-                color: CupertinoDynamicColor.resolve(
-                        AppColors.scoreGood, context)
-                    .withValues(alpha: 0.15),
-                width: 0.5,
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    demo.publicUrl,
-                    style: AppTypography.mono(context).copyWith(
-                      color: CupertinoDynamicColor.resolve(
-                          AppColors.accent, context),
-                      fontSize: 13,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                CupertinoButton(
-                  padding: EdgeInsets.zero,
-                  minimumSize: const Size(24, 24),
-                  onPressed: () => onCopyLink(demo.publicUrl),
-                  child: const Icon(CupertinoIcons.doc_on_doc, size: 18),
-                ),
-              ],
+        // URL + copy
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: CupertinoDynamicColor.resolve(AppColors.surface, context),
+            borderRadius: BorderRadius.circular(AppColors.radiusM),
+            border: Border.all(
+              color: CupertinoDynamicColor.resolve(AppColors.border, context),
+              width: 0.5,
             ),
           ),
-          const SizedBox(height: 12),
-
-          // Analytics row
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: CupertinoDynamicColor.resolve(
-                  AppColors.surface, context),
-              borderRadius: BorderRadius.circular(AppColors.radiusM),
-            ),
-            child: Row(
-              children: [
-                Icon(CupertinoIcons.eye,
-                    size: 16,
-                    color: CupertinoDynamicColor.resolve(
-                        AppColors.textTertiary, context)),
-                const SizedBox(width: 6),
-                Text(
-                  '${demo.views} view${demo.views == 1 ? '' : 's'}',
-                  style: AppTypography.bodyMedium(context).copyWith(
-                    color: CupertinoDynamicColor.resolve(
-                        AppColors.textSecondary, context),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (demo.lastViewedAt != null) ...[
-                  const SizedBox(width: 16),
-                  Icon(CupertinoIcons.clock,
-                      size: 16,
-                      color: CupertinoDynamicColor.resolve(
-                          AppColors.textTertiary, context)),
-                  const SizedBox(width: 6),
-                  Text(
-                    _timeAgo(demo.lastViewedAt!),
-                    style: AppTypography.bodyMedium(context).copyWith(
-                      color: CupertinoDynamicColor.resolve(
-                          AppColors.textTertiary, context),
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          Row(
+          child: Row(
             children: [
               Expanded(
-                child: AppButton(
-                  label: 'Share',
-                  onPressed: onShare,
-                  variant: AppButtonVariant.secondary,
+                child: Text(
+                  demo.publicUrl,
+                  style: AppTypography.mono(context).copyWith(
+                    color: CupertinoDynamicColor.resolve(
+                        AppColors.textSecondary, context),
+                    fontSize: 12,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: AppButton(
-                  label: 'Open',
-                  onPressed: () {
-                    launchUrl(Uri.parse(demo.publicUrl),
-                        mode: LaunchMode.externalApplication);
-                  },
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(24, 24),
+                onPressed: () => onCopyLink(demo.publicUrl),
+                child: Icon(
+                  CupertinoIcons.doc_on_doc,
+                  size: 16,
+                  color: CupertinoDynamicColor.resolve(
+                      AppColors.accent, context),
                 ),
               ),
             ],
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 12),
+
+        // Secondary actions
+        Row(
+          children: [
+            Expanded(
+              child: AppButton(
+                label: 'Share',
+                onPressed: onShare,
+                variant: AppButtonVariant.secondary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: AppButton(
+                label: 'Regenerate',
+                onPressed: onRegenerate,
+                variant: AppButtonVariant.ghost,
+              ),
+            ),
+          ],
+        ),
+      ],
     )
         .animate()
         .fadeIn(duration: 400.ms)
         .slideY(begin: 0.08, duration: 400.ms, curve: Curves.easeOut);
   }
+}
 
-  static String _timeAgo(DateTime date) {
-    final diff = DateTime.now().difference(date);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
-    return '${(diff.inDays / 7).floor()}w ago';
+// Full-screen preview with WebView + action bar
+class _DemoPreviewScreen extends StatefulWidget {
+  final Demo demo;
+  final VoidCallback onRegenerate;
+  final VoidCallback onShare;
+  final Function(String) onCopyLink;
+
+  const _DemoPreviewScreen({
+    required this.demo,
+    required this.onRegenerate,
+    required this.onShare,
+    required this.onCopyLink,
+  });
+
+  @override
+  State<_DemoPreviewScreen> createState() => _DemoPreviewScreenState();
+}
+
+class _DemoPreviewScreenState extends State<_DemoPreviewScreen> {
+  late final WebViewController _controller;
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (_) {
+            if (mounted) setState(() => _isLoading = false);
+          },
+        ),
+      );
+    _fetchAndLoadHtml();
+  }
+
+  Future<void> _fetchAndLoadHtml() async {
+    try {
+      final response = await http.get(Uri.parse(widget.demo.publicUrl));
+      if (response.statusCode == 200) {
+        await _controller.loadHtmlString(response.body);
+      } else {
+        if (mounted) setState(() => _error = 'Could not load demo');
+      }
+    } catch (e) {
+      if (mounted) setState(() => _error = 'Connection error');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accentColor =
+        CupertinoDynamicColor.resolve(AppColors.accent, context);
+    final bgColor =
+        CupertinoDynamicColor.resolve(AppColors.background, context);
+
+    return CupertinoPageScaffold(
+      navigationBar: CupertinoNavigationBar(
+        middle: const Text('Demo Preview'),
+        trailing: CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () {
+            launchUrl(Uri.parse(widget.demo.publicUrl),
+                mode: LaunchMode.externalApplication);
+          },
+          child: Icon(
+            CupertinoIcons.arrow_up_right_square,
+            size: 20,
+            color: accentColor,
+          ),
+        ),
+      ),
+      child: Column(
+        children: [
+          // WebView
+          Expanded(
+            child: Stack(
+              children: [
+                WebViewWidget(controller: _controller),
+                if (_isLoading && _error == null)
+                  const Center(child: CupertinoActivityIndicator(radius: 14)),
+                if (_error != null)
+                  Center(
+                    child: Text(
+                      _error!,
+                      style: AppTypography.bodyLarge(context).copyWith(
+                        color: CupertinoDynamicColor.resolve(
+                            AppColors.textSecondary, context),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // Bottom action bar
+          Container(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              12,
+              16,
+              MediaQuery.of(context).padding.bottom + 12,
+            ),
+            decoration: BoxDecoration(
+              color: bgColor,
+              border: Border(
+                top: BorderSide(
+                  color: CupertinoDynamicColor.resolve(
+                      AppColors.divider, context),
+                  width: 0.5,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: AppButton(
+                    label: 'Regenerate',
+                    onPressed: () {
+                      Haptics.medium();
+                      widget.onRegenerate();
+                    },
+                    variant: AppButtonVariant.secondary,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: AppButton(
+                    label: 'Share',
+                    onPressed: () {
+                      Haptics.light();
+                      widget.onShare();
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

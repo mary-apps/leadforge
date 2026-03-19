@@ -14,8 +14,8 @@ class AppColors {
 
   // Borders & Dividers
   static const divider = CupertinoDynamicColor.withBrightness(
-    color: Color(0xFFF0F0EE),
-    darkColor: Color(0xFF1A1A1A),
+    color: Color(0xFFE8E8E6),
+    darkColor: Color(0xFF1F1F1F),
   );
   static const border = CupertinoDynamicColor.withBrightness(
     color: Color(0xFFE5E5E3),
@@ -32,8 +32,8 @@ class AppColors {
     darkColor: Color(0xFF666666),
   );
   static const textTertiary = CupertinoDynamicColor.withBrightness(
-    color: Color(0xFFBBBBBB),
-    darkColor: Color(0xFF444444),
+    color: Color(0xFF999999),
+    darkColor: Color(0xFF555555),
   );
 
   // Accent (near-black / near-white)
@@ -220,4 +220,8 @@ class AppConstants {
   static const double contentGap = 4.0;
   static const double chipGap = 8.0;
   static const double statGap = 16.0;
+  static const double navIconSize = 22.0;
+  static const double navPillH = 16.0;
+  static const double navPillV = 6.0;
+  static const double scrollBottomPadding = 100.0;
 }

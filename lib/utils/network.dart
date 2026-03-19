@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -40,8 +41,18 @@ class ServerException implements Exception {
   final String body;
   const ServerException(this.statusCode, this.body);
 
+  String get message {
+    try {
+      final decoded = json.decode(body);
+      if (decoded is Map && decoded['error'] != null) {
+        return decoded['error'].toString();
+      }
+    } catch (_) {}
+    return 'Server error ($statusCode)';
+  }
+
   @override
-  String toString() => 'Server error ($statusCode)';
+  String toString() => message;
 }
 
 // ---------------------------------------------------------------------------
@@ -77,6 +88,7 @@ Future<http.Response> httpWithRetry(
   Future<http.Response> Function() request, {
   int maxRetries = 2,
   Duration initialDelay = const Duration(milliseconds: 500),
+  Duration timeout = const Duration(seconds: 30),
 }) async {
   // Check connectivity first
   if (!await hasConnectivity()) {
@@ -88,7 +100,7 @@ Future<http.Response> httpWithRetry(
 
   for (var attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      response = await request().timeout(const Duration(seconds: 30));
+      response = await request().timeout(timeout);
     } on SocketException {
       throw const NoConnectionException();
     } on TimeoutException {
@@ -107,7 +119,7 @@ Future<http.Response> httpWithRetry(
 
     // Client errors — don't retry
     if (response.statusCode == 402) {
-      throw LimitReachedException(
+      throw const LimitReachedException(
         'Free tier limit reached',
       );
     }

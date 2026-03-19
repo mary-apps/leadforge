@@ -28,25 +28,33 @@ class MessagesScreen extends ConsumerWidget {
                   children: [
                     Icon(
                       CupertinoIcons.clock,
-                      size: 48,
-                      color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                      size: 32,
+                      color: CupertinoDynamicColor.resolve(
+                          AppColors.textTertiary, context),
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'No activity yet',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: CupertinoColors.secondaryLabel.resolveFrom(context),
-                      ),
+                      style: AppTypography.titleMedium(context),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       'Your recent actions will appear here',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w400,
-                        color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                      style: AppTypography.bodyMedium(context).copyWith(
+                        color: CupertinoDynamicColor.resolve(
+                            AppColors.textSecondary, context),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    GestureDetector(
+                      onTap: () => context.go('/scout'),
+                      child: Text(
+                        'Start Scouting',
+                        style: AppTypography.labelLarge(context).copyWith(
+                          color: CupertinoDynamicColor.resolve(
+                              AppColors.accent, context),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
@@ -96,10 +104,9 @@ class MessagesScreen extends ConsumerWidget {
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
                     child: Text(
                       _summaryText(today.length, thisWeek.length),
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                      style: AppTypography.bodyMedium(context).copyWith(
+                        color: CupertinoDynamicColor.resolve(
+                            AppColors.textSecondary, context),
                       ),
                     ),
                   ),
@@ -136,7 +143,7 @@ class MessagesScreen extends ConsumerWidget {
                   ),
 
                 // Bottom spacing
-                const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                const SliverToBoxAdapter(child: SizedBox(height: AppConstants.scrollBottomPadding)),
               ],
             ),
           );
@@ -178,11 +185,9 @@ class MessagesScreen extends ConsumerWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
-                  color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                style: AppTypography.labelSmall(context).copyWith(
+                  color: CupertinoDynamicColor.resolve(
+                      AppColors.textSecondary, context),
                 ),
               ),
               const SizedBox(width: 8),
@@ -218,10 +223,10 @@ class MessagesScreen extends ConsumerWidget {
             ),
           )
               .animate(delay: Duration(milliseconds: 50 * animationOffset))
-              .fadeIn(duration: 300.ms)
+              .fadeIn(duration: AppConstants.standardAnimation)
               .slideX(
                 begin: -0.03,
-                duration: 350.ms,
+                duration: AppConstants.standardAnimation + const Duration(milliseconds: 100),
                 curve: Curves.easeOutCubic,
               ),
         ),
@@ -348,20 +353,14 @@ class _FeaturedActivityCardState extends State<_FeaturedActivityCard> {
                     children: [
                       Text(
                         business.name,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: CupertinoColors.label.resolveFrom(context),
-                        ),
+                        style: AppTypography.titleMedium(context),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 3),
                       Text(
                         '${_statusDescription(business.status)} · $timeAgo',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                        style: AppTypography.labelLarge(context).copyWith(
                           color: business.statusColor.withValues(alpha: 0.8),
                         ),
                       ),
@@ -476,23 +475,21 @@ class _ActivityTileState extends State<_ActivityTile> {
                       children: [
                         Text(
                           business.name,
-                          style: TextStyle(
-                            fontSize: density == _Density.compact ? 14 : 15,
-                            fontWeight: FontWeight.w600,
-                            color: CupertinoColors.label.resolveFrom(context),
-                          ),
+                          style: density == _Density.compact
+                              ? AppTypography.bodyMedium(context).copyWith(
+                                  fontWeight: FontWeight.w600,
+                                )
+                              : AppTypography.titleMedium(context),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        // Compact: only status dot, no full text
                         if (density != _Density.compact) ...[
                           const SizedBox(height: 2),
                           Text(
                             '${_statusLabel(business.status)} · $timeAgo',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w400,
-                              color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                            style: AppTypography.labelLarge(context).copyWith(
+                              color: CupertinoDynamicColor.resolve(
+                                  AppColors.textTertiary, context),
                             ),
                           ),
                         ],

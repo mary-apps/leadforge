@@ -25,14 +25,18 @@ class BuildService {
       body['custom_notes'] = customNotes.trim();
     }
 
-    await httpWithRetry(() => http.post(
-      Uri.parse(AppConstants.buildDemoEndpoint),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: json.encode(body),
-    ));
+    await httpWithRetry(
+      () => http.post(
+        Uri.parse(AppConstants.buildDemoEndpoint),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(body),
+      ),
+      timeout: const Duration(seconds: 90),
+      maxRetries: 1,
+    );
 
     // Fetch the created demo from database
     final demo = await fetchDemo(businessId);
@@ -43,17 +47,18 @@ class BuildService {
     return demo;
   }
   
-  /// Fetch demo for a business
+  /// Fetch demo for a business (latest one if multiple exist)
   static Future<Demo?> fetchDemo(String businessId) async {
     final response = await SupabaseService.client
         .from('demos')
         .select()
         .eq('business_id', businessId)
-        .maybeSingle();
-    
-    if (response == null) return null;
-    
-    return Demo.fromJson(response);
+        .order('created_at', ascending: false)
+        .limit(1);
+
+    if (response.isEmpty) return null;
+
+    return Demo.fromJson(response.first);
   }
   
   /// Fetch all demos for current user

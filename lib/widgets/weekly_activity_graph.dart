@@ -13,21 +13,32 @@ class WeeklyActivityGraph extends StatelessWidget {
     required this.data,
   });
 
+  bool get _hasActivity {
+    return data.values.any((vals) => vals.any((v) => v > 0));
+  }
+
   @override
   Widget build(BuildContext context) {
     final today = DateTime.now().weekday - 1; // 0=Mon, 6=Sun
+    final hasData = _hasActivity;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Weekly Activity',
-          style: AppTypography.titleMedium(context),
+          'WEEKLY ACTIVITY',
+          style: AppTypography.labelSmall(context).copyWith(
+            color: CupertinoDynamicColor.resolve(
+              AppColors.textSecondary,
+              context,
+            ),
+          ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         SizedBox(
-          height: 160,
-          child: BarChart(
+          height: hasData ? 120 : 60,
+          child: hasData
+              ? BarChart(
             BarChartData(
               alignment: BarChartAlignment.spaceAround,
               maxY: _getMaxY(),
@@ -56,7 +67,18 @@ class WeeklyActivityGraph extends StatelessWidget {
               ),
               barGroups: _buildBarGroups(context, today),
             ),
-          ),
+          )
+              : Center(
+                  child: Text(
+                    'No activity this week',
+                    style: AppTypography.labelLarge(context).copyWith(
+                      color: CupertinoDynamicColor.resolve(
+                        AppColors.textTertiary,
+                        context,
+                      ),
+                    ),
+                  ),
+                ),
         ),
       ],
     )

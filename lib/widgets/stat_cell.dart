@@ -16,19 +16,39 @@ class StatCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isZero = value == '0';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          value,
-          style: AppTypography.numberLarge(context).copyWith(
-            color: valueColor,
+        Flexible(
+          child: Text(
+            value,
+            style: AppTypography.numberLarge(context).copyWith(
+              color: valueColor ??
+                  (isZero
+                      ? CupertinoDynamicColor.resolve(
+                          AppColors.textTertiary, context)
+                      : null),
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
-        Text(
-          label,
-          style: AppTypography.labelSmall(context),
+        const SizedBox(height: 2),
+        Flexible(
+          child: Text(
+            label,
+            style: AppTypography.labelSmall(context).copyWith(
+              color: CupertinoDynamicColor.resolve(
+                AppColors.textSecondary,
+                context,
+              ),
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ],
     );
@@ -42,7 +62,8 @@ class StatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dividerColor = CupertinoDynamicColor.resolve(AppColors.divider, context);
+    final dividerColor =
+        CupertinoDynamicColor.resolve(AppColors.divider, context);
 
     return Container(
       decoration: BoxDecoration(

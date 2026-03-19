@@ -267,7 +267,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 56),
+                const SizedBox(height: AppConstants.sectionGap * 2),
 
                 // Title — text only, editorial minimalism
                 Column(
@@ -331,8 +331,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     padding: const EdgeInsets.only(top: 4, left: 4),
                     child: Text(
                       _emailError!,
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: AppTypography.chip(context).copyWith(
                         color: scoreBadColor,
                       ),
                     ),
@@ -389,8 +388,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     padding: const EdgeInsets.only(top: 4, left: 4),
                     child: Text(
                       _passwordError!,
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: AppTypography.chip(context).copyWith(
                         color: scoreBadColor,
                       ),
                     ),
