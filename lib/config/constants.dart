@@ -3,12 +3,24 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 /// App-wide constants and configuration
 class AppConstants {
   // Supabase Config
-  static String get supabaseUrl => dotenv.env['SUPABASE_URL'] ?? '';
-  static String get supabaseAnonKey => dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+  static String get supabaseUrl {
+    final url = dotenv.env['SUPABASE_URL'];
+    assert(url != null && url.isNotEmpty, 'SUPABASE_URL not set in .env');
+    return url ?? '';
+  }
+
+  static String get supabaseAnonKey {
+    final key = dotenv.env['SUPABASE_ANON_KEY'];
+    assert(key != null && key.isNotEmpty, 'SUPABASE_ANON_KEY not set in .env');
+    return key ?? '';
+  }
 
   // RevenueCat Config
-  static String get revenueCatApiKey =>
-      dotenv.env['REVENUECAT_API_KEY'] ?? 'YOUR_REVENUECAT_KEY';
+  static String get revenueCatApiKey {
+    final key = dotenv.env['REVENUECAT_API_KEY'];
+    assert(key != null && key.isNotEmpty, 'REVENUECAT_API_KEY not set in .env');
+    return key ?? '';
+  }
 
   // Free Tier Limits
   static const freeSearchesPerMonth = 5;

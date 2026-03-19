@@ -18,6 +18,7 @@ import '../../models/profile.dart';
 import '../../providers/profile_provider.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/ios_toast.dart';
+import '../../widgets/paywall_dialog.dart';
 import '../../utils/haptics.dart';
 
 class BuildDemoScreen extends ConsumerStatefulWidget {
@@ -94,28 +95,10 @@ class _BuildDemoScreenState extends ConsumerState<BuildDemoScreen> {
   }
 
   void _showPaywall() {
-    showCupertinoDialog(
-      context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: const Text('Demo Limit Reached'),
-        content: const Text(
-          'You\'ve used your free demo this month. Upgrade to Pro for unlimited demos.',
-        ),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Maybe Later'),
-          ),
-          CupertinoDialogAction(
-            isDefaultAction: true,
-            onPressed: () {
-              Navigator.pop(context);
-              context.push('/settings');
-            },
-            child: const Text('Upgrade to Pro'),
-          ),
-        ],
-      ),
+    showPaywallDialog(
+      context,
+      title: 'Demo Limit Reached',
+      message: 'You\'ve used your free demo this month. Upgrade to Pro for unlimited demos.',
     );
   }
 

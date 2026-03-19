@@ -50,8 +50,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (value == null || value.isEmpty) {
       return 'Password is required';
     }
-    if (_isSignUp && value.length < 6) {
-      return 'Password must be at least 6 characters';
+    if (_isSignUp) {
+      if (value.length < 8) {
+        return 'Password must be at least 8 characters';
+      }
+      if (!RegExp(r'[A-Za-z]').hasMatch(value) || !RegExp(r'[0-9]').hasMatch(value)) {
+        return 'Password must contain letters and numbers';
+      }
     }
     return null;
   }

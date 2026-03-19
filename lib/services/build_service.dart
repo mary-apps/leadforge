@@ -25,7 +25,7 @@ class BuildService {
       body['custom_notes'] = customNotes.trim();
     }
 
-    await httpWithRetry(
+    final response = await httpWithRetry(
       () => http.post(
         Uri.parse(AppConstants.buildDemoEndpoint),
         headers: {
@@ -38,7 +38,15 @@ class BuildService {
       maxRetries: 1,
     );
 
-    // Fetch the created demo from database
+    try {
+      final data = json.decode(response.body) as Map<String, dynamic>;
+      if (data['demo'] != null) {
+        return Demo.fromJson(data['demo'] as Map<String, dynamic>);
+      }
+    } catch (_) {
+      // Fallback: fetch from database if response parsing fails
+    }
+
     final demo = await fetchDemo(businessId);
     if (demo == null) {
       throw Exception('Demo was created but could not be fetched');

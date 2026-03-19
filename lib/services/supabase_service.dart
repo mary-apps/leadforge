@@ -47,9 +47,25 @@ class SupabaseService {
     await client.auth.signOut();
   }
   
-  /// Get auth token for API calls
+  /// Get auth token for API calls (refreshes if expired)
   static Future<String?> getAuthToken() async {
-    final session = client.auth.currentSession;
+    var session = client.auth.currentSession;
+    if (session == null) return null;
+
+    // Check if token is expired or about to expire (within 30s)
+    final expiresAt = session.expiresAt;
+    if (expiresAt != null) {
+      final expiresDate = DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
+      if (DateTime.now().isAfter(expiresDate.subtract(const Duration(seconds: 30)))) {
+        try {
+          final response = await client.auth.refreshSession();
+          session = response.session;
+        } catch (_) {
+          // If refresh fails, return current token and let the server reject it
+          return session?.accessToken;
+        }
+      }
+    }
     return session?.accessToken;
   }
 }

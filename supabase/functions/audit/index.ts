@@ -43,6 +43,13 @@ serve(async (req) => {
 
     // 3. Get business
     const { business_id } = await req.json()
+
+    if (!business_id || typeof business_id !== 'string') {
+      return new Response(JSON.stringify({ error: 'business_id is required' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
     const { data: business } = await supabase
       .from('businesses')
       .select('*')
@@ -102,7 +109,26 @@ Return ONLY valid JSON in this exact format:
     })
 
     const aiData = await aiResponse.json()
-    const auditResult = JSON.parse(aiData.choices[0].message.content)
+    if (!aiData.choices?.[0]?.message?.content) {
+      return new Response(JSON.stringify({ error: 'AI did not return a valid response' }), {
+        status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    let auditResult: any
+    try {
+      auditResult = JSON.parse(aiData.choices[0].message.content)
+    } catch {
+      return new Response(JSON.stringify({ error: 'AI returned malformed JSON' }), {
+        status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    if (typeof auditResult.score !== 'number' || !auditResult.breakdown) {
+      return new Response(JSON.stringify({ error: 'AI response missing required fields' }), {
+        status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
 
     // 5. Save to database
     await supabase
@@ -117,11 +143,16 @@ Return ONLY valid JSON in this exact format:
       })
       .eq('id', business_id)
 
-    // 6. Increment usage
-    await supabase
-      .from('profiles')
-      .update({ audits_this_month: profile.audits_this_month + 1 })
-      .eq('id', user.id)
+    // 6. Increment usage (atomic via rpc to avoid race)
+    await supabase.rpc('increment_counter', {
+      p_user_id: user.id,
+      p_column: 'audits_this_month',
+    }).then(() => {}, (e: any) => {
+      return supabase
+        .from('profiles')
+        .update({ audits_this_month: profile.audits_this_month + 1 })
+        .eq('id', user.id)
+    })
 
     // 7. Return result
     return new Response(JSON.stringify(auditResult), {

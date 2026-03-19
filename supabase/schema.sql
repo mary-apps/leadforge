@@ -180,8 +180,29 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- ============================================
+-- FUNCTION: Atomic counter increment (prevents race conditions)
+-- ============================================
+
+CREATE OR REPLACE FUNCTION public.increment_counter(
+  p_user_id UUID,
+  p_column TEXT
+)
+RETURNS void AS $$
+BEGIN
+  IF p_column = 'searches_this_month' THEN
+    UPDATE profiles SET searches_this_month = searches_this_month + 1 WHERE id = p_user_id;
+  ELSIF p_column = 'audits_this_month' THEN
+    UPDATE profiles SET audits_this_month = audits_this_month + 1 WHERE id = p_user_id;
+  ELSIF p_column = 'demos_this_month' THEN
+    UPDATE profiles SET demos_this_month = demos_this_month + 1 WHERE id = p_user_id;
+  ELSE
+    RAISE EXCEPTION 'Invalid column: %', p_column;
+  END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================
 -- FUNCTION: Reset monthly limits
--- Run this as a cron job (1st of each month)
 -- ============================================
 
 CREATE OR REPLACE FUNCTION public.reset_monthly_limits()
@@ -196,6 +217,9 @@ BEGIN
   WHERE month_reset_at <= now();
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Schedule monthly reset via pg_cron (run in Supabase Dashboard > SQL Editor)
+-- SELECT cron.schedule('reset-monthly-limits', '0 0 1 * *', 'SELECT public.reset_monthly_limits()');
 
 -- ============================================
 -- STORAGE: Create demos bucket

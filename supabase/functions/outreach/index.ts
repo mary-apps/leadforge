@@ -52,6 +52,17 @@ serve(async (req) => {
     // 3. Get request data and business
     const { business_id, channel, tone, language, demo_url } = await req.json()
 
+    if (!business_id || typeof business_id !== 'string') {
+      return new Response(JSON.stringify({ error: 'business_id is required' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    if (!channel || !['email', 'whatsapp', 'instagram', 'phone', 'other'].includes(channel)) {
+      return new Response(JSON.stringify({ error: 'Invalid channel' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
     const { data: business } = await supabase
       .from('businesses')
       .select('*')
@@ -104,6 +115,11 @@ Write the outreach message now. Output ONLY the message text, nothing else.`
     })
 
     const aiData = await aiResponse.json()
+    if (!aiData.choices?.[0]?.message?.content) {
+      return new Response(JSON.stringify({ error: 'AI did not return a valid response' }), {
+        status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
     const messageContent = aiData.choices[0].message.content.trim()
 
     // 5. Save message to database

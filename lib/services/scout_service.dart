@@ -26,7 +26,15 @@ class ScoutService {
       }),
     ));
 
-    final data = json.decode(response.body);
+    final dynamic data;
+    try {
+      data = json.decode(response.body);
+    } catch (e) {
+      throw Exception('Invalid response from scout service');
+    }
+    if (data is! Map<String, dynamic> || data['businesses'] is! List) {
+      throw Exception('Unexpected scout response format');
+    }
     final businessesJson = data['businesses'] as List;
 
     return businessesJson
@@ -48,7 +56,7 @@ class ScoutService {
         .eq('user_id', userId);
 
     if (status != null) {
-      query = query.eq('status', status.toString().split('.').last);
+      query = query.eq('status', status.name);
     }
 
     final response = await query
@@ -86,7 +94,7 @@ class ScoutService {
     await SupabaseService.client
         .from('businesses')
         .update({
-          'status': status.toString().split('.').last,
+          'status': status.name,
           'updated_at': DateTime.now().toIso8601String(),
         })
         .eq('id', businessId);

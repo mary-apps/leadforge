@@ -72,7 +72,7 @@ serve(async (req) => {
       },
     })
   } catch (error) {
-    return new Response(`<h1>Error</h1><p>${error.message}</p>`, {
+    return new Response('<h1>Error</h1><p>An unexpected error occurred.</p>', {
       status: 500,
       headers: { 'Content-Type': 'text/html' },
     })

@@ -13,6 +13,7 @@ import '../../providers/profile_provider.dart';
 import '../../providers/subscription_provider.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/ios_toast.dart';
+import '../../widgets/paywall_dialog.dart';
 import '../../utils/haptics.dart';
 
 class OutreachScreen extends ConsumerStatefulWidget {
@@ -91,28 +92,10 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
   }
 
   void _showPaywall() {
-    showCupertinoDialog(
-      context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: const Text('Pro Feature'),
-        content: const Text(
-          'AI message generation is a Pro feature.\n\nUpgrade to Pro for unlimited AI messages, 4 outreach channels, 3 tone options, and bilingual (EN/ES) support.',
-        ),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Maybe Later'),
-          ),
-          CupertinoDialogAction(
-            isDefaultAction: true,
-            onPressed: () {
-              Navigator.pop(context);
-              context.push('/settings');
-            },
-            child: const Text('Upgrade to Pro'),
-          ),
-        ],
-      ),
+    showPaywallDialog(
+      context,
+      title: 'Pro Feature',
+      message: 'AI message generation is a Pro feature.\n\nUpgrade to Pro for unlimited AI messages, 4 outreach channels, 3 tone options, and bilingual (EN/ES) support.',
     );
   }
 
