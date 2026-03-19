@@ -2,6 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/business.dart';
 import '../services/scout_service.dart';
+import 'audit_state_provider.dart';
+import '../services/audit_service.dart';
+import 'profile_provider.dart';
 
 /// Businesses list provider — user's saved businesses from DB
 class BusinessesNotifier extends StateNotifier<AsyncValue<List<Business>>> {
@@ -93,3 +96,27 @@ final pipelineProvider = FutureProvider<Map<BusinessStatus, List<Business>>>((re
 
   return grouped;
 });
+
+/// Fire audit in background and manage provider invalidation chain.
+Future<void> triggerAutoAudit(WidgetRef ref, String businessId) async {
+  // Mark as loading
+  ref.read(auditStateProvider(businessId).notifier).state =
+      const AsyncValue.loading();
+
+  try {
+    await AuditService.auditBusiness(businessId);
+
+    // Mark as complete
+    ref.read(auditStateProvider(businessId).notifier).state =
+        const AsyncValue.data(null);
+
+    // Invalidation chain
+    ref.invalidate(businessProvider(businessId));
+    ref.invalidate(pipelineProvider);
+    await ref.read(businessesProvider.notifier).load();
+    ref.read(profileNotifierProvider.notifier).reload();
+  } catch (e, st) {
+    ref.read(auditStateProvider(businessId).notifier).state =
+        AsyncValue.error(e, st);
+  }
+}
