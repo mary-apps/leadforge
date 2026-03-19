@@ -8,6 +8,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../providers/subscription_provider.dart';
 import '../../utils/haptics.dart';
+import '../../providers/auto_audit_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -30,7 +31,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
 
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, AppConstants.scrollBottomPadding),
             sliver: SliverList.list(
               children: [
                 // -- Profile card --
@@ -96,10 +97,8 @@ class SettingsScreen extends ConsumerWidget {
                                 children: [
                                   Text(
                                     profile.displayName ?? 'User',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                      color: CupertinoColors.label.resolveFrom(context),
+                                    style: AppTypography.titleMedium(context).copyWith(
+                                      fontSize: 17,
                                     ),
                                   ),
                                   const SizedBox(height: 2),
@@ -107,10 +106,9 @@ class SettingsScreen extends ConsumerWidget {
                                       profile.businessName!.isNotEmpty)
                                     Text(
                                       profile.businessName!,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w400,
-                                        color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                                      style: AppTypography.bodyMedium(context).copyWith(
+                                        color: CupertinoDynamicColor.resolve(
+                                            AppColors.textSecondary, context),
                                       ),
                                     ),
                                 ],
@@ -163,10 +161,10 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                     )
                         .animate()
-                        .fadeIn(duration: 300.ms)
+                        .fadeIn(duration: AppConstants.standardAnimation)
                         .slideY(
                             begin: 0.03,
-                            duration: 400.ms,
+                            duration: AppConstants.standardAnimation + const Duration(milliseconds: 100),
                             curve: Curves.easeOutCubic);
                   },
                   loading: () => Container(
@@ -237,11 +235,9 @@ class SettingsScreen extends ConsumerWidget {
                           padding: const EdgeInsets.only(left: 4, bottom: 10),
                           child: Text(
                             'USAGE',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.2,
-                              color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                            style: AppTypography.labelSmall(context).copyWith(
+                              color: CupertinoDynamicColor.resolve(
+                                  AppColors.textSecondary, context),
                             ),
                           ),
                         ),
@@ -279,10 +275,10 @@ class SettingsScreen extends ConsumerWidget {
                       ],
                     )
                         .animate(delay: 80.ms)
-                        .fadeIn(duration: 300.ms)
+                        .fadeIn(duration: AppConstants.standardAnimation)
                         .slideY(
                             begin: 0.03,
-                            duration: 400.ms,
+                            duration: AppConstants.standardAnimation + const Duration(milliseconds: 100),
                             curve: Curves.easeOutCubic);
                   },
                   loading: () => const SizedBox(),
@@ -330,19 +326,14 @@ class SettingsScreen extends ConsumerWidget {
                               children: [
                                 Text(
                                   'Upgrade to Pro',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: CupertinoColors.label.resolveFrom(context),
-                                  ),
+                                  style: AppTypography.titleMedium(context),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   'Unlimited searches, audits & outreach',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w400,
-                                    color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                                  style: AppTypography.chip(context).copyWith(
+                                    color: CupertinoDynamicColor.resolve(
+                                        AppColors.textSecondary, context),
                                   ),
                                 ),
                               ],
@@ -358,10 +349,10 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                     )
                         .animate(delay: 140.ms)
-                        .fadeIn(duration: 300.ms)
+                        .fadeIn(duration: AppConstants.standardAnimation)
                         .slideY(
                             begin: 0.03,
-                            duration: 400.ms,
+                            duration: AppConstants.standardAnimation + const Duration(milliseconds: 100),
                             curve: Curves.easeOutCubic);
                   },
                   loading: () => const SizedBox(),
@@ -378,14 +369,24 @@ class SettingsScreen extends ConsumerWidget {
                 CupertinoListSection.insetGrouped(
                   header: Text(
                     'PREFERENCES',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
-                      color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                    style: AppTypography.labelSmall(context).copyWith(
+                      color: CupertinoDynamicColor.resolve(
+                          AppColors.textSecondary, context),
                     ),
                   ),
                   children: [
+                    CupertinoListTile(
+                      leading: const Icon(CupertinoIcons.bolt),
+                      title: const Text('Auto-analyze'),
+                      subtitle: const Text('Audit businesses when selected'),
+                      trailing: CupertinoSwitch(
+                        value: ref.watch(autoAuditProvider),
+                        onChanged: (_) {
+                          Haptics.light();
+                          ref.read(autoAuditProvider.notifier).toggle();
+                        },
+                      ),
+                    ),
                     CupertinoListTile(
                       leading: const Icon(CupertinoIcons.globe),
                       title: const Text('Language'),
