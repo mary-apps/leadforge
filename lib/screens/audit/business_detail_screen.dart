@@ -21,6 +21,7 @@ import '../../widgets/inline_score.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/ios_toast.dart';
 import '../../widgets/share_business_sheet.dart';
+import '../../widgets/error_state.dart';
 import '../../widgets/skeleton_loaders.dart';
 import '../../utils/haptics.dart';
 
@@ -71,28 +72,10 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
       data: (business) {
         if (business == null) {
           return CupertinoPageScaffold(
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppConstants.pageHorizontal),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 16),
-                    GestureDetector(
-                      onTap: () => context.pop(),
-                      child: Text(
-                        '\u2190 Pipeline',
-                        style: AppTypography.labelLarge(context),
-                      ),
-                    ),
-                    const Expanded(
-                      child: Center(child: Text('Business not found')),
-                    ),
-                  ],
-                ),
-              ),
+            navigationBar: const CupertinoNavigationBar(
+              middle: Text('Business'),
             ),
+            child: const Center(child: Text('Business not found')),
           );
         }
 
@@ -105,6 +88,22 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
         final outreach = outreachAsync.valueOrNull;
 
         return CupertinoPageScaffold(
+          navigationBar: CupertinoNavigationBar(
+            middle: Text(
+              business.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: GestureDetector(
+              onTap: () => ShareBusinessSheet.show(context, business),
+              child: Icon(
+                CupertinoIcons.share,
+                size: 20,
+                color: CupertinoDynamicColor.resolve(
+                    AppColors.accent, context),
+              ),
+            ),
+          ),
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(
               parent: AlwaysScrollableScrollPhysics(),
@@ -115,34 +114,7 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                     horizontal: AppConstants.pageHorizontal),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    SizedBox(
-                        height: MediaQuery.of(context).padding.top + 16),
-
-                    // Back link + share row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        GestureDetector(
-                          onTap: () => context.pop(),
-                          child: Text(
-                            '\u2190 Pipeline',
-                            style: AppTypography.labelLarge(context),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            ShareBusinessSheet.show(context, business);
-                          },
-                          child: Icon(
-                            CupertinoIcons.share,
-                            size: 20,
-                            color: CupertinoDynamicColor.resolve(
-                                AppColors.accent, context),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppConstants.sectionGap),
+                    const SizedBox(height: 16),
 
                     // Business name
                     Text(
@@ -409,7 +381,13 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
         );
       },
       loading: () => const SafeArea(child: BusinessDetailSkeleton()),
-      error: (error, _) => Center(child: Text('Error: $error')),
+      error: (error, _) => CupertinoPageScaffold(
+        navigationBar: const CupertinoNavigationBar(middle: Text('Error')),
+        child: ErrorState(
+          error: error,
+          onRetry: () => ref.invalidate(businessProvider(widget.businessId)),
+        ),
+      ),
     );
   }
 }

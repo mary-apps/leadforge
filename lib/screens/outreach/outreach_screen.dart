@@ -12,6 +12,7 @@ import '../../providers/businesses_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../providers/subscription_provider.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/error_state.dart';
 import '../../widgets/ios_toast.dart';
 import '../../widgets/paywall_dialog.dart';
 import '../../utils/haptics.dart';
@@ -255,7 +256,10 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
             );
           },
           loading: () => const Center(child: CupertinoActivityIndicator()),
-          error: (error, _) => Center(child: Text('Error: $error')),
+          error: (error, _) => ErrorState(
+            error: error,
+            onRetry: () => ref.invalidate(businessProvider(widget.businessId)),
+          ),
         ),
       ),
     );

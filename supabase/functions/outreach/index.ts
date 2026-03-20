@@ -153,7 +153,8 @@ Write the outreach message now. Output ONLY the message text, nothing else.`
     })
 
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('[outreach] Error:', error.message)
+    return new Response(JSON.stringify({ error: 'Something went wrong. Please try again.' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }

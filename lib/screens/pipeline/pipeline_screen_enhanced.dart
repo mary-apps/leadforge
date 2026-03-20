@@ -7,6 +7,7 @@ import '../../config/theme.dart';
 import '../../models/business.dart';
 import '../../providers/businesses_provider.dart';
 import '../../utils/haptics.dart';
+import '../../widgets/error_state.dart';
 import '../../widgets/ios_toast.dart';
 import '../../widgets/skeleton_loaders.dart';
 
@@ -168,6 +169,11 @@ class _PipelineScreenEnhancedState
               parent: AlwaysScrollableScrollPhysics(),
             ),
             slivers: [
+              CupertinoSliverRefreshControl(
+                onRefresh: () async {
+                  await ref.read(businessesProvider.notifier).load();
+                },
+              ),
               // Custom title header
               SliverToBoxAdapter(
                 child: SafeArea(
@@ -340,7 +346,10 @@ class _PipelineScreenEnhancedState
           );
         },
         loading: () => const PipelineSkeleton(),
-        error: (error, _) => Center(child: Text('Error: $error')),
+        error: (error, _) => ErrorState(
+          error: error,
+          onRetry: () => ref.read(businessesProvider.notifier).load(),
+        ),
       ),
     );
   }

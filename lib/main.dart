@@ -39,6 +39,9 @@ void main() async {
   // Initialize RevenueCat
   await Purchases.setLogLevel(kReleaseMode ? LogLevel.warn : LogLevel.debug);
   final configuration = PurchasesConfiguration(AppConstants.revenueCatApiKey);
+  await Purchases.setLogLevel(LogLevel.error);
+  PurchasesConfiguration configuration;
+  configuration = PurchasesConfiguration(AppConstants.revenueCatApiKey);
   await Purchases.configure(configuration);
 
   runApp(

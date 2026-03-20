@@ -143,7 +143,8 @@ serve(async (req) => {
     })
     
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('[scout] Error:', error.message)
+    return new Response(JSON.stringify({ error: 'Something went wrong. Please try again.' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
