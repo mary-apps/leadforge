@@ -7,8 +7,10 @@ import '../../models/profile.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../providers/subscription_provider.dart';
+import '../../services/supabase_service.dart';
 import '../../utils/haptics.dart';
 import '../../providers/auto_audit_provider.dart';
+import '../../widgets/ios_toast.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -45,7 +47,9 @@ class SettingsScreen extends ConsumerWidget {
                         .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '')
                         .join();
 
-                    return Container(
+                    return GestureDetector(
+                      onTap: () => _showEditProfile(context, ref, profile),
+                      child: Container(
                       decoration: BoxDecoration(
                         color: CupertinoDynamicColor.resolve(
                             AppColors.surface, context),
@@ -156,9 +160,13 @@ class SettingsScreen extends ConsumerWidget {
                               loading: () => const SizedBox(width: 40),
                               error: (_, __) => const SizedBox(),
                             ),
+                            const SizedBox(width: 8),
+                            Icon(CupertinoIcons.pencil, size: 16,
+                              color: CupertinoDynamicColor.resolve(AppColors.textTertiary, context)),
                           ],
                         ),
                       ),
+                    ),
                     )
                         .animate()
                         .fadeIn(duration: AppConstants.standardAnimation)
@@ -480,6 +488,91 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// Edit profile bottom sheet
+// ---------------------------------------------------------------------------
+
+void _showEditProfile(BuildContext context, WidgetRef ref, Profile profile) {
+  final nameController = TextEditingController(text: profile.displayName ?? '');
+  final bizController = TextEditingController(text: profile.businessName ?? '');
+
+  showCupertinoModalPopup(
+    context: context,
+    builder: (ctx) => Container(
+      padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(ctx).padding.bottom + 24),
+      decoration: BoxDecoration(
+        color: CupertinoDynamicColor.resolve(AppColors.surface, ctx),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            width: 36,
+            height: 4,
+            margin: const EdgeInsets.only(bottom: 20),
+            alignment: Alignment.center,
+            child: Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: CupertinoDynamicColor.resolve(AppColors.divider, ctx),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          Text('Edit Profile', style: AppTypography.headlineLarge(ctx)),
+          const SizedBox(height: 20),
+          CupertinoTextField(
+            controller: nameController,
+            placeholder: 'Display Name',
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: CupertinoDynamicColor.resolve(AppColors.searchField, ctx),
+              borderRadius: BorderRadius.circular(AppColors.radiusM),
+            ),
+          ),
+          const SizedBox(height: 12),
+          CupertinoTextField(
+            controller: bizController,
+            placeholder: 'Business Name',
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: CupertinoDynamicColor.resolve(AppColors.searchField, ctx),
+              borderRadius: BorderRadius.circular(AppColors.radiusM),
+            ),
+          ),
+          const SizedBox(height: 20),
+          CupertinoButton.filled(
+            onPressed: () async {
+              final name = nameController.text.trim();
+              final biz = bizController.text.trim();
+              if (name.length < 2) return;
+
+              await SupabaseService.client
+                  .from('profiles')
+                  .update({
+                    'display_name': name,
+                    'business_name': biz.isEmpty ? null : biz,
+                  })
+                  .eq('id', SupabaseService.userId!);
+
+              ref.read(profileNotifierProvider.notifier).reload();
+              // ignore: use_build_context_synchronously
+              Navigator.pop(ctx);
+              if (context.mounted) {
+                IosToast.show(context, 'Profile updated');
+              }
+            },
+            child: const Text('Save Changes'),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 // ---------------------------------------------------------------------------
