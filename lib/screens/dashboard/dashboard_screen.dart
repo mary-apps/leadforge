@@ -14,6 +14,7 @@ import '../../widgets/skeleton_loaders.dart';
 import '../../widgets/error_state.dart';
 import '../../widgets/daily_digest.dart';
 import '../../widgets/weekly_activity_graph.dart';
+import '../../widgets/getting_started_guide.dart';
 
 
 String _timeAwareGreeting() {
@@ -57,7 +58,7 @@ class DashboardScreen extends ConsumerWidget {
                 },
               ),
 
-              // Title + greeting
+              // Title + greeting — always visible
               SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(
@@ -90,136 +91,152 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ),
 
-              // Stat row — 3 cells
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppConstants.pageHorizontal,
-                    AppConstants.sectionGap,
-                    AppConstants.pageHorizontal,
-                    0,
-                  ),
-                  child: StatRow(
-                    cells: [
-                      StatCell(
-                        value: (stats['audited'] as int).toString(),
-                        label: 'AUDITED',
-                      ),
-                      StatCell(
-                        value: (stats['demos'] as int).toString(),
-                        label: 'DEMOS',
-                      ),
-                      StatCell(
-                        value: (stats['closed'] as int).toString(),
-                        label: 'CLOSED',
-                      ),
-                    ],
+              if (businesses.isEmpty) ...[
+                // Getting started guide for new users
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppConstants.pageHorizontal,
+                      AppConstants.sectionGap,
+                      AppConstants.pageHorizontal,
+                      0,
+                    ),
+                    child: GettingStartedGuide(
+                      onStartScouting: () => context.go('/scout'),
+                    ),
                   ),
                 ),
-              ),
+                const SliverToBoxAdapter(child: SizedBox(height: AppConstants.scrollBottomPadding)),
+              ] else ...[
+                // Normal dashboard content (stats, digest, chart, recent leads)
 
-              // Hero stat — animated number
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppConstants.pageHorizontal,
-                    AppConstants.sectionGap,
-                    AppConstants.pageHorizontal,
-                    0,
-                  ),
-                  child: _HeroStat(
-                    value: stats['total'] as int,
-                    trend: _calculateTrend(businesses),
-                  ),
-                ),
-              ),
-
-              // Daily Digest
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppConstants.pageHorizontal,
-                    AppConstants.sectionGap,
-                    AppConstants.pageHorizontal,
-                    0,
-                  ),
-                  child: DailyDigest(
-                    businesses: businesses,
-                    onNavigate: (route) {
-                      final uri = Uri.parse(route);
-                      final filter = uri.queryParameters['filter'];
-                      if (uri.path == '/pipeline' && filter != null) {
-                        final status = BusinessStatus.values.firstWhere(
-                          (s) => s.name == filter,
-                          orElse: () => BusinessStatus.found,
-                        );
-                        ref.read(pipelineFilterProvider.notifier).state = status;
-                        context.go('/pipeline');
-                      } else {
-                        context.go(route);
-                      }
-                    },
-                  ),
-                ),
-              ),
-
-              // Weekly Activity Graph
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppConstants.pageHorizontal - 8,
-                    AppConstants.itemGap,
-                    AppConstants.pageHorizontal + 4,
-                    0,
-                  ),
-                  child: WeeklyActivityGraph(
-                    data: _getWeeklyData(businesses),
-                  ),
-                ),
-              ),
-
-              // Recent leads header
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppConstants.pageHorizontal,
-                    AppConstants.sectionGap,
-                    AppConstants.pageHorizontal,
-                    0,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'RECENT',
-                        style: AppTypography.labelSmall(context).copyWith(
-                          color: CupertinoDynamicColor.resolve(
-                            AppColors.textSecondary,
-                            context,
-                          ),
+                // Stat row — 3 cells
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppConstants.pageHorizontal,
+                      AppConstants.sectionGap,
+                      AppConstants.pageHorizontal,
+                      0,
+                    ),
+                    child: StatRow(
+                      cells: [
+                        StatCell(
+                          value: (stats['audited'] as int).toString(),
+                          label: 'AUDITED',
                         ),
-                      ),
-                      if (recentLeads.isNotEmpty)
-                        GestureDetector(
-                          onTap: () => context.go('/pipeline'),
-                          child: Text(
-                            'See All',
-                            style: AppTypography.labelLarge(context).copyWith(
-                              color: CupertinoDynamicColor.resolve(
-                                AppColors.accent,
-                                context,
-                              ),
+                        StatCell(
+                          value: (stats['demos'] as int).toString(),
+                          label: 'DEMOS',
+                        ),
+                        StatCell(
+                          value: (stats['closed'] as int).toString(),
+                          label: 'CLOSED',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Hero stat — animated number
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppConstants.pageHorizontal,
+                      AppConstants.sectionGap,
+                      AppConstants.pageHorizontal,
+                      0,
+                    ),
+                    child: _HeroStat(
+                      value: stats['total'] as int,
+                      trend: _calculateTrend(businesses),
+                    ),
+                  ),
+                ),
+
+                // Daily Digest
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppConstants.pageHorizontal,
+                      AppConstants.sectionGap,
+                      AppConstants.pageHorizontal,
+                      0,
+                    ),
+                    child: DailyDigest(
+                      businesses: businesses,
+                      onNavigate: (route) {
+                        final uri = Uri.parse(route);
+                        final filter = uri.queryParameters['filter'];
+                        if (uri.path == '/pipeline' && filter != null) {
+                          final status = BusinessStatus.values.firstWhere(
+                            (s) => s.name == filter,
+                            orElse: () => BusinessStatus.found,
+                          );
+                          ref.read(pipelineFilterProvider.notifier).state = status;
+                          context.go('/pipeline');
+                        } else {
+                          context.go(route);
+                        }
+                      },
+                    ),
+                  ),
+                ),
+
+                // Weekly Activity Graph
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppConstants.pageHorizontal - 8,
+                      AppConstants.itemGap,
+                      AppConstants.pageHorizontal + 4,
+                      0,
+                    ),
+                    child: WeeklyActivityGraph(
+                      data: _getWeeklyData(businesses),
+                    ),
+                  ),
+                ),
+
+                // Recent leads header
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppConstants.pageHorizontal,
+                      AppConstants.sectionGap,
+                      AppConstants.pageHorizontal,
+                      0,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'RECENT',
+                          style: AppTypography.labelSmall(context).copyWith(
+                            color: CupertinoDynamicColor.resolve(
+                              AppColors.textSecondary,
+                              context,
                             ),
                           ),
                         ),
-                    ],
+                        if (recentLeads.isNotEmpty)
+                          GestureDetector(
+                            onTap: () => context.go('/pipeline'),
+                            child: Text(
+                              'See All',
+                              style: AppTypography.labelLarge(context).copyWith(
+                                color: CupertinoDynamicColor.resolve(
+                                  AppColors.accent,
+                                  context,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
 
-              if (recentLeads.isEmpty)
-                SliverToBoxAdapter(child: _EmptyState())
-              else
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(
                     AppConstants.pageHorizontal,
@@ -254,9 +271,7 @@ class DashboardScreen extends ConsumerWidget {
                     },
                   ),
                 ),
-
-              if (recentLeads.isEmpty)
-                const SliverToBoxAdapter(child: SizedBox(height: AppConstants.scrollBottomPadding)),
+              ],
             ],
           );
         },
