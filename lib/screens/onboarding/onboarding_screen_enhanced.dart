@@ -102,9 +102,9 @@ class _OnboardingScreenEnhancedState
 
       Haptics.heavy();
 
-      // Simple slide transition to dashboard
+      // Navigate to dashboard after onboarding
       if (mounted) {
-        context.go('/scout');
+        context.go('/dashboard');
       }
     } catch (e) {
       Haptics.heavy();

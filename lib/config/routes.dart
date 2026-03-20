@@ -122,26 +122,50 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Business Detail (full screen, no bottom nav)
       GoRoute(
         path: '/business/:id',
-        pageBuilder: (context, state) => CupertinoPage(
-          child: BusinessDetailScreen(businessId: state.pathParameters['id']!),
-        ),
+        pageBuilder: (context, state) {
+          final id = state.pathParameters['id'];
+          if (id == null) return const CupertinoPage(child: SizedBox.shrink());
+          return CupertinoPage(child: BusinessDetailScreen(businessId: id));
+        },
       ),
 
       // Build Demo (full screen, no bottom nav)
       GoRoute(
         path: '/business/:id/build-demo',
-        pageBuilder: (context, state) => CupertinoPage(
-          child: BuildDemoScreen(businessId: state.pathParameters['id']!),
-        ),
+        pageBuilder: (context, state) {
+          final id = state.pathParameters['id'];
+          if (id == null) return const CupertinoPage(child: SizedBox.shrink());
+          return CupertinoPage(child: BuildDemoScreen(businessId: id));
+        },
       ),
 
       // Outreach (full screen, no bottom nav)
       GoRoute(
         path: '/business/:id/outreach',
-        pageBuilder: (context, state) => CupertinoPage(
-          child: OutreachScreen(businessId: state.pathParameters['id']!),
-        ),
+        pageBuilder: (context, state) {
+          final id = state.pathParameters['id'];
+          if (id == null) return const CupertinoPage(child: SizedBox.shrink());
+          return CupertinoPage(child: OutreachScreen(businessId: id));
+        },
       ),
     ],
+    errorBuilder: (context, state) => CupertinoPageScaffold(
+      navigationBar: const CupertinoNavigationBar(middle: Text('Not Found')),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(CupertinoIcons.exclamationmark_circle, size: 48),
+            const SizedBox(height: 16),
+            const Text('Page not found'),
+            const SizedBox(height: 16),
+            CupertinoButton(
+              child: const Text('Go Home'),
+              onPressed: () => GoRouter.of(context).go('/dashboard'),
+            ),
+          ],
+        ),
+      ),
+    ),
   );
 });

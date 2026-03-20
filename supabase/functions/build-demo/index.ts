@@ -389,6 +389,17 @@ serve(async (req) => {
     // 3. Get business and request data
     console.log('[build-demo] Step 3: Fetching business...')
     const { business_id, custom_notes } = await req.json()
+
+    if (!business_id || typeof business_id !== 'string') {
+      return new Response(JSON.stringify({ error: 'business_id is required' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    if (custom_notes && typeof custom_notes === 'string' && custom_notes.length > 500) {
+      return new Response(JSON.stringify({ error: 'custom_notes too long (max 500 characters)' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
     const { data: business, error: bizError } = await supabase
       .from('businesses')
       .select('*')
@@ -466,11 +477,16 @@ serve(async (req) => {
       .update({ status: 'demo_created', updated_at: new Date().toISOString() })
       .eq('id', business_id)
 
-    // 8. Increment usage
-    await supabase
-      .from('profiles')
-      .update({ demos_this_month: profile.demos_this_month + 1 })
-      .eq('id', user.id)
+    // 8. Increment usage (atomic via rpc to avoid race)
+    await supabase.rpc('increment_counter', {
+      p_user_id: user.id,
+      p_column: 'demos_this_month',
+    }).then(() => {}, (e: any) => {
+      return supabase
+        .from('profiles')
+        .update({ demos_this_month: profile.demos_this_month + 1 })
+        .eq('id', user.id)
+    })
 
     console.log('[build-demo] DONE - success')
     return new Response(JSON.stringify({ demo }), {

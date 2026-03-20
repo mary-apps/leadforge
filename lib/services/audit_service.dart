@@ -26,7 +26,15 @@ class AuditService {
       }),
     ));
 
-    final data = json.decode(response.body);
-    return AuditResult.fromJson(data as Map<String, dynamic>);
+    final dynamic data;
+    try {
+      data = json.decode(response.body);
+    } catch (e) {
+      throw Exception('Invalid response from audit service');
+    }
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Unexpected audit response format');
+    }
+    return AuditResult.fromJson(data);
   }
 }

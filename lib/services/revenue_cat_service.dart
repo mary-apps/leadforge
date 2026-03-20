@@ -1,5 +1,6 @@
 import 'dart:developer' as dev;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
@@ -70,10 +71,15 @@ class RevenueCatService {
     final userId = SupabaseService.userId;
     if (userId == null) return;
 
-    await SupabaseService.client
-        .from('profiles')
-        .update({'subscription_tier': tier})
-        .eq('id', userId);
+    try {
+      await SupabaseService.client
+          .from('profiles')
+          .update({'subscription_tier': tier})
+          .eq('id', userId);
+    } catch (e) {
+      debugPrint('Failed to update subscription tier in Supabase: $e');
+      rethrow;
+    }
   }
 
   /// Get customer info

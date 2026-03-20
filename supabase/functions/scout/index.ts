@@ -46,7 +46,14 @@ serve(async (req) => {
     
     // 3. Parse request
     const { query } = await req.json()
-    
+
+    if (!query || typeof query !== 'string' || query.trim().length === 0) {
+      return new Response(JSON.stringify({ error: 'Query is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
     // 4. Google Places Text Search
     const placesUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${Deno.env.get('GOOGLE_PLACES_API_KEY')}`
     const placesRes = await fetch(placesUrl)
@@ -112,11 +119,17 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .in('place_id', placeIds)
 
-    // 9. Increment usage
-    await supabase
-      .from('profiles')
-      .update({ searches_this_month: profile.searches_this_month + 1 })
-      .eq('id', user.id)
+    // 9. Increment usage (atomic via rpc or increment to avoid race)
+    await supabase.rpc('increment_counter', {
+      p_user_id: user.id,
+      p_column: 'searches_this_month',
+    }).then(() => {}, (e: any) => {
+      // Fallback to direct update if RPC not available
+      return supabase
+        .from('profiles')
+        .update({ searches_this_month: profile.searches_this_month + 1 })
+        .eq('id', user.id)
+    })
 
     // 10. Sort results — no website first, then by rating
     const sorted = (dbBusinesses || []).sort((a: any, b: any) => {

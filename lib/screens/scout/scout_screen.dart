@@ -16,6 +16,7 @@ import '../../widgets/search_suggestions.dart';
 import '../../widgets/app_button.dart';
 import '../../utils/haptics.dart';
 import '../../utils/network.dart';
+import '../../widgets/paywall_dialog.dart';
 
 class ScoutScreen extends ConsumerStatefulWidget {
   const ScoutScreen({super.key});
@@ -95,10 +96,16 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
         });
       }
     } catch (e) {
-      if (e is LimitReachedException && mounted) {
-        ref.read(scoutResultsProvider.notifier).clear();
-        Haptics.heavy();
-        _showPaywall();
+      if (mounted) {
+        if (e is LimitReachedException) {
+          ref.read(scoutResultsProvider.notifier).clear();
+          Haptics.heavy();
+          _showPaywall();
+        } else if (e is ProRequiredException) {
+          Haptics.heavy();
+          _showPaywall();
+        }
+        // Other exceptions propagate to the AsyncValue error state
       }
     } finally {
       if (mounted) {
@@ -108,28 +115,10 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
   }
 
   void _showPaywall() {
-    showCupertinoDialog(
-      context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: const Text('Search Limit Reached'),
-        content: const Text(
-          'You\'ve used all 5 free searches this month.\n\nUpgrade to Pro for unlimited searches, audits, demos, and AI outreach messages.',
-        ),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Maybe Later'),
-          ),
-          CupertinoDialogAction(
-            isDefaultAction: true,
-            onPressed: () {
-              Navigator.pop(context);
-              context.push('/settings');
-            },
-            child: const Text('Upgrade to Pro'),
-          ),
-        ],
-      ),
+    showPaywallDialog(
+      context,
+      title: 'Search Limit Reached',
+      message: 'You\'ve used all 5 free searches this month.\n\nUpgrade to Pro for unlimited searches, audits, demos, and AI outreach messages.',
     );
   }
 

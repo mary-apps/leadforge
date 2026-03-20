@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../config/constants.dart';
@@ -21,7 +22,7 @@ class OutreachService {
       throw Exception('Not authenticated');
     }
 
-    await httpWithRetry(() => http.post(
+    final response = await httpWithRetry(() => http.post(
       Uri.parse(AppConstants.outreachEndpoint),
       headers: {
         'Authorization': 'Bearer $token',
@@ -29,14 +30,22 @@ class OutreachService {
       },
       body: json.encode({
         'business_id': businessId,
-        'channel': channel.toString().split('.').last,
+        'channel': channel.name,
         'tone': tone,
         'language': language,
         if (demoUrl != null) 'demo_url': demoUrl,
       }),
     ));
 
-    // Fetch the created message from database
+    try {
+      final data = json.decode(response.body) as Map<String, dynamic>;
+      if (data['message'] != null) {
+        return Message.fromJson(data['message'] as Map<String, dynamic>);
+      }
+    } catch (e) {
+      debugPrint('Outreach response parsing failed: $e, falling back to DB fetch');
+    }
+
     final messages = await fetchMessages(businessId);
     if (messages.isEmpty) {
       throw Exception('Message was created but could not be fetched');
