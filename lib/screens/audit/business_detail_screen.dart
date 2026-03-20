@@ -17,6 +17,7 @@ import '../../providers/audit_state_provider.dart';
 import '../../providers/businesses_provider.dart';
 import '../../providers/demo_provider.dart';
 import '../../providers/outreach_provider.dart';
+import '../../widgets/audit_context.dart';
 import '../../widgets/inline_score.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/ios_toast.dart';
@@ -263,6 +264,8 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                             duration: 500.ms,
                             curve: Curves.easeOutCubic,
                           ),
+                      const SizedBox(height: AppConstants.itemGap),
+                      AuditContext(business: business),
                       const SizedBox(height: AppConstants.sectionGap),
 
                       // AI Analysis — flat layout with divider borders
