@@ -17,7 +17,9 @@ import '../../providers/audit_state_provider.dart';
 import '../../providers/businesses_provider.dart';
 import '../../providers/demo_provider.dart';
 import '../../providers/outreach_provider.dart';
+import '../../providers/messages_provider.dart';
 import '../../widgets/audit_context.dart';
+import '../../widgets/outreach_history.dart';
 import '../../widgets/inline_score.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/ios_toast.dart';
@@ -374,6 +376,19 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                             ref.invalidate(outreachForBusinessProvider(business.id));
                           },
                         ),
+
+                      // Outreach history
+                      const SizedBox(height: AppConstants.sectionGap),
+                      Builder(builder: (context) {
+                        final messagesAsync =
+                            ref.watch(messagesForBusinessProvider(business.id));
+                        return messagesAsync.when(
+                          data: (messages) =>
+                              OutreachHistory(messages: messages),
+                          loading: () => const SizedBox.shrink(),
+                          error: (_, __) => const SizedBox.shrink(),
+                        );
+                      }),
                     ],
                     const SizedBox(height: 120),
                   ]),
