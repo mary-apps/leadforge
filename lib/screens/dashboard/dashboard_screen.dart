@@ -7,7 +7,6 @@ import '../../config/theme.dart';
 import '../../models/business.dart';
 import '../../providers/businesses_provider.dart';
 import '../../providers/profile_provider.dart';
-import '../../widgets/app_button.dart';
 import '../../widgets/lead_item.dart';
 import '../../widgets/stat_cell.dart';
 import '../../widgets/skeleton_loaders.dart';
@@ -457,74 +456,3 @@ class _HeroStatState extends State<_HeroStat>
 
 // ---------------------------------------------------------------------------
 // Empty state
-// ---------------------------------------------------------------------------
-
-class _EmptyState extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final accentColor =
-        CupertinoDynamicColor.resolve(AppColors.accent, context);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        vertical: 48,
-        horizontal: AppConstants.pageHorizontal,
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  accentColor.withValues(alpha: 0.12),
-                  accentColor.withValues(alpha: 0.02),
-                ],
-              ),
-            ),
-            child: Icon(
-              CupertinoIcons.rocket,
-              size: 28,
-              color: accentColor.withValues(alpha: 0.6),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No leads yet',
-            style: AppTypography.titleMedium(context).copyWith(
-              color: CupertinoDynamicColor.resolve(
-                AppColors.textSecondary,
-                context,
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Start scouting to find businesses',
-            style: AppTypography.bodyLarge(context).copyWith(
-              color: CupertinoDynamicColor.resolve(
-                AppColors.textTertiary,
-                context,
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          AppButton(
-            label: 'Start Scouting',
-            compact: true,
-            onPressed: () => context.go('/scout'),
-          ),
-        ],
-      ),
-    )
-        .animate()
-        .fadeIn(duration: 500.ms)
-        .scale(
-          begin: const Offset(0.9, 0.9),
-          duration: 600.ms,
-          curve: Curves.easeOutBack,
-        );
-  }
-}
