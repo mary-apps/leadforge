@@ -267,7 +267,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SafeArea(bottom: false, child: const _HeroSection()),
+              const SafeArea(bottom: false, child: _HeroSection()),
               const SizedBox(height: 24),
               Padding(
                 padding: const EdgeInsets.symmetric(

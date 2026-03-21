@@ -56,7 +56,7 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
           _isAuditing = false;
         });
 
-        ref.refresh(businessProvider(widget.businessId));
+        ref.invalidate(businessProvider(widget.businessId));
       }
     } catch (e) {
       if (mounted) {
@@ -569,7 +569,7 @@ class _WorkflowStepper extends StatelessWidget {
       ]));
     }
     if (isAuditError) return _CtaCard(title: 'Retry Analysis', subtitle: 'Auto-analysis failed — tap to retry', onTap: onRetryAudit);
-    if (autoAuditEnabled) return _FutureCard(title: 'Analyze Business', subtitle: 'Auto-analysis will run automatically');
+    if (autoAuditEnabled) return const _FutureCard(title: 'Analyze Business', subtitle: 'Auto-analysis will run automatically');
     return _CtaCard(title: 'Analyze Business', subtitle: 'AI will score their online presence', onTap: onAudit);
   }
 
@@ -589,7 +589,7 @@ class _WorkflowStepper extends StatelessWidget {
         ]),
       ]));
     }
-    if (state == _StepState.future) return _FutureCard(title: 'Generate Demo Site', subtitle: 'Complete audit first');
+    if (state == _StepState.future) return const _FutureCard(title: 'Generate Demo Site', subtitle: 'Complete audit first');
     return _CtaCard(title: 'Generate Demo Site', subtitle: 'Create a professional demo', onTap: onBuildDemo);
   }
 
@@ -610,7 +610,7 @@ class _WorkflowStepper extends StatelessWidget {
         ]),
       ]));
     }
-    if (state == _StepState.future) return _FutureCard(title: 'Compose Outreach', subtitle: 'Complete audit first');
+    if (state == _StepState.future) return const _FutureCard(title: 'Compose Outreach', subtitle: 'Complete audit first');
     return _CtaCard(title: 'Compose Outreach', subtitle: demo == null ? 'Generate demo first for best results' : 'Send a personalized pitch', onTap: onCompose);
   }
 }
