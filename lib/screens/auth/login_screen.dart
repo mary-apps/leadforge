@@ -253,8 +253,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         CupertinoDynamicColor.resolve(AppColors.textTertiary, context);
     final primaryTextColor =
         CupertinoDynamicColor.resolve(AppColors.textPrimary, context);
-    final secondaryTextColor =
-        CupertinoDynamicColor.resolve(AppColors.textSecondary, context);
     final accentColor =
         CupertinoDynamicColor.resolve(AppColors.accent, context);
     final scoreBadColor =
@@ -264,240 +262,325 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return CupertinoPageScaffold(
       child: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppConstants.pageHorizontal, vertical: 24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: AppConstants.sectionGap * 2),
-
-                // Title — text only, editorial minimalism
-                Column(
+        top: false,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SafeArea(bottom: false, child: const _HeroSection()),
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppConstants.pageHorizontal),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      'LeadForge',
-                      style: AppTypography.displayLarge(context),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'AI-powered lead generation',
-                      style: AppTypography.bodyLarge(context).copyWith(
-                        color: secondaryTextColor,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                )
-                    .animate()
-                    .fadeIn(duration: 400.ms)
-                    .slideY(
-                        begin: -0.03,
-                        duration: 400.ms,
-                        curve: Curves.easeOut),
-                const SizedBox(height: 36),
+                    // Pill toggle
+                    _buildPillToggle(context),
+                    const SizedBox(height: 24),
 
-                // Pill toggle
-                _buildPillToggle(context),
-                const SizedBox(height: 24),
-
-                // Email field
-                CupertinoTextField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  autocorrect: false,
-                  textInputAction: TextInputAction.next,
-                  placeholder: 'Email address',
-                  placeholderStyle: TextStyle(color: tertiaryColor),
-                  style: TextStyle(color: primaryTextColor),
-                  prefix: Padding(
-                    padding: const EdgeInsets.only(left: 12),
-                    child: Icon(
-                      CupertinoIcons.mail,
-                      size: 20,
-                      color: tertiaryColor,
-                    ),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: searchFieldColor,
-                    borderRadius: BorderRadius.circular(AppColors.radiusM),
-                    border: _emailError != null
-                        ? Border.all(color: scoreBadColor, width: 0.5)
-                        : null,
-                  ),
-                ),
-                if (_emailError != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4, left: 4),
-                    child: Text(
-                      _emailError!,
-                      style: AppTypography.chip(context).copyWith(
-                        color: scoreBadColor,
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 14),
-
-                // Password field
-                CupertinoTextField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => _handleEmailAuth(),
-                  placeholder: 'Password',
-                  placeholderStyle: TextStyle(color: tertiaryColor),
-                  style: TextStyle(color: primaryTextColor),
-                  prefix: Padding(
-                    padding: const EdgeInsets.only(left: 12),
-                    child: Icon(
-                      CupertinoIcons.lock,
-                      size: 20,
-                      color: tertiaryColor,
-                    ),
-                  ),
-                  suffix: Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: CupertinoButton(
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      onPressed: () {
-                        setState(
-                            () => _obscurePassword = !_obscurePassword);
-                      },
-                      child: Icon(
-                        _obscurePassword
-                            ? CupertinoIcons.eye_slash
-                            : CupertinoIcons.eye,
-                        size: 20,
-                        color: tertiaryColor,
-                      ),
-                    ),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: searchFieldColor,
-                    borderRadius: BorderRadius.circular(AppColors.radiusM),
-                    border: _passwordError != null
-                        ? Border.all(color: scoreBadColor, width: 0.5)
-                        : null,
-                  ),
-                ),
-                if (_passwordError != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4, left: 4),
-                    child: Text(
-                      _passwordError!,
-                      style: AppTypography.chip(context).copyWith(
-                        color: scoreBadColor,
-                      ),
-                    ),
-                  ),
-
-                if (!_isSignUp)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: CupertinoButton(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      onPressed: _forgotPassword,
-                      child: Text(
-                        'Forgot password?',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: accentColor,
+                    // Email field
+                    CupertinoTextField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      autocorrect: false,
+                      textInputAction: TextInputAction.next,
+                      placeholder: 'Email address',
+                      placeholderStyle: TextStyle(color: tertiaryColor),
+                      style: TextStyle(color: primaryTextColor),
+                      prefix: Padding(
+                        padding: const EdgeInsets.only(left: 12),
+                        child: Icon(
+                          CupertinoIcons.mail,
+                          size: 20,
+                          color: tertiaryColor,
                         ),
                       ),
-                    ),
-                  ),
-                const SizedBox(height: 8),
-
-                // Error message
-                if (_errorMessage != null)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: scoreBadColor.withValues(alpha: 0.08),
-                      borderRadius:
-                          BorderRadius.circular(AppColors.radiusM),
-                      border: Border.all(
-                        color: scoreBadColor.withValues(alpha: 0.15),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: searchFieldColor,
+                        borderRadius:
+                            BorderRadius.circular(AppColors.radiusM),
+                        border: _emailError != null
+                            ? Border.all(color: scoreBadColor, width: 0.5)
+                            : null,
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(CupertinoIcons.exclamationmark_circle,
-                            color: scoreBadColor, size: 18),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            _errorMessage!,
-                            style: TextStyle(
-                              color: scoreBadColor,
-                              fontSize: 13,
-                            ),
+                    if (_emailError != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4, left: 4),
+                        child: Text(
+                          _emailError!,
+                          style: AppTypography.chip(context).copyWith(
+                            color: scoreBadColor,
                           ),
                         ),
-                      ],
-                    ),
-                  ).animate().fadeIn(duration: 250.ms),
+                      ),
+                    const SizedBox(height: 14),
 
-                // Submit button
-                AppButton(
-                  label: _isSignUp ? 'Create Account' : 'Sign In',
-                  isLoading: _isLoading,
-                  onPressed: _isLoading ? null : _handleEmailAuth,
-                ),
-                const SizedBox(height: 20),
-
-                // Apple Sign In
-                if (!kIsWeb &&
-                    (Platform.isIOS || Platform.isMacOS)) ...[
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          height: 0.5,
-                          color: dividerColor,
+                    // Password field
+                    CupertinoTextField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _handleEmailAuth(),
+                      placeholder: 'Password',
+                      placeholderStyle: TextStyle(color: tertiaryColor),
+                      style: TextStyle(color: primaryTextColor),
+                      prefix: Padding(
+                        padding: const EdgeInsets.only(left: 12),
+                        child: Icon(
+                          CupertinoIcons.lock,
+                          size: 20,
+                          color: tertiaryColor,
                         ),
                       ),
-                      Padding(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'or',
-                          style: TextStyle(
-                            fontSize: 15,
+                      suffix: Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: CupertinoButton(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          onPressed: () {
+                            setState(
+                                () => _obscurePassword = !_obscurePassword);
+                          },
+                          child: Icon(
+                            _obscurePassword
+                                ? CupertinoIcons.eye_slash
+                                : CupertinoIcons.eye,
+                            size: 20,
                             color: tertiaryColor,
                           ),
                         ),
                       ),
-                      Expanded(
-                        child: Container(
-                          height: 0.5,
-                          color: dividerColor,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: searchFieldColor,
+                        borderRadius:
+                            BorderRadius.circular(AppColors.radiusM),
+                        border: _passwordError != null
+                            ? Border.all(color: scoreBadColor, width: 0.5)
+                            : null,
+                      ),
+                    ),
+                    if (_passwordError != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4, left: 4),
+                        child: Text(
+                          _passwordError!,
+                          style: AppTypography.chip(context).copyWith(
+                            color: scoreBadColor,
+                          ),
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
 
-                  AppButton(
-                    label: 'Continue with Apple',
-                    variant: AppButtonVariant.secondary,
-                    onPressed: _isLoading ? null : _handleAppleSignIn,
-                  ),
-                ],
-              ],
-            ),
+                    if (!_isSignUp)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: CupertinoButton(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          onPressed: _forgotPassword,
+                          child: Text(
+                            'Forgot password?',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: accentColor,
+                            ),
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 8),
+
+                    // Error message
+                    if (_errorMessage != null)
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: scoreBadColor.withValues(alpha: 0.08),
+                          borderRadius:
+                              BorderRadius.circular(AppColors.radiusM),
+                          border: Border.all(
+                            color: scoreBadColor.withValues(alpha: 0.15),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(CupertinoIcons.exclamationmark_circle,
+                                color: scoreBadColor, size: 18),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                _errorMessage!,
+                                style: TextStyle(
+                                  color: scoreBadColor,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ).animate().fadeIn(duration: 250.ms),
+
+                    // Submit button
+                    AppButton(
+                      label: _isSignUp ? 'Create Account' : 'Sign In',
+                      isLoading: _isLoading,
+                      onPressed: _isLoading ? null : _handleEmailAuth,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Apple Sign In
+                    if (!kIsWeb &&
+                        (Platform.isIOS || Platform.isMacOS)) ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              height: 0.5,
+                              color: dividerColor,
+                            ),
+                          ),
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              'or',
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: tertiaryColor,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Container(
+                              height: 0.5,
+                              color: dividerColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      AppButton(
+                        label: 'Continue with Apple',
+                        variant: AppButtonVariant.secondary,
+                        onPressed: _isLoading ? null : _handleAppleSignIn,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _HeroSection extends StatelessWidget {
+  const _HeroSection();
+
+  @override
+  Widget build(BuildContext context) {
+    const heroBg = CupertinoDynamicColor.withBrightness(
+      color: Color(0xFF18181B),
+      darkColor: Color(0xFFFAFAFA),
+    );
+    const heroText = CupertinoDynamicColor.withBrightness(
+      color: Color(0xFFFFFFFF),
+      darkColor: Color(0xFF18181B),
+    );
+    const heroMuted = CupertinoDynamicColor.withBrightness(
+      color: Color(0xFF666666),
+      darkColor: Color(0xFF999999),
+    );
+    const heroLine = CupertinoDynamicColor.withBrightness(
+      color: Color(0x14FFFFFF),
+      darkColor: Color(0x1418181B),
+    );
+
+    final resolvedBg = CupertinoDynamicColor.resolve(heroBg, context);
+    final resolvedText = CupertinoDynamicColor.resolve(heroText, context);
+    final resolvedMuted = CupertinoDynamicColor.resolve(heroMuted, context);
+    final resolvedLine = CupertinoDynamicColor.resolve(heroLine, context);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(
+        AppConstants.pageHorizontal, 32, AppConstants.pageHorizontal, 24,
+      ),
+      color: resolvedBg,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'LEADFORGE',
+            style: AppTypography.labelSmall(context).copyWith(
+              color: resolvedMuted, letterSpacing: 1.5,
+            ),
+          ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.03, duration: 400.ms, curve: Curves.easeOut),
+          const SizedBox(height: 16),
+          RichText(
+            text: TextSpan(
+              style: AppTypography.displayLarge(context).copyWith(
+                fontSize: 30, fontWeight: FontWeight.w900, height: 1.1, color: resolvedText,
+              ),
+              children: [
+                const TextSpan(text: 'Turn weak\nwebsites into\n'),
+                TextSpan(text: 'your clients.', style: TextStyle(color: resolvedMuted)),
+              ],
+            ),
+          ).animate(delay: 100.ms).fadeIn(duration: 400.ms).slideY(begin: -0.03, duration: 400.ms, curve: Curves.easeOut),
+          const SizedBox(height: 12),
+          Container(
+            width: 40, height: 3,
+            decoration: BoxDecoration(
+              color: resolvedText.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ).animate(delay: 200.ms).fadeIn(duration: 300.ms),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.only(top: 12),
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: resolvedLine, width: 1)),
+            ),
+            child: Row(
+              children: [
+                _HeroStat(value: '2.4K', label: 'Leads found', color: resolvedText, mutedColor: resolvedMuted),
+                const SizedBox(width: 20),
+                _HeroStat(value: '890', label: 'Demos built', color: resolvedText, mutedColor: resolvedMuted),
+                const SizedBox(width: 20),
+                _HeroStat(value: '94%', label: 'Response rate', color: resolvedText, mutedColor: resolvedMuted),
+              ],
+            ),
+          ).animate(delay: 300.ms).fadeIn(duration: 400.ms).slideY(begin: 0.03, duration: 400.ms, curve: Curves.easeOut),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroStat extends StatelessWidget {
+  final String value;
+  final String label;
+  final Color color;
+  final Color mutedColor;
+
+  const _HeroStat({required this.value, required this.label, required this.color, required this.mutedColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: color)),
+        Text(label, style: TextStyle(fontSize: 10, color: mutedColor)),
+      ],
     );
   }
 }
