@@ -133,29 +133,25 @@ class _OnboardingScreenEnhancedState
                   Haptics.light();
                 },
                 children: [
-                  const _OnboardingPage(
-                    icon: CupertinoIcons.search,
+                  _OnboardingPage(
                     title: 'Find Hidden Opportunities',
                     description:
                         'Search for businesses with poor or no web presence in any niche.',
                     pageIndex: 0,
                   ),
-                  const _OnboardingPage(
-                    icon: CupertinoIcons.chart_bar,
+                  _OnboardingPage(
                     title: 'AI-Powered Analysis',
                     description:
                         'Get instant insights on website quality, SEO gaps, and online reputation.',
                     pageIndex: 1,
                   ),
-                  const _OnboardingPage(
-                    icon: CupertinoIcons.globe,
+                  _OnboardingPage(
                     title: 'Generate Demo Sites',
                     description:
                         'Create professional demo websites in seconds to showcase your work.',
                     pageIndex: 2,
                   ),
-                  const _OnboardingPage(
-                    icon: CupertinoIcons.bubble_left_bubble_right,
+                  _OnboardingPage(
                     title: 'Personalized Outreach',
                     description:
                         'AI writes custom messages for email, WhatsApp, Instagram, or phone.',
@@ -171,29 +167,14 @@ class _OnboardingScreenEnhancedState
               ),
             ),
 
-            // Page indicator dots
-            if (_currentPage < 4)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  4,
-                  (index) => AnimatedContainer(
-                    duration: AppConstants.standardAnimation,
-                    curve: Curves.easeOutCubic,
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: index == _currentPage
-                          ? CupertinoDynamicColor.resolve(
-                              AppColors.accent, context)
-                          : CupertinoDynamicColor.resolve(
-                              AppColors.divider, context),
-                    ),
-                  ),
-                ),
+            // Progress bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppConstants.pageHorizontal),
+              child: _ProgressBar(
+                currentStep: _currentPage,
+                totalSteps: 4,
               ),
+            ),
             const SizedBox(height: AppConstants.sectionGap),
 
             // Navigation buttons
@@ -245,99 +226,41 @@ class _OnboardingScreenEnhancedState
   }
 }
 
-/// Animated onboarding page
-class _OnboardingPage extends StatefulWidget {
-  final IconData icon;
+/// Onboarding page with mockup preview
+class _OnboardingPage extends StatelessWidget {
   final String title;
   final String description;
   final int pageIndex;
 
   const _OnboardingPage({
-    required this.icon,
     required this.title,
     required this.description,
     required this.pageIndex,
   });
 
   @override
-  State<_OnboardingPage> createState() => _OnboardingPageState();
-}
-
-class _OnboardingPageState extends State<_OnboardingPage>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final accentColor =
-        CupertinoDynamicColor.resolve(AppColors.accent, context);
-
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon with subtle background
-          Container(
-            width: 96,
-            height: 96,
-            decoration: BoxDecoration(
-              color: CupertinoDynamicColor.resolve(
-                  AppColors.chipInactive, context),
-              borderRadius: BorderRadius.circular(AppColors.radiusXL),
-            ),
-            alignment: Alignment.center,
-            child: Icon(
-              widget.icon,
-              size: 48,
-              color: accentColor,
-            ),
-          )
-              .animate(controller: _controller)
-              .scale(
-                begin: const Offset(0.7, 0.7),
-                duration: 500.ms,
-                curve: Curves.easeOutBack,
-              )
-              .fadeIn(duration: 400.ms),
-          const SizedBox(height: 36),
-
-          // Title
-          Text(
-            widget.title,
-            style: AppTypography.displayLarge(context),
-            textAlign: TextAlign.center,
-          )
+          _MockupPreview(pageIndex: pageIndex)
+              .animate()
+              .fadeIn(duration: 400.ms)
+              .scale(begin: const Offset(0.95, 0.95), duration: 500.ms, curve: Curves.easeOutBack),
+          const SizedBox(height: 24),
+          Text(title, style: AppTypography.displayLarge(context))
               .animate()
               .fadeIn(delay: 200.ms, duration: 400.ms)
               .slideY(begin: 0.15, delay: 200.ms, duration: 400.ms),
-          const SizedBox(height: 12),
-
-          // Description
+          const SizedBox(height: 8),
           Text(
-            widget.description,
+            description,
             style: AppTypography.bodyLarge(context).copyWith(
-              color: CupertinoDynamicColor.resolve(
-                  AppColors.textSecondary, context),
+              color: CupertinoDynamicColor.resolve(AppColors.textSecondary, context),
               height: 1.5,
             ),
-            textAlign: TextAlign.center,
           )
               .animate()
               .fadeIn(delay: 400.ms, duration: 400.ms)
@@ -367,7 +290,7 @@ class _ProfileSetupPage extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Text(
             'Set Up Your Profile',
@@ -457,6 +380,211 @@ class _ProfileSetupPage extends StatelessWidget {
               .slideX(begin: -0.1, delay: 400.ms, duration: 400.ms),
         ],
       ),
+    );
+  }
+}
+
+class _ProgressBar extends StatelessWidget {
+  final int currentStep;
+  final int totalSteps;
+
+  const _ProgressBar({
+    required this.currentStep,
+    required this.totalSteps,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isFinalStep = currentStep >= totalSteps;
+    final label = isFinalStep ? 'FINAL STEP' : 'STEP ${currentStep + 1} OF $totalSteps';
+    final progress = isFinalStep ? 1.0 : (currentStep + 1) / totalSteps;
+
+    return Row(
+      children: [
+        Text(
+          label,
+          style: AppTypography.labelSmall(context).copyWith(
+            color: CupertinoDynamicColor.resolve(AppColors.textSecondary, context),
+            letterSpacing: 1,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: SizedBox(
+            height: 3,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: Stack(
+                children: [
+                  Container(color: CupertinoDynamicColor.resolve(AppColors.divider, context)),
+                  TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: 0, end: progress),
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                    builder: (context, value, _) {
+                      return FractionallySizedBox(
+                        widthFactor: value,
+                        child: Container(color: CupertinoDynamicColor.resolve(AppColors.accent, context)),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MockupPreview extends StatelessWidget {
+  final int pageIndex;
+  const _MockupPreview({required this.pageIndex});
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = CupertinoDynamicColor.resolve(AppColors.chipInactive, context);
+    final surfaceColor = CupertinoDynamicColor.resolve(AppColors.surface, context);
+    final borderColor = CupertinoDynamicColor.resolve(AppColors.border, context);
+    final accentColor = CupertinoDynamicColor.resolve(AppColors.accent, context);
+    final secondaryColor = CupertinoDynamicColor.resolve(AppColors.textSecondary, context);
+    final tertiaryColor = CupertinoDynamicColor.resolve(AppColors.textTertiary, context);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(AppColors.radiusL),
+        border: Border.all(color: borderColor, width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(_labelIcon, size: 12, color: tertiaryColor),
+              const SizedBox(width: 4),
+              Text(_labelText, style: AppTypography.labelSmall(context).copyWith(color: tertiaryColor)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          switch (pageIndex) {
+            0 => _buildScoutPreview(context, surfaceColor, borderColor, accentColor, secondaryColor, tertiaryColor),
+            1 => _buildAuditPreview(context, surfaceColor, borderColor, accentColor, secondaryColor, tertiaryColor),
+            2 => _buildDemoPreview(context, surfaceColor, borderColor, accentColor, secondaryColor, tertiaryColor),
+            _ => _buildOutreachPreview(context, surfaceColor, borderColor, accentColor, secondaryColor, tertiaryColor),
+          },
+        ],
+      ),
+    );
+  }
+
+  IconData get _labelIcon => switch (pageIndex) { 0 => CupertinoIcons.search, 1 => CupertinoIcons.chart_bar, 2 => CupertinoIcons.globe, _ => CupertinoIcons.paperplane };
+  String get _labelText => switch (pageIndex) { 0 => 'SEARCH PREVIEW', 1 => 'AUDIT PREVIEW', 2 => 'DEMO PREVIEW', _ => 'MESSAGE PREVIEW' };
+
+  Widget _buildScoutPreview(BuildContext context, Color surface, Color border, Color accent, Color secondary, Color tertiary) {
+    return Column(children: [
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(AppColors.radiusM), border: Border.all(color: border, width: 0.5)),
+        child: Row(children: [Icon(CupertinoIcons.search, size: 14, color: tertiary), const SizedBox(width: 8), Text('restaurants in Miami...', style: TextStyle(fontSize: 12, color: tertiary))]),
+      ),
+      const SizedBox(height: 8),
+      Row(children: [
+        Expanded(child: _miniResultCard(context, 'Casa Luna', 'No website · 3.2★', surface, border, secondary, tertiary)),
+        const SizedBox(width: 6),
+        Expanded(child: _miniResultCard(context, 'El Patio', 'Poor SEO · 2.8★', surface, border, secondary, tertiary)),
+      ]),
+    ]);
+  }
+
+  Widget _miniResultCard(BuildContext context, String name, String detail, Color surface, Color border, Color secondary, Color tertiary) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(AppColors.radiusS + 2), border: Border.all(color: border, width: 0.5)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(name, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: secondary)),
+        const SizedBox(height: 2),
+        Text(detail, style: TextStyle(fontSize: 10, color: tertiary)),
+      ]),
+    );
+  }
+
+  Widget _buildAuditPreview(BuildContext context, Color surface, Color border, Color accent, Color secondary, Color tertiary) {
+    final scoreBadColor = CupertinoDynamicColor.resolve(AppColors.scoreBad, context);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(AppColors.radiusM), border: Border.all(color: border, width: 0.5)),
+      child: Row(children: [
+        Text('32', style: TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: scoreBadColor)),
+        Text('/100', style: TextStyle(fontSize: 14, color: tertiary)),
+        const SizedBox(width: 16),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('No website found', style: TextStyle(fontSize: 11, color: secondary)),
+          Text('Few reviews', style: TextStyle(fontSize: 11, color: secondary)),
+          Text('No social media', style: TextStyle(fontSize: 11, color: secondary)),
+        ])),
+      ]),
+    );
+  }
+
+  Widget _buildDemoPreview(BuildContext context, Color surface, Color border, Color accent, Color secondary, Color tertiary) {
+    return Container(
+      decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(AppColors.radiusM), border: Border.all(color: border, width: 0.5)),
+      clipBehavior: Clip.antiAlias,
+      child: Column(children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: border, width: 0.5))),
+          child: Row(children: [
+            Row(children: [_dot(const Color(0xFFFF5F56)), const SizedBox(width: 4), _dot(const Color(0xFFFFBD2E)), const SizedBox(width: 4), _dot(const Color(0xFF27C93F))]),
+            const SizedBox(width: 10),
+            Expanded(child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(color: CupertinoDynamicColor.resolve(AppColors.chipInactive, context), borderRadius: BorderRadius.circular(4)),
+              child: Text('casaluna.leadforge.site', style: TextStyle(fontSize: 10, color: tertiary)),
+            )),
+          ]),
+        ),
+        Padding(padding: const EdgeInsets.all(10), child: Column(children: [
+          Container(height: 8, decoration: BoxDecoration(color: accent.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 6),
+          Container(height: 32, decoration: BoxDecoration(color: accent.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(4))),
+          const SizedBox(height: 6),
+          Row(children: [
+            Expanded(child: Container(height: 20, decoration: BoxDecoration(color: accent.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(3)))),
+            const SizedBox(width: 6),
+            Expanded(child: Container(height: 20, decoration: BoxDecoration(color: accent.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(3)))),
+          ]),
+        ])),
+      ]),
+    );
+  }
+
+  Widget _dot(Color color) => Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: color));
+
+  Widget _buildOutreachPreview(BuildContext context, Color surface, Color border, Color accent, Color secondary, Color tertiary) {
+    return Column(children: [
+      Container(
+        width: double.infinity, padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(AppColors.radiusM), border: Border.all(color: border, width: 0.5)),
+        child: Text("Hi! I noticed your restaurant could benefit from a stronger online presence. I've prepared a demo website...", style: TextStyle(fontSize: 12, color: secondary, height: 1.5)),
+      ),
+      const SizedBox(height: 8),
+      Row(children: [
+        _channelPill(context, 'Email', accent), const SizedBox(width: 6),
+        _channelPill(context, 'WhatsApp', accent), const SizedBox(width: 6),
+        _channelPill(context, 'Instagram', accent),
+      ]),
+    ]);
+  }
+
+  Widget _channelPill(BuildContext context, String label, Color accent) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(border: Border.all(color: accent.withValues(alpha: 0.2), width: 0.5), borderRadius: BorderRadius.circular(12)),
+      child: Text(label, style: TextStyle(fontSize: 10, color: accent)),
     );
   }
 }
