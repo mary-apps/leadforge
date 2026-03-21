@@ -133,25 +133,25 @@ class _OnboardingScreenEnhancedState
                   Haptics.light();
                 },
                 children: [
-                  _OnboardingPage(
+                  const _OnboardingPage(
                     title: 'Find Hidden Opportunities',
                     description:
                         'Search for businesses with poor or no web presence in any niche.',
                     pageIndex: 0,
                   ),
-                  _OnboardingPage(
+                  const _OnboardingPage(
                     title: 'AI-Powered Analysis',
                     description:
                         'Get instant insights on website quality, SEO gaps, and online reputation.',
                     pageIndex: 1,
                   ),
-                  _OnboardingPage(
+                  const _OnboardingPage(
                     title: 'Generate Demo Sites',
                     description:
                         'Create professional demo websites in seconds to showcase your work.',
                     pageIndex: 2,
                   ),
-                  _OnboardingPage(
+                  const _OnboardingPage(
                     title: 'Personalized Outreach',
                     description:
                         'AI writes custom messages for email, WhatsApp, Instagram, or phone.',
