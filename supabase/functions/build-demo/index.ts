@@ -187,7 +187,7 @@ For services, include 4-6 items with name and a compelling description. Use real
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
