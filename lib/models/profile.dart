@@ -16,6 +16,7 @@ class Profile with _$Profile {
     @Default(0) int reportsThisMonth,
     DateTime? monthResetAt,
     DateTime? createdAt,
+    @JsonKey(name: 'org_id') String? orgId,
   }) = _Profile;
 
   factory Profile.fromJson(Map<String, dynamic> json) =>
