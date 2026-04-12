@@ -66,10 +66,16 @@ function buildServiceCards(services: { name: string; desc: string }[] | string[]
 // ---------------------------------------------------------------------------
 
 function buildWhyOrHours(business: BusinessData, whyUs: string[]): string {
-  if (business.opening_hours && Object.keys(business.opening_hours).length > 0) {
-    const rows = Object.entries(business.opening_hours)
-      .map(([day, hours]) => {
-        return `<div class="hours-row"><span class="hours-day">${escapeHtml(day)}</span><span class="hours-time">${escapeHtml(hours)}</span></div>`
+  // opening_hours from Google Places is { periods, open_now, weekday_text }
+  // weekday_text is the human-readable array like ["Monday: 9 AM – 5 PM", ...]
+  const hours = business.opening_hours as any
+  if (hours && hours.weekday_text && Array.isArray(hours.weekday_text) && hours.weekday_text.length > 0) {
+    const rows = hours.weekday_text
+      .map((line: string) => {
+        const parts = String(line).split(': ')
+        const day = parts[0] || ''
+        const time = parts.slice(1).join(': ') || ''
+        return `<div class="hours-row"><span class="hours-day">${escapeHtml(day)}</span><span class="hours-time">${escapeHtml(time)}</span></div>`
       })
       .join('\n')
     return `<div class="hours-grid">${rows}</div>`
@@ -88,16 +94,11 @@ function buildWhyOrHours(business: BusinessData, whyUs: string[]): string {
 
 function buildRatingHtml(rating: number | null): string {
   if (!rating || rating < 3.5) return ''
-  const fullStars = Math.floor(rating)
-  const halfStar = rating - fullStars >= 0.5
-  const emptyStars = 5 - fullStars - (halfStar ? 1 : 0)
-
-  const stars =
-    '★'.repeat(fullStars) +
-    (halfStar ? '½' : '') +
-    '☆'.repeat(emptyStars)
-
-  return `<div class="rating"><span class="stars" aria-label="${rating} out of 5 stars">${stars}</span><span class="rating-value">${rating}</span></div>`
+  const full = Math.floor(rating)
+  const half = rating - full >= 0.5
+  // Use HTML entities for reliable cross-platform rendering
+  const stars = '&#9733;'.repeat(full) + (half ? '&#189;' : '')
+  return `<div class="rating"><span class="stars" aria-label="${rating} out of 5 stars">${stars}</span> <span class="rating-value">${rating}/5</span></div>`
 }
 
 // ---------------------------------------------------------------------------
