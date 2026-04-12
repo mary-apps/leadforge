@@ -12,7 +12,7 @@ import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/messages/messages_screen.dart';
 import '../screens/outreach/outreach_screen.dart';
-import '../widgets/app_bottom_nav.dart';
+import '../widgets/adaptive_shell.dart';
 
 /// Notifier that bridges Riverpod state changes to GoRouter's refreshListenable.
 class _AuthChangeNotifier extends ChangeNotifier {
@@ -72,8 +72,14 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Main Shell with Bottom Nav (5 branches)
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) =>
-            AppBottomNav(navigationShell: navigationShell),
+        builder: (context, state, navigationShell) => AdaptiveShell(
+          currentIndex: navigationShell.currentIndex,
+          onTap: (index) => navigationShell.goBranch(
+            index,
+            initialLocation: index == navigationShell.currentIndex,
+          ),
+          child: navigationShell,
+        ),
         branches: [
           // 0 - Home / Dashboard
           StatefulShellBranch(

@@ -2,15 +2,24 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../config/theme.dart';
 
-class AppBottomNav extends ConsumerWidget {
-  final StatefulNavigationShell navigationShell;
+/// Bottom tab bar for compact (phone) layouts.
+///
+/// Accepts [currentIndex], [onTap], and the page [child] so that the
+/// navigation chrome is decoupled from GoRouter's [StatefulNavigationShell].
+class AppBottomNav extends StatelessWidget {
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+  final Widget child;
 
-  const AppBottomNav({super.key, required this.navigationShell});
+  const AppBottomNav({
+    super.key,
+    required this.currentIndex,
+    required this.onTap,
+    required this.child,
+  });
 
   static const _tabs = [
     (
@@ -41,7 +50,7 @@ class AppBottomNav extends ConsumerWidget {
   ];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final bgColor =
         CupertinoDynamicColor.resolve(AppColors.background, context);
     final dividerColor =
@@ -50,7 +59,7 @@ class AppBottomNav extends ConsumerWidget {
     return CupertinoPageScaffold(
       child: Column(
         children: [
-          Expanded(child: navigationShell),
+          Expanded(child: child),
           ClipRect(
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
@@ -73,12 +82,8 @@ class AppBottomNav extends ConsumerWidget {
                             icon: _tabs[i].icon,
                             activeIcon: _tabs[i].activeIcon,
                             label: _tabs[i].label,
-                            isActive: i == navigationShell.currentIndex,
-                            onTap: () => navigationShell.goBranch(
-                              i,
-                              initialLocation:
-                                  i == navigationShell.currentIndex,
-                            ),
+                            isActive: i == currentIndex,
+                            onTap: () => onTap(i),
                           ),
                       ],
                     ),
