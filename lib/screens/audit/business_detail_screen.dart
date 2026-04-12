@@ -1,23 +1,30 @@
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../config/theme.dart';
 import '../../models/business.dart';
 import '../../models/audit_result.dart';
-import '../../models/demo.dart';
 import '../../models/message.dart';
+import '../../models/report.dart';
 import '../../services/audit_service.dart';
+import '../../services/report_service.dart';
+import '../../services/scout_service.dart';
+import '../../services/supabase_service.dart';
 import '../../providers/auto_audit_provider.dart';
 import '../../providers/audit_state_provider.dart';
 import '../../providers/businesses_provider.dart';
-import '../../providers/demo_provider.dart';
+import '../../providers/report_provider.dart';
 import '../../providers/outreach_provider.dart';
 import '../../providers/messages_provider.dart';
+import '../../providers/profile_provider.dart';
 import '../../widgets/audit_context.dart';
 import '../../widgets/outreach_history.dart';
 import '../../widgets/app_button.dart';
@@ -44,6 +51,7 @@ class BusinessDetailScreen extends ConsumerStatefulWidget {
 
 class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
   bool _isAuditing = false;
+  bool _isGenerating = false;
   AuditResult? _auditResult;
   bool _autoAuditTriggered = false;
 
@@ -92,6 +100,72 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
     }
   }
 
+  Future<void> _generateReport(Business business) async {
+    setState(() => _isGenerating = true);
+    try {
+      final profile = ref.read(profileNotifierProvider).valueOrNull;
+      final agencyName = profile?.businessName;
+
+      // Generate PDF
+      final pdfBytes =
+          await ReportService.generatePdfReport(business, agencyName);
+
+      // Upload to storage
+      final userId = SupabaseService.userId!;
+      final storagePath =
+          await ReportService.uploadPdf(pdfBytes, userId, business.id);
+
+      // Save report record
+      await ReportService.saveReport(
+        businessId: business.id,
+        score: business.auditScore ?? 0,
+        breakdown: business.auditBreakdown ?? {},
+        diagnosis: business.auditDiagnosis ?? '',
+        recommendations: [],
+        pdfStoragePath: storagePath,
+      );
+
+      // Update business status
+      await ScoutService.updateStatus(business.id, BusinessStatus.reportSent);
+
+      // Refresh providers
+      ref.invalidate(reportForBusinessProvider(business.id));
+      ref.invalidate(businessProvider(business.id));
+
+      if (mounted) {
+        setState(() => _isGenerating = false);
+        Haptics.medium();
+        IosToast.show(context, 'Report generated successfully');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isGenerating = false);
+        Haptics.heavy();
+        IosToast.show(context, 'Error: $e');
+      }
+    }
+  }
+
+  Future<void> _shareReport(Report report) async {
+    if (report.pdfStoragePath == null) return;
+    try {
+      // Download PDF from Supabase storage
+      final bytes = await SupabaseService.client.storage
+          .from('reports')
+          .download(report.pdfStoragePath!);
+      // Save to temp file and share
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/audit-report.pdf');
+      await file.writeAsBytes(bytes);
+      await Share.shareXFiles([XFile(file.path)],
+          text: 'Web Presence Audit Report');
+    } catch (e) {
+      if (mounted) {
+        IosToast.show(context, 'Share failed: $e');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final businessAsync = ref.watch(businessProvider(widget.businessId));
@@ -114,9 +188,9 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
           auditStateProvider(widget.businessId).select((s) => s is AsyncError),
         );
         final autoAuditEnabled = ref.watch(autoAuditProvider);
-        final demoAsync = ref.watch(demoForBusinessProvider(business.id));
+        final reportAsync = ref.watch(reportForBusinessProvider(business.id));
         final outreachAsync = ref.watch(outreachForBusinessProvider(business.id));
-        final demo = demoAsync.valueOrNull;
+        final report = reportAsync.valueOrNull;
         final outreach = outreachAsync.valueOrNull;
 
         // Auto-trigger audit if enabled and not yet audited
@@ -245,24 +319,18 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                       isAuditError: isAuditStateError && !business.isAudited,
                       autoAuditEnabled: autoAuditEnabled,
                       auditResult: _auditResult,
-                      demo: demo,
+                      report: report,
+                      isGenerating: _isGenerating,
                       outreach: outreach,
                       onAudit: () => _runAudit(business),
                       onRetryAudit: () => triggerAutoAudit(ref, business.id),
-                      onBuildDemo: () async {
-                        await context.push('/business/${business.id}/build-demo');
-                        ref.invalidate(demoForBusinessProvider(business.id));
-                      },
+                      onGenerateReport: () => _generateReport(business),
                       onCompose: () async {
                         await context.push('/business/${business.id}/outreach');
                         ref.invalidate(outreachForBusinessProvider(business.id));
                       },
-                      onPreviewDemo: demo != null ? () => launchUrl(Uri.parse(demo.publicUrl), mode: LaunchMode.externalApplication) : null,
-                      onShareDemo: demo != null ? () => Share.share('Check out this demo: ${demo.publicUrl}', subject: 'Demo Website') : null,
-                      onRedoDemo: () async {
-                        await context.push('/business/${business.id}/build-demo');
-                        ref.invalidate(demoForBusinessProvider(business.id));
-                      },
+                      onShareReport: report != null ? () => _shareReport(report) : null,
+                      onRegenerateReport: () => _generateReport(business),
                       onCopyOutreach: outreach != null ? () { Clipboard.setData(ClipboardData(text: outreach.content)); HapticFeedback.mediumImpact(); } : null,
                       onRedoOutreach: () async {
                         await context.push('/business/${business.id}/outreach');
@@ -529,6 +597,170 @@ class _AnalysisStep {
 }
 
 // ---------------------------------------------------------------------------
+// Generating Report Animation
+// ---------------------------------------------------------------------------
+
+class _GeneratingReportAnimation extends StatefulWidget {
+  @override
+  State<_GeneratingReportAnimation> createState() =>
+      _GeneratingReportAnimationState();
+}
+
+class _GeneratingReportAnimationState extends State<_GeneratingReportAnimation>
+    with SingleTickerProviderStateMixin {
+  int _currentStep = 0;
+  late AnimationController _pulseController;
+
+  final List<_AnalysisStep> _steps = const [
+    _AnalysisStep(CupertinoIcons.doc_chart_fill, 'Building PDF...'),
+    _AnalysisStep(CupertinoIcons.cloud_upload, 'Uploading report...'),
+    _AnalysisStep(CupertinoIcons.checkmark_seal, 'Saving record...'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _animateSteps();
+  }
+
+  Future<void> _animateSteps() async {
+    for (int i = 0; i < _steps.length; i++) {
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (mounted) {
+        setState(() => _currentStep = i);
+        Haptics.light();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accentCol =
+        CupertinoDynamicColor.resolve(AppColors.accent, context);
+    final scoreGoodCol =
+        CupertinoDynamicColor.resolve(AppColors.scoreGood, context);
+    final dividerCol =
+        CupertinoDynamicColor.resolve(AppColors.divider, context);
+    final textPrimaryCol =
+        CupertinoDynamicColor.resolve(AppColors.textPrimary, context);
+    final textSecondaryCol =
+        CupertinoDynamicColor.resolve(AppColors.textSecondary, context);
+    final textTertiaryCol =
+        CupertinoDynamicColor.resolve(AppColors.textTertiary, context);
+
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          border: Border.all(color: dividerCol, width: 1),
+          borderRadius: BorderRadius.circular(AppColors.radiusM),
+        ),
+        child: Column(
+          children: [
+            AnimatedBuilder(
+              animation: _pulseController,
+              builder: (context, child) {
+                return Opacity(
+                  opacity: 0.4 + (_pulseController.value * 0.6),
+                  child: Transform.scale(
+                    scale: 0.9 + (_pulseController.value * 0.1),
+                    child: child,
+                  ),
+                );
+              },
+              child: Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: accentCol.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(AppColors.radiusL),
+                ),
+                child: Icon(
+                  CupertinoIcons.doc_richtext,
+                  color: accentCol,
+                  size: 24,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            ...List.generate(_steps.length, (index) {
+              final isActive = index == _currentStep;
+              final isDone = index < _currentStep;
+
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+                margin: const EdgeInsets.symmetric(vertical: 3),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? accentCol.withValues(alpha: 0.04)
+                      : const Color(0x00000000),
+                  borderRadius: BorderRadius.circular(AppColors.radiusS),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: Icon(
+                        isDone
+                            ? CupertinoIcons.checkmark_circle_fill
+                            : isActive
+                                ? _steps[index].icon
+                                : CupertinoIcons.circle,
+                        key: ValueKey('report-$index-$isDone-$isActive'),
+                        size: 16,
+                        color: isActive
+                            ? accentCol
+                            : isDone
+                                ? scoreGoodCol
+                                : textTertiaryCol,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _steps[index].label,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: isActive
+                            ? textPrimaryCol
+                            : isDone
+                                ? textSecondaryCol
+                                : textTertiaryCol,
+                        fontWeight:
+                            isActive ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    )
+        .animate()
+        .fadeIn(duration: 300.ms)
+        .scale(
+            begin: const Offset(0.95, 0.95),
+            duration: 350.ms,
+            curve: Curves.easeOutCubic);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Workflow Stepper
 // ---------------------------------------------------------------------------
 
@@ -541,41 +773,42 @@ class _WorkflowStepper extends StatelessWidget {
   final bool isAuditError;
   final bool autoAuditEnabled;
   final AuditResult? auditResult;
-  final Demo? demo;
+  final Report? report;
+  final bool isGenerating;
   final Message? outreach;
   final VoidCallback onAudit;
   final VoidCallback onRetryAudit;
-  final VoidCallback onBuildDemo;
+  final VoidCallback onGenerateReport;
   final VoidCallback onCompose;
-  final VoidCallback? onPreviewDemo;
-  final VoidCallback? onShareDemo;
-  final VoidCallback? onRedoDemo;
+  final VoidCallback? onShareReport;
+  final VoidCallback? onRegenerateReport;
   final VoidCallback? onCopyOutreach;
   final VoidCallback? onRedoOutreach;
 
   const _WorkflowStepper({
     required this.business, required this.isAudited, required this.isAuditing,
     required this.isAuditError, required this.autoAuditEnabled,
-    required this.auditResult, required this.demo, required this.outreach,
+    required this.auditResult, required this.report, required this.isGenerating,
+    required this.outreach,
     required this.onAudit, required this.onRetryAudit,
-    required this.onBuildDemo, required this.onCompose,
-    this.onPreviewDemo, this.onShareDemo, this.onRedoDemo,
+    required this.onGenerateReport, required this.onCompose,
+    this.onShareReport, this.onRegenerateReport,
     this.onCopyOutreach, this.onRedoOutreach,
   });
 
   @override
   Widget build(BuildContext context) {
     final auditState = isAuditing ? _StepState.current : isAudited ? _StepState.completed : _StepState.current;
-    final demoState = !isAudited ? _StepState.future : demo != null ? _StepState.completed : _StepState.current;
+    final reportState = !isAudited ? _StepState.future : isGenerating ? _StepState.current : report != null ? _StepState.completed : _StepState.current;
     final outreachState = !isAudited ? _StepState.future : outreach != null ? _StepState.completed : _StepState.current;
 
     return Column(children: [
       _WorkflowStep(stepNumber: 1, state: auditState, showConnector: true,
         connectorColor: auditState == _StepState.completed ? CupertinoDynamicColor.resolve(AppColors.scoreGood, context) : CupertinoDynamicColor.resolve(AppColors.divider, context),
         child: _buildAuditCard(context, auditState)),
-      _WorkflowStep(stepNumber: 2, state: demoState, showConnector: true,
-        connectorColor: demoState == _StepState.completed ? CupertinoDynamicColor.resolve(AppColors.scoreGood, context) : CupertinoDynamicColor.resolve(AppColors.divider, context),
-        child: _buildDemoCard(context, demoState)),
+      _WorkflowStep(stepNumber: 2, state: reportState, showConnector: true,
+        connectorColor: reportState == _StepState.completed ? CupertinoDynamicColor.resolve(AppColors.scoreGood, context) : CupertinoDynamicColor.resolve(AppColors.divider, context),
+        child: _buildReportCard(context, reportState)),
       _WorkflowStep(stepNumber: 3, state: outreachState, showConnector: false,
         child: _buildOutreachCard(context, outreachState)),
     ]);
@@ -600,24 +833,28 @@ class _WorkflowStepper extends StatelessWidget {
     return _CtaCard(title: 'Analyze Site', subtitle: 'AI will score their online presence', onTap: onAudit);
   }
 
-  Widget _buildDemoCard(BuildContext context, _StepState state) {
-    if (state == _StepState.completed && demo != null) {
+  Widget _buildReportCard(BuildContext context, _StepState state) {
+    if (isGenerating) {
+      return _GeneratingReportAnimation();
+    }
+    if (state == _StepState.completed && report != null) {
       return _CompletedCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Demo Ready', style: AppTypography.titleMedium(context).copyWith(color: CupertinoDynamicColor.resolve(AppColors.scoreGood, context))),
+        Text('Audit Report', style: AppTypography.titleMedium(context).copyWith(color: CupertinoDynamicColor.resolve(AppColors.scoreGood, context))),
         const SizedBox(height: 4),
-        Text(demo!.publicUrl, style: AppTypography.mono(context).copyWith(color: CupertinoDynamicColor.resolve(AppColors.textSecondary, context), fontSize: 11), overflow: TextOverflow.ellipsis),
+        Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Text(report!.score.toString(), style: AppTypography.scoreLarge(context).copyWith(color: CupertinoDynamicColor.resolve(AppColors.scoreColor(report!.score), context))),
+          Padding(padding: const EdgeInsets.only(bottom: 6), child: Text('/100', style: AppTypography.bodyMedium(context).copyWith(color: CupertinoDynamicColor.resolve(AppColors.textTertiary, context)))),
+        ]),
         const SizedBox(height: 10),
         Row(children: [
-          Expanded(child: AppButton(label: 'Preview', compact: true, onPressed: onPreviewDemo)),
+          Expanded(child: AppButton(label: 'Share PDF', compact: true, onPressed: onShareReport)),
           const SizedBox(width: 8),
-          Expanded(child: AppButton(label: 'Share', compact: true, variant: AppButtonVariant.secondary, onPressed: onShareDemo)),
-          const SizedBox(width: 8),
-          Expanded(child: AppButton(label: 'Redo', compact: true, variant: AppButtonVariant.ghost, onPressed: onRedoDemo)),
+          Expanded(child: AppButton(label: 'Regenerate', compact: true, variant: AppButtonVariant.ghost, onPressed: onRegenerateReport)),
         ]),
       ]));
     }
-    if (state == _StepState.future) return const _FutureCard(title: 'Generate Demo Site', subtitle: 'Complete audit first');
-    return _CtaCard(title: 'Generate Demo Site', subtitle: 'Create a professional demo', onTap: onBuildDemo);
+    if (state == _StepState.future) return const _FutureCard(title: 'Generate Audit Report', subtitle: 'Complete audit first');
+    return _CtaCard(title: 'Generate Audit Report', subtitle: 'Create a PDF report to share', onTap: onGenerateReport);
   }
 
   Widget _buildOutreachCard(BuildContext context, _StepState state) {
@@ -638,7 +875,7 @@ class _WorkflowStepper extends StatelessWidget {
       ]));
     }
     if (state == _StepState.future) return const _FutureCard(title: 'Compose Outreach', subtitle: 'Complete audit first');
-    return _CtaCard(title: 'Compose Outreach', subtitle: demo == null ? 'Generate demo first for best results' : 'Send a personalized pitch', onTap: onCompose);
+    return _CtaCard(title: 'Compose Outreach', subtitle: report == null ? 'Generate report first for best results' : 'Send a personalized pitch', onTap: onCompose);
   }
 }
 

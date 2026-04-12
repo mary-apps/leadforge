@@ -146,9 +146,9 @@ class _OnboardingScreenEnhancedState
                     pageIndex: 1,
                   ),
                   const _OnboardingPage(
-                    title: 'Generate Demo Sites',
+                    title: 'Generate Audit Reports',
                     description:
-                        'Create professional demo websites in seconds to showcase your work.',
+                        'Create professional PDF reports in seconds to share with prospects.',
                     pageIndex: 2,
                   ),
                   const _OnboardingPage(
@@ -472,7 +472,7 @@ class _MockupPreview extends StatelessWidget {
           switch (pageIndex) {
             0 => _buildScoutPreview(context, surfaceColor, borderColor, accentColor, secondaryColor, tertiaryColor),
             1 => _buildAuditPreview(context, surfaceColor, borderColor, accentColor, secondaryColor, tertiaryColor),
-            2 => _buildDemoPreview(context, surfaceColor, borderColor, accentColor, secondaryColor, tertiaryColor),
+            2 => _buildReportPreview(context, surfaceColor, borderColor, accentColor, secondaryColor, tertiaryColor),
             _ => _buildOutreachPreview(context, surfaceColor, borderColor, accentColor, secondaryColor, tertiaryColor),
           },
         ],
@@ -480,8 +480,8 @@ class _MockupPreview extends StatelessWidget {
     );
   }
 
-  IconData get _labelIcon => switch (pageIndex) { 0 => CupertinoIcons.search, 1 => CupertinoIcons.chart_bar, 2 => CupertinoIcons.globe, _ => CupertinoIcons.paperplane };
-  String get _labelText => switch (pageIndex) { 0 => 'SEARCH PREVIEW', 1 => 'AUDIT PREVIEW', 2 => 'DEMO PREVIEW', _ => 'MESSAGE PREVIEW' };
+  IconData get _labelIcon => switch (pageIndex) { 0 => CupertinoIcons.search, 1 => CupertinoIcons.chart_bar, 2 => CupertinoIcons.doc_richtext, _ => CupertinoIcons.paperplane };
+  String get _labelText => switch (pageIndex) { 0 => 'SEARCH PREVIEW', 1 => 'AUDIT PREVIEW', 2 => 'REPORT PREVIEW', _ => 'MESSAGE PREVIEW' };
 
   Widget _buildScoutPreview(BuildContext context, Color surface, Color border, Color accent, Color secondary, Color tertiary) {
     return Column(children: [
@@ -529,47 +529,40 @@ class _MockupPreview extends StatelessWidget {
     );
   }
 
-  Widget _buildDemoPreview(BuildContext context, Color surface, Color border, Color accent, Color secondary, Color tertiary) {
+  Widget _buildReportPreview(BuildContext context, Color surface, Color border, Color accent, Color secondary, Color tertiary) {
+    final scoreBadColor = CupertinoDynamicColor.resolve(AppColors.scoreBad, context);
     return Container(
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(AppColors.radiusM), border: Border.all(color: border, width: 0.5)),
-      clipBehavior: Clip.antiAlias,
-      child: Column(children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: border, width: 0.5))),
-          child: Row(children: [
-            Row(children: [_dot(const Color(0xFFFF5F56)), const SizedBox(width: 4), _dot(const Color(0xFFFFBD2E)), const SizedBox(width: 4), _dot(const Color(0xFF27C93F))]),
-            const SizedBox(width: 10),
-            Expanded(child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(color: CupertinoDynamicColor.resolve(AppColors.chipInactive, context), borderRadius: BorderRadius.circular(4)),
-              child: Text('casaluna.leadforge.site', style: AppTypography.chip(context).copyWith(fontSize: 10, color: tertiary)),
-            )),
-          ]),
-        ),
-        Padding(padding: const EdgeInsets.all(10), child: Column(children: [
-          Container(height: 8, decoration: BoxDecoration(color: accent.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(2))),
-          const SizedBox(height: 6),
-          Container(height: 32, decoration: BoxDecoration(color: accent.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(4))),
-          const SizedBox(height: 6),
-          Row(children: [
-            Expanded(child: Container(height: 20, decoration: BoxDecoration(color: accent.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(3)))),
-            const SizedBox(width: 6),
-            Expanded(child: Container(height: 20, decoration: BoxDecoration(color: accent.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(3)))),
-          ]),
-        ])),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(CupertinoIcons.doc_richtext, size: 16, color: accent),
+          const SizedBox(width: 6),
+          Text('audit-report.pdf', style: AppTypography.chip(context).copyWith(fontWeight: FontWeight.w600, color: secondary)),
+        ]),
+        const SizedBox(height: 10),
+        Row(children: [
+          Text('32', style: AppTypography.headlineLarge(context).copyWith(fontSize: 28, fontWeight: FontWeight.w900, color: scoreBadColor)),
+          Text('/100', style: AppTypography.bodyMedium(context).copyWith(color: tertiary)),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Container(height: 6, width: double.infinity, decoration: BoxDecoration(color: scoreBadColor.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(3)),
+              child: FractionallySizedBox(alignment: Alignment.centerLeft, widthFactor: 0.32,
+                child: Container(decoration: BoxDecoration(color: scoreBadColor, borderRadius: BorderRadius.circular(3))))),
+            const SizedBox(height: 6),
+            Text('3 pages - Share PDF', style: AppTypography.chip(context).copyWith(fontSize: 10, color: tertiary)),
+          ])),
+        ]),
       ]),
     );
   }
-
-  Widget _dot(Color color) => Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: color));
 
   Widget _buildOutreachPreview(BuildContext context, Color surface, Color border, Color accent, Color secondary, Color tertiary) {
     return Column(children: [
       Container(
         width: double.infinity, padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(AppColors.radiusM), border: Border.all(color: border, width: 0.5)),
-        child: Text("Hi! I noticed your restaurant could benefit from a stronger online presence. I've prepared a demo website...", style: AppTypography.chip(context).copyWith(color: secondary, height: 1.5)),
+        child: Text("Hi! I noticed your restaurant could benefit from a stronger online presence. I've prepared an audit report...", style: AppTypography.chip(context).copyWith(color: secondary, height: 1.5)),
       ),
       const SizedBox(height: 8),
       Row(children: [

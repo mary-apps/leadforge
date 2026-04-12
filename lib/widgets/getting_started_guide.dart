@@ -26,7 +26,7 @@ class GettingStartedGuide extends StatelessWidget {
       (
         icon: CupertinoIcons.paperplane,
         title: 'Send your pitch',
-        subtitle: 'Demo site + personalized outreach message',
+        subtitle: 'Audit report + personalized outreach message',
         hasAction: false,
       ),
     ];

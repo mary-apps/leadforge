@@ -11,7 +11,6 @@ import '../screens/pipeline/pipeline_screen_enhanced.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/messages/messages_screen.dart';
-import '../screens/build/build_demo_screen.dart';
 import '../screens/outreach/outreach_screen.dart';
 import '../widgets/app_bottom_nav.dart';
 
@@ -36,7 +35,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLoggingIn = state.matchedLocation == '/login';
       final isOnboarding = state.matchedLocation == '/onboarding';
 
-      // Guard business sub-routes (build-demo, outreach) for unauthenticated users
+      // Guard business sub-routes (outreach) for unauthenticated users
       if (!isLoggedIn && state.matchedLocation.contains('/business/')) {
         return '/login';
       }
@@ -133,18 +132,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             return const CupertinoPage(child: SizedBox.shrink());
           }
           return CupertinoPage(child: BusinessDetailScreen(businessId: id));
-        },
-      ),
-
-      // Build Demo (full screen, no bottom nav)
-      GoRoute(
-        path: '/business/:id/build-demo',
-        pageBuilder: (context, state) {
-          final id = state.pathParameters['id'];
-          if (id == null || id.length < 10) {
-            return const CupertinoPage(child: SizedBox.shrink());
-          }
-          return CupertinoPage(child: BuildDemoScreen(businessId: id));
         },
       ),
 
