@@ -175,8 +175,8 @@ export function renderTemplate(
   html = replaceAll(html, '{{business_website}}', escapeHtml(business.website))
 
   // 6. Image tokens
-  html = replaceAll(html, '{{hero_image}}', escapeHtml(images.hero))
-  html = replaceAll(html, '{{section_image}}', escapeHtml(images.section))
+  html = replaceAll(html, '{{hero_image}}', images.hero ?? '')
+  html = replaceAll(html, '{{section_image}}', images.section ?? '')
 
   return html
 }

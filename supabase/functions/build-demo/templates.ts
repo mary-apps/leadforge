@@ -131,7 +131,7 @@ export function warmOrganic(): string {
     .hero-bg {
       position: absolute;
       inset: 0;
-      background-image: url('{{hero_image_url}}');
+      background-image: url('{{hero_image}}');
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
@@ -717,7 +717,7 @@ export function warmOrganic(): string {
           <div>
             <p class="contact-card-label">Phone</p>
             <p class="contact-card-value">
-              <a href="tel:{{business_phone}}">{{business_phone}}</a>
+              {{business_phone}}
             </p>
           </div>
         </div>
@@ -735,14 +735,14 @@ export function warmOrganic(): string {
           <div>
             <p class="contact-card-label">Website</p>
             <p class="contact-card-value">
-              <a href="{{business_website}}" target="_blank" rel="noopener">{{business_website}}</a>
+              {{business_website}}
             </p>
           </div>
         </div>
       </div>
 
       <div class="contact-cta">
-        <a href="tel:{{business_phone}}" class="btn btn-primary">{{cta_text}}</a>
+        <a href="tel:{{business_phone_raw}}" class="btn btn-primary">{{cta_text}}</a>
       </div>
     </div>
   </section>
