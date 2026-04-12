@@ -26,13 +26,15 @@ class Profile with _$Profile {
 extension ProfileX on Profile {
   bool get isPro => subscriptionTier == 'pro';
   bool get isFree => subscriptionTier == 'free';
-  
-  bool get canSearch => isPro || searchesThisMonth < 5;
-  bool get canAudit => isPro || auditsThisMonth < 3;
-  bool get canGenerateReport => isPro || reportsThisMonth < 5;
-  bool get canUseOutreach => isPro; // Pro only
 
-  int get searchesRemaining => isPro ? 999 : (5 - searchesThisMonth).clamp(0, 5);
-  int get auditsRemaining => isPro ? 999 : (3 - auditsThisMonth).clamp(0, 3);
-  int get reportsRemaining => isPro ? 999 : (5 - reportsThisMonth).clamp(0, 5);
+  bool get canSearch => isPro || searchesThisMonth < 10;
+  bool get canAudit => isPro || auditsThisMonth < 10;
+  bool get canGenerateReport => isPro || reportsThisMonth < 3;
+  bool get canUseOutreach => isPro; // Pro only
+  bool get canCreateTerritory => isPro;
+  bool get hasTeamAccess => isPro;
+
+  int get searchesRemaining => isPro ? 999 : (10 - searchesThisMonth).clamp(0, 10);
+  int get auditsRemaining => isPro ? 999 : (10 - auditsThisMonth).clamp(0, 10);
+  int get reportsRemaining => isPro ? 999 : (3 - reportsThisMonth).clamp(0, 3);
 }
