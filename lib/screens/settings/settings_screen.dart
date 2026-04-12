@@ -278,9 +278,9 @@ class SettingsScreen extends ConsumerWidget {
                             const SizedBox(width: 8),
                             Expanded(
                               child: _UsagePill(
-                                label: 'Demos',
-                                used: profile.demosThisMonth,
-                                limit: isPro ? null : 1,
+                                label: 'Reports',
+                                used: profile.reportsThisMonth,
+                                limit: isPro ? null : 5,
                                 color: CupertinoDynamicColor.resolve(
                                     AppColors.scoreMid, context),
                               ),

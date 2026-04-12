@@ -577,8 +577,8 @@ String _statusLabel(BusinessStatus status) {
       return 'Found';
     case BusinessStatus.audited:
       return 'Audited';
-    case BusinessStatus.demoCreated:
-      return 'Demo created';
+    case BusinessStatus.reportSent:
+      return 'Report sent';
     case BusinessStatus.contacted:
       return 'Contacted';
     case BusinessStatus.interested:
@@ -596,8 +596,8 @@ String _statusDescription(BusinessStatus status) {
       return 'New lead found';
     case BusinessStatus.audited:
       return 'Audit completed';
-    case BusinessStatus.demoCreated:
-      return 'Demo site built';
+    case BusinessStatus.reportSent:
+      return 'Report sent to lead';
     case BusinessStatus.contacted:
       return 'Outreach sent';
     case BusinessStatus.interested:

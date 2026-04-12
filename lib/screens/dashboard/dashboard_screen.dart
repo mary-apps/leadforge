@@ -343,7 +343,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return {
       'total': businesses.length,
       'audited': businesses.where((b) => b.isAudited).length,
-      'demos': businesses.where((b) => b.hasDemo).length,
+      'demos': businesses.where((b) => b.hasReport).length,
       'closed': businesses
           .where((b) => b.status == BusinessStatus.closed)
           .length,

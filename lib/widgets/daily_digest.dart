@@ -58,13 +58,13 @@ class DailyDigest extends StatelessWidget {
     }
 
     final needsOutreach = businesses
-        .where((b) => b.status == BusinessStatus.demoCreated)
+        .where((b) => b.status == BusinessStatus.reportSent)
         .toList();
     if (needsOutreach.isNotEmpty) {
       final first = needsOutreach.last;
       items.add(DigestItem(
         icon: CupertinoIcons.paperplane,
-        title: '${needsOutreach.length} demo${needsOutreach.length == 1 ? '' : 's'} ready to share',
+        title: '${needsOutreach.length} report${needsOutreach.length == 1 ? '' : 's'} ready to share',
         subtitle: 'Send outreach for ${first.name}',
         onTap: () => onNavigate('/business/${first.id}/outreach'),
       ));

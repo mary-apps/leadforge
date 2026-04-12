@@ -13,7 +13,7 @@ class Profile with _$Profile {
     @Default('free') String subscriptionTier,
     @Default(0) int searchesThisMonth,
     @Default(0) int auditsThisMonth,
-    @Default(0) int demosThisMonth,
+    @Default(0) int reportsThisMonth,
     DateTime? monthResetAt,
     DateTime? createdAt,
   }) = _Profile;
@@ -28,10 +28,10 @@ extension ProfileX on Profile {
   
   bool get canSearch => isPro || searchesThisMonth < 5;
   bool get canAudit => isPro || auditsThisMonth < 3;
-  bool get canCreateDemo => isPro || demosThisMonth < 1;
+  bool get canGenerateReport => isPro || reportsThisMonth < 5;
   bool get canUseOutreach => isPro; // Pro only
-  
+
   int get searchesRemaining => isPro ? 999 : (5 - searchesThisMonth).clamp(0, 5);
   int get auditsRemaining => isPro ? 999 : (3 - auditsThisMonth).clamp(0, 3);
-  int get demosRemaining => isPro ? 999 : (1 - demosThisMonth).clamp(0, 1);
+  int get reportsRemaining => isPro ? 999 : (5 - reportsThisMonth).clamp(0, 5);
 }

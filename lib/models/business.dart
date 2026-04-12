@@ -13,7 +13,7 @@ enum WebPresence {
 enum BusinessStatus {
   @JsonValue('found') found,
   @JsonValue('audited') audited,
-  @JsonValue('demo_created') demoCreated,
+  @JsonValue('report_sent') reportSent,
   @JsonValue('contacted') contacted,
   @JsonValue('interested') interested,
   @JsonValue('closed') closed,
@@ -68,8 +68,8 @@ extension BusinessX on Business {
   /// Returns true if business has been audited
   bool get isAudited => auditScore != null;
   
-  /// Returns true if business has demo
-  bool get hasDemo => status == BusinessStatus.demoCreated ||
+  /// Returns true if business has a report sent
+  bool get hasReport => status == BusinessStatus.reportSent ||
       status == BusinessStatus.contacted ||
       status == BusinessStatus.interested ||
       status == BusinessStatus.closed;
@@ -105,8 +105,8 @@ extension BusinessX on Business {
         return CupertinoIcons.search;
       case BusinessStatus.audited:
         return CupertinoIcons.chart_bar;
-      case BusinessStatus.demoCreated:
-        return CupertinoIcons.globe;
+      case BusinessStatus.reportSent:
+        return CupertinoIcons.doc_text;
       case BusinessStatus.contacted:
         return CupertinoIcons.paperplane;
       case BusinessStatus.interested:
@@ -125,7 +125,7 @@ extension BusinessX on Business {
         return const Color(0x73FFFFFF); // textSecondary
       case BusinessStatus.audited:
         return const Color(0xFF48CAE4); // secondary
-      case BusinessStatus.demoCreated:
+      case BusinessStatus.reportSent:
         return const Color(0xFF00B4D8); // primary
       case BusinessStatus.contacted:
         return const Color(0xFF34D399); // success
@@ -145,8 +145,8 @@ extension BusinessX on Business {
         return 'Found';
       case BusinessStatus.audited:
         return 'Audited';
-      case BusinessStatus.demoCreated:
-        return 'Demo Created';
+      case BusinessStatus.reportSent:
+        return 'Report Sent';
       case BusinessStatus.contacted:
         return 'Contacted';
       case BusinessStatus.interested:

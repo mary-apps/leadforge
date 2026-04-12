@@ -291,7 +291,7 @@ class _PipelineScreenEnhancedState
         result.add((b, 'Create demo'));
       }
     }
-    for (final b in pipeline[BusinessStatus.demoCreated] ?? []) {
+    for (final b in pipeline[BusinessStatus.reportSent] ?? []) {
       final ts = b.updatedAt ?? b.createdAt ?? now;
       if (now.difference(ts).inHours >= 48) {
         result.add((b, 'Send outreach'));
@@ -538,8 +538,8 @@ class _PipelineScreenEnhancedState
         return 'Found';
       case BusinessStatus.audited:
         return 'Audited';
-      case BusinessStatus.demoCreated:
-        return 'Demo Created';
+      case BusinessStatus.reportSent:
+        return 'Report Sent';
       case BusinessStatus.contacted:
         return 'Contacted';
       case BusinessStatus.interested:
@@ -752,7 +752,7 @@ class _DraggableBusinessCardState extends State<_DraggableBusinessCard> {
     final statuses = [
       BusinessStatus.found,
       BusinessStatus.audited,
-      BusinessStatus.demoCreated,
+      BusinessStatus.reportSent,
       BusinessStatus.contacted,
       BusinessStatus.interested,
       BusinessStatus.closed,
