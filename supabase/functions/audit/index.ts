@@ -109,11 +109,11 @@ Return ONLY valid JSON in this exact format:
 {
   "score": <total 0-100>,
   "breakdown": {
-    "website_quality": { "label": "Website Quality", "impact": <0-20>, "passed": <true/false> },
-    "online_reviews": { "label": "Online Reviews", "impact": <0-20>, "passed": <true/false> },
-    "contact_info": { "label": "Contact Info", "impact": <0-20>, "passed": <true/false> },
-    "social_presence": { "label": "Social Presence", "impact": <0-20>, "passed": <true/false> },
-    "local_seo": { "label": "Local SEO", "impact": <0-20>, "passed": <true/false> }
+    "website_quality": { "label": "Website Quality", "impact": <0-20>, "passed": <true/false>, "severity": "<low|medium|high|critical>", "details": "<one sentence explanation>", "recommendations": ["specific recommendation 1", "specific recommendation 2"] },
+    "online_reviews": { "label": "Online Reviews", "impact": <0-20>, "passed": <true/false>, "severity": "<low|medium|high|critical>", "details": "<one sentence explanation>", "recommendations": ["specific recommendation 1", "specific recommendation 2"] },
+    "contact_info": { "label": "Contact Info", "impact": <0-20>, "passed": <true/false>, "severity": "<low|medium|high|critical>", "details": "<one sentence explanation>", "recommendations": ["specific recommendation 1", "specific recommendation 2"] },
+    "social_presence": { "label": "Social Presence", "impact": <0-20>, "passed": <true/false>, "severity": "<low|medium|high|critical>", "details": "<one sentence explanation>", "recommendations": ["specific recommendation 1", "specific recommendation 2"] },
+    "local_seo": { "label": "Local SEO", "impact": <0-20>, "passed": <true/false>, "severity": "<low|medium|high|critical>", "details": "<one sentence explanation>", "recommendations": ["specific recommendation 1", "specific recommendation 2"] }
   },
   "diagnosis": "<2-3 sentence summary of main weaknesses and opportunity for a web agency to help>"
 }`

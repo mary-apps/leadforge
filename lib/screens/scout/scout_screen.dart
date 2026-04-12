@@ -7,9 +7,11 @@ import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
 import '../../models/business.dart';
 import '../../models/profile.dart';
+import '../../models/territory.dart';
 import '../../providers/auto_audit_provider.dart';
 import '../../providers/businesses_provider.dart';
 import '../../providers/profile_provider.dart';
+import '../../providers/territory_provider.dart';
 import '../../widgets/lead_item.dart';
 import '../../widgets/skeleton_loaders.dart';
 import '../../widgets/search_suggestions.dart';
@@ -17,6 +19,12 @@ import '../../widgets/app_button.dart';
 import '../../utils/haptics.dart';
 import '../../utils/network.dart';
 import '../../widgets/paywall_dialog.dart';
+
+// ---------------------------------------------------------------------------
+// Tab index
+// ---------------------------------------------------------------------------
+
+enum _ScoutTab { quickSearch, territories }
 
 class ScoutScreen extends ConsumerStatefulWidget {
   const ScoutScreen({super.key});
@@ -26,6 +34,9 @@ class ScoutScreen extends ConsumerStatefulWidget {
 }
 
 class _ScoutScreenState extends ConsumerState<ScoutScreen> {
+  _ScoutTab _activeTab = _ScoutTab.quickSearch;
+
+  // Quick search state
   final _searchController = TextEditingController();
   final _focusNode = FocusNode();
   bool _showSuggestions = false;
@@ -124,15 +135,13 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final businessesAsync = ref.watch(scoutResultsProvider);
-
     return CupertinoPageScaffold(
       child: CustomScrollView(
         physics: const BouncingScrollPhysics(
           parent: AlwaysScrollableScrollPhysics(),
         ),
         slivers: [
-          // Custom title area
+          // Title area
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(
@@ -163,7 +172,7 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
             ),
           ),
 
-          // Search bar
+          // Segmented control
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -172,226 +181,988 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
                 AppConstants.pageHorizontal,
                 0,
               ),
-              child: Column(
-                children: [
-                  _StyledSearchBar(
-                    controller: _searchController,
-                    focusNode: _focusNode,
-                    isSearching: _isSearching,
-                    onSubmitted: _handleSearch,
-                    onChanged: (value) {
-                      setState(() {
-                        _showSuggestions =
-                            _focusNode.hasFocus && value.isEmpty;
-                      });
-                    },
-                  ),
-                  if (_showSuggestions) ...[
-                    const SizedBox(height: 12),
-                    SearchSuggestions(
-                      recentSearches: _recentSearches,
-                      trendingSearches: _trendingSearches,
-                      onSelected: (query) {
-                        _searchController.text = query;
-                        _handleSearch(query);
-                      },
+              child: SizedBox(
+                width: double.infinity,
+                child: CupertinoSlidingSegmentedControl<_ScoutTab>(
+                  groupValue: _activeTab,
+                  children: const {
+                    _ScoutTab.quickSearch: Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Text('Quick Search',
+                          style: TextStyle(fontSize: 13)),
                     ),
-                  ],
-                ],
+                    _ScoutTab.territories: Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Text('Territories',
+                          style: TextStyle(fontSize: 13)),
+                    ),
+                  },
+                  onValueChanged: (tab) {
+                    if (tab == null) return;
+                    Haptics.selection();
+                    setState(() => _activeTab = tab);
+                  },
+                ),
               ),
             ),
           ),
 
-          // Content: discovery view or results
-          businessesAsync.when(
-            data: (businesses) {
-              if (businesses.isEmpty && !_hasSearched) {
-                return _DiscoveryView(
-                  onCategoryTap: (query) {
-                    _searchController.text = query;
-                    _handleSearch(query);
-                  },
-                  onTrendingTap: (query) {
-                    _searchController.text = query;
-                    _handleSearch(query);
-                  },
-                );
-              }
+          // Tab content
+          if (_activeTab == _ScoutTab.quickSearch) ..._buildQuickSearch(),
+          if (_activeTab == _ScoutTab.territories) ..._buildTerritories(),
+        ],
+      ),
+    );
+  }
 
-              if (businesses.isEmpty && _hasSearched) {
-                return SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: _NoResultsState(
-                    query: _searchController.text,
-                    onRetry: () =>
-                        _handleSearch(_searchController.text),
-                    onClear: () {
-                      setState(() {
-                        _hasSearched = false;
-                        _searchController.clear();
-                      });
-                      ref.read(scoutResultsProvider.notifier).clear();
+  // -------------------------------------------------------------------------
+  // Quick Search tab (existing logic, extracted into method)
+  // -------------------------------------------------------------------------
+
+  List<Widget> _buildQuickSearch() {
+    final businessesAsync = ref.watch(scoutResultsProvider);
+
+    return [
+      // Search bar
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppConstants.pageHorizontal,
+            AppConstants.itemGap,
+            AppConstants.pageHorizontal,
+            0,
+          ),
+          child: Column(
+            children: [
+              _StyledSearchBar(
+                controller: _searchController,
+                focusNode: _focusNode,
+                isSearching: _isSearching,
+                onSubmitted: _handleSearch,
+                onChanged: (value) {
+                  setState(() {
+                    _showSuggestions =
+                        _focusNode.hasFocus && value.isEmpty;
+                  });
+                },
+              ),
+              if (_showSuggestions) ...[
+                const SizedBox(height: 12),
+                SearchSuggestions(
+                  recentSearches: _recentSearches,
+                  trendingSearches: _trendingSearches,
+                  onSelected: (query) {
+                    _searchController.text = query;
+                    _handleSearch(query);
+                  },
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+
+      // Content: discovery view or results
+      businessesAsync.when(
+        data: (businesses) {
+          if (businesses.isEmpty && !_hasSearched) {
+            return _DiscoveryView(
+              onCategoryTap: (query) {
+                _searchController.text = query;
+                _handleSearch(query);
+              },
+              onTrendingTap: (query) {
+                _searchController.text = query;
+                _handleSearch(query);
+              },
+            );
+          }
+
+          if (businesses.isEmpty && _hasSearched) {
+            return SliverFillRemaining(
+              hasScrollBody: false,
+              child: _NoResultsState(
+                query: _searchController.text,
+                onRetry: () =>
+                    _handleSearch(_searchController.text),
+                onClear: () {
+                  setState(() {
+                    _hasSearched = false;
+                    _searchController.clear();
+                  });
+                  ref.read(scoutResultsProvider.notifier).clear();
+                },
+              ),
+            );
+          }
+
+          return SliverMainAxisGroup(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppConstants.pageHorizontal,
+                    AppConstants.itemGap,
+                    AppConstants.pageHorizontal,
+                    0,
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        '${businesses.length} RESULTS',
+                        style: AppTypography.labelSmall(context).copyWith(
+                          color: CupertinoDynamicColor.resolve(
+                            AppColors.textTertiary,
+                            context,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _hasSearched = false;
+                            _searchController.clear();
+                          });
+                          ref
+                              .read(scoutResultsProvider.notifier)
+                              .clear();
+                        },
+                        child: Text(
+                          'Clear',
+                          style: AppTypography.labelLarge(context).copyWith(
+                            color: CupertinoDynamicColor.resolve(
+                              AppColors.accent,
+                              context,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppConstants.pageHorizontal,
+                  AppConstants.itemGap,
+                  AppConstants.pageHorizontal,
+                  100,
+                ),
+                sliver: SliverList.builder(
+                  itemCount: businesses.length,
+                  itemBuilder: (context, index) {
+                    final business = businesses[index];
+                    return LeadItem(
+                      business: business,
+                      showChevron: true,
+                      showDivider: index < businesses.length - 1,
+                      onTap: () {
+                        // Fire auto-audit in background if enabled and business not yet audited
+                        final autoAudit = ref.read(autoAuditProvider);
+                        if (autoAudit && !business.isAudited) {
+                          final profile = ref.read(profileNotifierProvider).valueOrNull;
+                          final canAudit = profile == null ||
+                              profile.isPro ||
+                              profile.auditsThisMonth < 3;
+                          if (canAudit) {
+                            triggerAutoAudit(ref, business.id);
+                          }
+                        }
+                        context.push('/business/${business.id}');
+                      },
+                    )
+                        .animate(
+                            delay: Duration(
+                                milliseconds:
+                                    AppConstants.staggerDelay.inMilliseconds *
+                                        index))
+                        .fadeIn(duration: 300.ms)
+                        .slideY(
+                            begin: AppConstants.entranceSlideDistance / 100,
+                            duration: 350.ms,
+                            curve: Curves.easeOutCubic);
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+        loading: () => const SliverFillRemaining(
+          hasScrollBody: false,
+          child: SearchSkeleton(),
+        ),
+        error: (error, _) {
+          final isNoConnection = error is NoConnectionException;
+          final isServer = error is ServerException;
+          final icon = isNoConnection
+              ? CupertinoIcons.wifi_slash
+              : isServer
+                  ? CupertinoIcons.cloud
+                  : CupertinoIcons.exclamationmark_circle;
+          final title = isNoConnection
+              ? 'No internet connection'
+              : isServer
+                  ? 'Server error'
+                  : 'Search failed';
+          final subtitle = isNoConnection
+              ? 'Check your connection and try again'
+              : isServer
+                  ? 'Our servers are having issues. Try again in a moment.'
+                  : error.toString();
+
+          return SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icon,
+                        size: 56,
+                        color: CupertinoDynamicColor.resolve(
+                            AppColors.textTertiary, context)),
+                    const SizedBox(height: 16),
+                    Text(title,
+                        style: AppTypography.titleMedium(context).copyWith(
+                          fontSize: 18,
+                          color: CupertinoDynamicColor.resolve(
+                              AppColors.textSecondary, context),
+                        )),
+                    const SizedBox(height: 8),
+                    Text(subtitle,
+                        textAlign: TextAlign.center,
+                        style: AppTypography.labelLarge(context).copyWith(
+                          color: CupertinoDynamicColor.resolve(
+                              AppColors.textTertiary, context),
+                        )),
+                    const SizedBox(height: 24),
+                    AppButton(
+                      label: 'Retry',
+                      compact: true,
+                      onPressed: () => _handleSearch(
+                          _searchController.text),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    ];
+  }
+
+  // -------------------------------------------------------------------------
+  // Territories tab
+  // -------------------------------------------------------------------------
+
+  List<Widget> _buildTerritories() {
+    final territoriesAsync = ref.watch(territoriesProvider);
+
+    return [
+      // New Territory button
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppConstants.pageHorizontal,
+            AppConstants.itemGap,
+            AppConstants.pageHorizontal,
+            0,
+          ),
+          child: AppButton(
+            label: 'New Territory',
+            onPressed: () => _showNewTerritorySheet(context),
+          ),
+        ),
+      ),
+
+      // Territory list
+      territoriesAsync.when(
+        data: (territories) {
+          if (territories.isEmpty) {
+            return SliverFillRemaining(
+              hasScrollBody: false,
+              child: _EmptyTerritoriesState(
+                onCreateTap: () => _showNewTerritorySheet(context),
+              ),
+            );
+          }
+
+          return SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppConstants.pageHorizontal,
+              AppConstants.itemGap,
+              AppConstants.pageHorizontal,
+              100,
+            ),
+            sliver: SliverList.builder(
+              itemCount: territories.length,
+              itemBuilder: (context, index) {
+                final territory = territories[index];
+                return Dismissible(
+                  key: ValueKey(territory.id),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20),
+                    margin: const EdgeInsets.only(bottom: 10),
+                    decoration: BoxDecoration(
+                      color: CupertinoDynamicColor.resolve(
+                              AppColors.scoreBad, context)
+                          .withValues(alpha: 0.12),
+                      borderRadius:
+                          BorderRadius.circular(AppColors.radiusL),
+                    ),
+                    child: Icon(
+                      CupertinoIcons.trash,
+                      color: CupertinoDynamicColor.resolve(
+                          AppColors.scoreBad, context),
+                      size: 20,
+                    ),
+                  ),
+                  confirmDismiss: (_) async {
+                    Haptics.medium();
+                    return true;
+                  },
+                  onDismissed: (_) {
+                    ref
+                        .read(territoriesProvider.notifier)
+                        .delete(territory.id);
+                  },
+                  child: _TerritoryCard(
+                    territory: territory,
+                    onTap: () {
+                      Haptics.light();
+                      context.push('/business?territory=${territory.id}');
                     },
                   ),
-                );
-              }
+                )
+                    .animate(
+                      delay: Duration(
+                        milliseconds:
+                            AppConstants.staggerDelay.inMilliseconds *
+                                index,
+                      ),
+                    )
+                    .fadeIn(duration: 300.ms)
+                    .slideY(
+                      begin: AppConstants.entranceSlideDistance / 100,
+                      duration: 350.ms,
+                      curve: Curves.easeOutCubic,
+                    );
+              },
+            ),
+          );
+        },
+        loading: () => const SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(child: CupertinoActivityIndicator()),
+        ),
+        error: (error, _) => SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(CupertinoIcons.exclamationmark_circle,
+                    size: 40,
+                    color: CupertinoDynamicColor.resolve(
+                        AppColors.textTertiary, context)),
+                const SizedBox(height: 12),
+                Text(
+                  'Could not load territories',
+                  style: AppTypography.bodyMedium(context).copyWith(
+                    color: CupertinoDynamicColor.resolve(
+                        AppColors.textSecondary, context),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                AppButton(
+                  label: 'Retry',
+                  compact: true,
+                  onPressed: () =>
+                      ref.read(territoriesProvider.notifier).load(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ];
+  }
 
-              return SliverMainAxisGroup(
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppConstants.pageHorizontal,
-                        AppConstants.itemGap,
-                        AppConstants.pageHorizontal,
-                        0,
-                      ),
-                      child: Row(
-                        children: [
-                          Text(
-                            '${businesses.length} RESULTS',
-                            style: AppTypography.labelSmall(context).copyWith(
-                              color: CupertinoDynamicColor.resolve(
-                                AppColors.textTertiary,
-                                context,
-                              ),
-                            ),
-                          ),
-                          const Spacer(),
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _hasSearched = false;
-                                _searchController.clear();
-                              });
-                              ref
-                                  .read(scoutResultsProvider.notifier)
-                                  .clear();
-                            },
-                            child: Text(
-                              'Clear',
-                              style: AppTypography.labelLarge(context).copyWith(
-                                color: CupertinoDynamicColor.resolve(
-                                  AppColors.accent,
-                                  context,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+  // -------------------------------------------------------------------------
+  // New Territory bottom sheet
+  // -------------------------------------------------------------------------
+
+  void _showNewTerritorySheet(BuildContext context) {
+    Haptics.light();
+    showCupertinoModalPopup(
+      context: context,
+      builder: (ctx) => _NewTerritorySheet(
+        onCreated: (territory) {
+          // Switch to territories tab after creation
+          setState(() => _activeTab = _ScoutTab.territories);
+        },
+      ),
+    );
+  }
+}
+
+// ===========================================================================
+// New Territory Sheet
+// ===========================================================================
+
+class _NewTerritorySheet extends ConsumerStatefulWidget {
+  final ValueChanged<Territory> onCreated;
+
+  const _NewTerritorySheet({required this.onCreated});
+
+  @override
+  ConsumerState<_NewTerritorySheet> createState() =>
+      _NewTerritorySheetState();
+}
+
+class _NewTerritorySheetState extends ConsumerState<_NewTerritorySheet> {
+  final _nicheController = TextEditingController();
+  final _locationController = TextEditingController();
+  double _selectedRadius = 2.0;
+  bool _isScanning = false;
+  String? _errorMessage;
+
+  static const _radiusOptions = [0.5, 1.0, 2.0, 5.0];
+
+  static const _nicheSuggestions = [
+    'Dentists',
+    'Restaurants',
+    'Plumbers',
+    'Lawyers',
+    'Hair Salons',
+    'Gyms',
+    'Cafes',
+    'Auto Repair',
+  ];
+
+  @override
+  void dispose() {
+    _nicheController.dispose();
+    _locationController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _scanTerritory() async {
+    final niche = _nicheController.text.trim();
+    final location = _locationController.text.trim();
+
+    if (niche.isEmpty || location.isEmpty) {
+      setState(() => _errorMessage = 'Please enter both niche and location.');
+      return;
+    }
+
+    setState(() {
+      _isScanning = true;
+      _errorMessage = null;
+    });
+    Haptics.medium();
+
+    try {
+      // 1. Run scout search with niche + location
+      final query = '$niche $location';
+      await ref.read(scoutResultsProvider.notifier).search(query);
+
+      final results = ref.read(scoutResultsProvider).valueOrNull ?? [];
+
+      if (results.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _isScanning = false;
+            _errorMessage =
+                'No businesses found. Try a different niche or location.';
+          });
+        }
+        return;
+      }
+
+      // 2. Get coordinates from first result
+      final firstBiz = results.first;
+      final lat = firstBiz.latitude ?? 0;
+      final lng = firstBiz.longitude ?? 0;
+
+      // 3. Create territory
+      final territory =
+          await ref.read(territoriesProvider.notifier).create(
+                name: '$niche in $location',
+                query: niche,
+                latitude: lat,
+                longitude: lng,
+                radiusKm: _selectedRadius,
+              );
+
+      if (mounted) {
+        Navigator.of(context).pop();
+        widget.onCreated(territory);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isScanning = false;
+          _errorMessage = 'Scan failed. Please try again.';
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPad = MediaQuery.of(context).padding.bottom;
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(24, 24, 24, bottomPad + 24),
+      decoration: BoxDecoration(
+        color: CupertinoDynamicColor.resolve(AppColors.surface, context),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppColors.radiusXL),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Handle bar
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: CupertinoDynamicColor.resolve(
+                    AppColors.border, context),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Title
+          Text(
+            'New Territory',
+            style: AppTypography.headlineLarge(context),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Define a geographic area to scan for businesses',
+            style: AppTypography.bodyMedium(context).copyWith(
+              color: CupertinoDynamicColor.resolve(
+                  AppColors.textSecondary, context),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Niche field
+          Text(
+            'NICHE',
+            style: AppTypography.labelSmall(context),
+          ),
+          const SizedBox(height: 8),
+          CupertinoTextField(
+            controller: _nicheController,
+            placeholder: 'e.g. Dentists',
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: CupertinoDynamicColor.resolve(
+                  AppColors.searchField, context),
+              borderRadius: BorderRadius.circular(AppColors.radiusM),
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Niche chips
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _nicheSuggestions.map((niche) {
+              return GestureDetector(
+                onTap: () {
+                  Haptics.light();
+                  _nicheController.text = niche;
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: CupertinoDynamicColor.resolve(
+                        AppColors.chipInactive, context),
+                    borderRadius:
+                        BorderRadius.circular(AppColors.radiusM),
+                  ),
+                  child: Text(
+                    niche,
+                    style: AppTypography.chip(context),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 20),
+
+          // Location field
+          Text(
+            'LOCATION',
+            style: AppTypography.labelSmall(context),
+          ),
+          const SizedBox(height: 8),
+          CupertinoTextField(
+            controller: _locationController,
+            placeholder: 'e.g. Austin, TX',
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: CupertinoDynamicColor.resolve(
+                  AppColors.searchField, context),
+              borderRadius: BorderRadius.circular(AppColors.radiusM),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Radius picker
+          Text(
+            'RADIUS',
+            style: AppTypography.labelSmall(context),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: CupertinoSlidingSegmentedControl<double>(
+              groupValue: _selectedRadius,
+              children: {
+                for (final r in _radiusOptions)
+                  r: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 6),
+                    child: Text(
+                      r < 1 ? '${(r * 1000).toInt()}m' : '${r.toInt()}km',
+                      style: const TextStyle(fontSize: 13),
                     ),
                   ),
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppConstants.pageHorizontal,
-                      AppConstants.itemGap,
-                      AppConstants.pageHorizontal,
-                      100,
-                    ),
-                    sliver: SliverList.builder(
-                      itemCount: businesses.length,
-                      itemBuilder: (context, index) {
-                        final business = businesses[index];
-                        return LeadItem(
-                          business: business,
-                          showChevron: true,
-                          showDivider: index < businesses.length - 1,
-                          onTap: () {
-                            // Fire auto-audit in background if enabled and business not yet audited
-                            final autoAudit = ref.read(autoAuditProvider);
-                            if (autoAudit && !business.isAudited) {
-                              final profile = ref.read(profileNotifierProvider).valueOrNull;
-                              final canAudit = profile == null ||
-                                  profile.isPro ||
-                                  profile.auditsThisMonth < 3;
-                              if (canAudit) {
-                                triggerAutoAudit(ref, business.id);
-                              }
-                            }
-                            context.push('/business/${business.id}');
-                          },
-                        )
-                            .animate(
-                                delay: Duration(
-                                    milliseconds:
-                                        AppConstants.staggerDelay.inMilliseconds *
-                                            index))
-                            .fadeIn(duration: 300.ms)
-                            .slideY(
-                                begin: AppConstants.entranceSlideDistance / 100,
-                                duration: 350.ms,
-                                curve: Curves.easeOutCubic);
-                      },
+              },
+              onValueChanged: (val) {
+                if (val == null) return;
+                Haptics.selection();
+                setState(() => _selectedRadius = val);
+              },
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Error message
+          if (_errorMessage != null) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: CupertinoDynamicColor.resolve(
+                        AppColors.scoreBad, context)
+                    .withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(AppColors.radiusM),
+              ),
+              child: Row(
+                children: [
+                  Icon(CupertinoIcons.exclamationmark_triangle,
+                      size: 16,
+                      color: CupertinoDynamicColor.resolve(
+                          AppColors.scoreBad, context)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _errorMessage!,
+                      style: AppTypography.chip(context).copyWith(
+                        color: CupertinoDynamicColor.resolve(
+                            AppColors.scoreBad, context),
+                      ),
                     ),
                   ),
                 ],
-              );
-            },
-            loading: () => const SliverFillRemaining(
-              hasScrollBody: false,
-              child: SearchSkeleton(),
+              ),
             ),
-            error: (error, _) {
-              final isNoConnection = error is NoConnectionException;
-              final isServer = error is ServerException;
-              final icon = isNoConnection
-                  ? CupertinoIcons.wifi_slash
-                  : isServer
-                      ? CupertinoIcons.cloud
-                      : CupertinoIcons.exclamationmark_circle;
-              final title = isNoConnection
-                  ? 'No internet connection'
-                  : isServer
-                      ? 'Server error'
-                      : 'Search failed';
-              final subtitle = isNoConnection
-                  ? 'Check your connection and try again'
-                  : isServer
-                      ? 'Our servers are having issues. Try again in a moment.'
-                      : error.toString();
+            const SizedBox(height: 16),
+          ],
 
-              return SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
+          // CTA button
+          AppButton(
+            label: 'Scan Territory',
+            isLoading: _isScanning,
+            onPressed: _isScanning ? null : _scanTerritory,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ===========================================================================
+// Territory Card
+// ===========================================================================
+
+class _TerritoryCard extends StatefulWidget {
+  final Territory territory;
+  final VoidCallback onTap;
+
+  const _TerritoryCard({
+    required this.territory,
+    required this.onTap,
+  });
+
+  @override
+  State<_TerritoryCard> createState() => _TerritoryCardState();
+}
+
+class _TerritoryCardState extends State<_TerritoryCard> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = widget.territory;
+    final accentColor =
+        CupertinoDynamicColor.resolve(AppColors.accent, context);
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1.0,
+        duration: AppConstants.quickAnimation,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color:
+                CupertinoDynamicColor.resolve(AppColors.surface, context),
+            borderRadius: BorderRadius.circular(AppColors.radiusL),
+            border: Border.all(
+              color: CupertinoDynamicColor.resolve(
+                  AppColors.border, context),
+              width: 0.5,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row
+              Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          accentColor.withValues(alpha: 0.15),
+                          accentColor.withValues(alpha: 0.04),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(CupertinoIcons.map_pin_ellipse,
+                        size: 18, color: accentColor),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(icon,
-                            size: 56,
-                            color: CupertinoDynamicColor.resolve(
-                                AppColors.textTertiary, context)),
-                        const SizedBox(height: 16),
-                        Text(title,
-                            style: AppTypography.titleMedium(context).copyWith(
-                              fontSize: 18,
-                              color: CupertinoDynamicColor.resolve(
-                                  AppColors.textSecondary, context),
-                            )),
-                        const SizedBox(height: 8),
-                        Text(subtitle,
-                            textAlign: TextAlign.center,
-                            style: AppTypography.labelLarge(context).copyWith(
-                              color: CupertinoDynamicColor.resolve(
-                                  AppColors.textTertiary, context),
-                            )),
-                        const SizedBox(height: 24),
-                        AppButton(
-                          label: 'Retry',
-                          compact: true,
-                          onPressed: () => _handleSearch(
-                              _searchController.text),
+                        Text(
+                          t.name,
+                          style:
+                              AppTypography.titleMedium(context).copyWith(
+                            fontSize: 15,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${t.radiusKm < 1 ? '${(t.radiusKm * 1000).toInt()}m' : '${t.radiusKm.toStringAsFixed(t.radiusKm == t.radiusKm.roundToDouble() ? 0 : 1)}km'} radius',
+                          style: AppTypography.chip(context),
                         ),
                       ],
                     ),
                   ),
-                ),
-              );
-            },
+                  Icon(CupertinoIcons.chevron_forward,
+                      size: 14,
+                      color: CupertinoDynamicColor.resolve(
+                          AppColors.textTertiary, context)),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              // Stats row
+              Row(
+                children: [
+                  _TerritoryStat(
+                    icon: CupertinoIcons.building_2_fill,
+                    value: '${t.businessCount}',
+                    label: 'found',
+                  ),
+                  const SizedBox(width: 20),
+                  _TerritoryStat(
+                    icon: CupertinoIcons.chart_bar_fill,
+                    value: '${t.auditedCount}',
+                    label: 'audited',
+                  ),
+                  const Spacer(),
+                  if (t.lastScannedAt != null)
+                    Text(
+                      _timeAgo(t.lastScannedAt!),
+                      style: AppTypography.chip(context).copyWith(
+                        color: CupertinoDynamicColor.resolve(
+                            AppColors.textTertiary, context),
+                      ),
+                    ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  String _timeAgo(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return '${(diff.inDays / 7).floor()}w ago';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Territory stat widget
+// ---------------------------------------------------------------------------
+
+class _TerritoryStat extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+
+  const _TerritoryStat({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon,
+            size: 13,
+            color: CupertinoDynamicColor.resolve(
+                AppColors.textTertiary, context)),
+        const SizedBox(width: 4),
+        Text(
+          '$value $label',
+          style: AppTypography.chip(context).copyWith(
+            color: CupertinoDynamicColor.resolve(
+                AppColors.textSecondary, context),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Empty territories state
+// ---------------------------------------------------------------------------
+
+class _EmptyTerritoriesState extends StatelessWidget {
+  final VoidCallback onCreateTap;
+
+  const _EmptyTerritoriesState({required this.onCreateTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final accentColor =
+        CupertinoDynamicColor.resolve(AppColors.accent, context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    accentColor.withValues(alpha: 0.1),
+                    accentColor.withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
+              child: Center(
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        accentColor.withValues(alpha: 0.12),
+                        accentColor.withValues(alpha: 0.04),
+                      ],
+                    ),
+                    border: Border.all(
+                      color: accentColor.withValues(alpha: 0.1),
+                    ),
+                  ),
+                  child: Icon(CupertinoIcons.map,
+                      size: 24,
+                      color: accentColor.withValues(alpha: 0.6)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'No territories yet',
+              style: AppTypography.titleMedium(context).copyWith(
+                fontSize: 18,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Create a territory to batch scan businesses\nin a geographic area.',
+              style: AppTypography.bodyMedium(context).copyWith(
+                height: 1.5,
+                color: CupertinoDynamicColor.resolve(
+                    AppColors.textTertiary, context),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+            AppButton(
+              label: 'Create Territory',
+              compact: true,
+              onPressed: onCreateTap,
+            ),
+          ],
+        ).animate().fadeIn(duration: 400.ms).scale(
+              begin: const Offset(0.95, 0.95),
+              duration: 450.ms,
+              curve: Curves.easeOutBack,
+            ),
       ),
     );
   }

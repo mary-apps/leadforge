@@ -21,6 +21,9 @@ class AuditFactor with _$AuditFactor {
     required String label,
     required int impact,
     required bool passed,
+    @Default('medium') String severity,
+    @Default([]) List<String> recommendations,
+    String? details,
   }) = _AuditFactor;
 
   factory AuditFactor.fromJson(Map<String, dynamic> json) =>
