@@ -4,21 +4,18 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import '../services/revenue_cat_service.dart';
 import 'profile_provider.dart';
 
-/// Subscription state — cached
-final isProProvider = FutureProvider<bool>((ref) async {
-  ref.keepAlive();
+/// Subscription state — autoDisposed, refetched on demand
+final isProProvider = FutureProvider.autoDispose<bool>((ref) async {
   return await RevenueCatService.isPro();
 });
 
-/// Offerings — cached
-final offeringsProvider = FutureProvider<Offerings?>((ref) async {
-  ref.keepAlive();
+/// Offerings — autoDisposed, refetched when paywall opens
+final offeringsProvider = FutureProvider.autoDispose<Offerings?>((ref) async {
   return await RevenueCatService.getOfferings();
 });
 
-/// Customer info — cached
-final customerInfoProvider = FutureProvider<CustomerInfo?>((ref) async {
-  ref.keepAlive();
+/// Customer info — autoDisposed, refetched on demand
+final customerInfoProvider = FutureProvider.autoDispose<CustomerInfo?>((ref) async {
   return await RevenueCatService.getCustomerInfo();
 });
 

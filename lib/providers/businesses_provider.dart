@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/business.dart';
 import '../services/scout_service.dart';
+import '../services/supabase_service.dart';
+import '../utils/network.dart';
 import 'audit_state_provider.dart';
 import '../services/audit_service.dart';
 import 'profile_provider.dart';
@@ -47,14 +49,19 @@ class ScoutResultsNotifier extends StateNotifier<AsyncValue<List<Business>>> {
   String? _lastQuery;
   String? get lastQuery => _lastQuery;
 
+  int _searchGeneration = 0;
+
   Future<void> search(String query) async {
     _lastQuery = query;
     state = const AsyncValue.loading();
+    final generation = ++_searchGeneration;
 
     try {
       final businesses = await ScoutService.searchBusinesses(query);
+      if (generation != _searchGeneration) return; // stale
       state = AsyncValue.data(businesses);
     } catch (e, st) {
+      if (generation != _searchGeneration) return; // stale
       state = AsyncValue.error(e, st);
       rethrow;
     }
@@ -71,21 +78,19 @@ final businessesProvider =
   return BusinessesNotifier();
 });
 
-/// Scout search results provider — cached, separate from saved businesses
+/// Scout search results provider — autoDisposed, search results are ephemeral
 final scoutResultsProvider =
-    StateNotifierProvider<ScoutResultsNotifier, AsyncValue<List<Business>>>((ref) {
+    StateNotifierProvider.autoDispose<ScoutResultsNotifier, AsyncValue<List<Business>>>((ref) {
   return ScoutResultsNotifier();
 });
 
-/// Single business provider — cached per ID
-final businessProvider = FutureProvider.family<Business?, String>((ref, id) async {
-  ref.keepAlive();
+/// Single business provider — autoDisposed per ID, invalidated after audit
+final businessProvider = FutureProvider.autoDispose.family<Business?, String>((ref, id) async {
   return await ScoutService.fetchBusiness(id);
 });
 
 /// Pipeline businesses grouped by status — cached, invalidated via ref.invalidate
 final pipelineProvider = FutureProvider<Map<BusinessStatus, List<Business>>>((ref) async {
-  ref.keepAlive();
   final businesses = await ScoutService.fetchMyBusinesses(limit: 200);
 
   final grouped = <BusinessStatus, List<Business>>{};
@@ -118,6 +123,10 @@ Future<void> triggerAutoAudit(WidgetRef ref, String businessId) async {
     ref.invalidate(pipelineProvider);
     await ref.read(businessesProvider.notifier).load();
     ref.read(profileNotifierProvider.notifier).reload();
+  } on AuthExpiredException {
+    // Don't set error state, just sign out
+    SupabaseService.signOut();
+    return;
   } catch (e, st) {
     ref.read(auditStateProvider(businessId).notifier).state =
         AsyncValue.error(e, st);

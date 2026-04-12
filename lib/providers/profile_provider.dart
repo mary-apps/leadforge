@@ -3,9 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/profile.dart';
 import '../services/supabase_service.dart';
 
-/// Profile provider — cached, use ref.invalidate(profileProvider) to refresh
-final profileProvider = FutureProvider<Profile?>((ref) async {
-  ref.keepAlive();
+/// Profile provider — use ref.invalidate(profileProvider) to refresh
+final profileProvider = FutureProvider.autoDispose<Profile?>((ref) async {
   final userId = SupabaseService.userId;
   if (userId == null) return null;
 
