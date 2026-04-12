@@ -35,9 +35,9 @@ export interface BusinessData {
 // HTML escaping — applied to all user-supplied strings
 // ---------------------------------------------------------------------------
 
-function escapeHtml(str: string | null | undefined): string {
-  if (!str) return ''
-  return str
+function escapeHtml(str: unknown): string {
+  if (str == null) return ''
+  return String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -54,7 +54,7 @@ function buildServiceCards(services: string[]): string {
   return services
     .map((service) => {
       const safe = escapeHtml(service)
-      return `<div class="service-card"><span class="service-name">${safe}</span></div>`
+      return `<div class="service-card"><h3>${safe}</h3><p></p></div>`
     })
     .join('\n')
 }
@@ -137,18 +137,19 @@ export function renderTemplate(
   // 1. Handle conditional blocks first
   let html = processConditionals(templateHtml, hasHeroImage)
 
-  // 2. CSS custom property palette tokens
+  // 2. CSS custom property palette tokens (not HTML-escaped — they're CSS values)
+  const p = content.palette || {}
   const paletteMap: Record<string, string> = {
-    '{{clr-primary}}': content.palette.primary,
-    '{{clr-secondary}}': content.palette.secondary,
-    '{{clr-accent}}': content.palette.accent,
-    '{{clr-bg}}': content.palette.bg,
-    '{{clr-surface}}': content.palette.surface,
-    '{{clr-text}}': content.palette.text,
-    '{{clr-muted}}': content.palette.muted,
+    '{{clr-primary}}': p.primary || '#1a1a2e',
+    '{{clr-secondary}}': p.secondary || '#f8f8f8',
+    '{{clr-accent}}': p.accent || '#4a6cf7',
+    '{{clr-bg}}': p.bg || '#ffffff',
+    '{{clr-surface}}': p.surface || '#f4f4f5',
+    '{{clr-text}}': p.text || '#1a1a2e',
+    '{{clr-muted}}': p.muted || '#71717a',
   }
   for (const [token, value] of Object.entries(paletteMap)) {
-    html = replaceAll(html, token, escapeHtml(value))
+    html = replaceAll(html, token, value)
   }
 
   // 3. AI copy tokens (HTML-escaped)
@@ -182,9 +183,8 @@ export function renderTemplate(
 }
 
 // Simple global string replacement (no regex needed for literal tokens)
-function replaceAll(source: string, token: string, value: string): string {
-  // Split on the literal token and rejoin with value — handles all occurrences
-  return source.split(token).join(value)
+function replaceAll(source: string, token: string, value: string | null | undefined): string {
+  return source.split(token).join(value ?? '')
 }
 
 // ---------------------------------------------------------------------------
