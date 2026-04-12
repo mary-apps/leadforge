@@ -9,15 +9,60 @@ import '../../providers/businesses_provider.dart';
 import '../../widgets/error_state.dart';
 import '../../widgets/skeleton_loaders.dart';
 
-class MessagesScreen extends ConsumerWidget {
+class MessagesScreen extends ConsumerStatefulWidget {
   const MessagesScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MessagesScreen> createState() => _MessagesScreenState();
+}
+
+class _MessagesScreenState extends ConsumerState<MessagesScreen> {
+  // Memoization cache — recalculated only when the businesses list identity changes.
+  List<Business>? _cachedBusinesses;
+  List<Business>? _cachedSorted;
+  List<Business>? _cachedToday;
+  List<Business>? _cachedThisWeek;
+  List<Business>? _cachedEarlier;
+
+  void _refreshCache(List<Business> businesses) {
+    _cachedBusinesses = businesses;
+
+    final sorted = List<Business>.from(businesses)
+      ..sort((a, b) {
+        final aDate = a.updatedAt ?? a.createdAt ?? DateTime.now();
+        final bDate = b.updatedAt ?? b.createdAt ?? DateTime.now();
+        return bDate.compareTo(aDate);
+      });
+    _cachedSorted = sorted;
+
+    final now = DateTime.now();
+    DateTime eventDate(Business b) => b.updatedAt ?? b.createdAt ?? DateTime.now();
+
+    _cachedToday = sorted
+        .where((b) => now.difference(eventDate(b)).inHours < 24)
+        .toList();
+    _cachedThisWeek = sorted.where((b) {
+      final d = now.difference(eventDate(b));
+      return d.inHours >= 24 && d.inDays < 7;
+    }).toList();
+    _cachedEarlier = sorted
+        .where((b) => now.difference(eventDate(b)).inDays >= 7)
+        .toList();
+  }
+
+  void _ensureCache(List<Business> businesses) {
+    if (!identical(businesses, _cachedBusinesses) ||
+        _cachedSorted == null) {
+      _refreshCache(businesses);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final businessesAsync = ref.watch(businessesProvider);
 
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
+      backgroundColor: CupertinoDynamicColor.resolve(AppColors.background, context),
       child: businessesAsync.when(
         data: (businesses) {
           if (businesses.isEmpty) {
@@ -63,28 +108,10 @@ class MessagesScreen extends ConsumerWidget {
             );
           }
 
-          // Sort by most recently updated
-          final sorted = List<Business>.from(businesses)
-            ..sort((a, b) {
-              final aDate = a.updatedAt ?? a.createdAt ?? DateTime.now();
-              final bDate = b.updatedAt ?? b.createdAt ?? DateTime.now();
-              return bDate.compareTo(aDate);
-            });
-
-          // Group by time period
-          final now = DateTime.now();
-          DateTime eventDate(Business b) => b.updatedAt ?? b.createdAt ?? DateTime.now();
-
-          final today = sorted
-              .where((b) => now.difference(eventDate(b)).inHours < 24)
-              .toList();
-          final thisWeek = sorted.where((b) {
-            final d = now.difference(eventDate(b));
-            return d.inHours >= 24 && d.inDays < 7;
-          }).toList();
-          final earlier = sorted
-              .where((b) => now.difference(eventDate(b)).inDays >= 7)
-              .toList();
+          _ensureCache(businesses);
+          final today = _cachedToday!;
+          final thisWeek = _cachedThisWeek!;
+          final earlier = _cachedEarlier!;
 
           return SafeArea(
             bottom: false,
@@ -374,7 +401,7 @@ class _FeaturedActivityCardState extends State<_FeaturedActivityCard> {
                 ),
                 Icon(
                   CupertinoIcons.chevron_right,
-                  color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                  color: CupertinoDynamicColor.resolve(AppColors.textTertiary, context),
                   size: 20,
                 ),
               ],
@@ -451,7 +478,7 @@ class _ActivityTileState extends State<_ActivityTile> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 80),
         color: _pressed
-            ? CupertinoColors.systemFill.resolveFrom(context)
+            ? CupertinoDynamicColor.resolve(AppColors.divider, context)
             : const Color(0x00000000),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -514,7 +541,7 @@ class _ActivityTileState extends State<_ActivityTile> {
                   else
                     Icon(
                       CupertinoIcons.chevron_right,
-                      color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                      color: CupertinoDynamicColor.resolve(AppColors.textTertiary, context),
                       size: 18,
                     ),
                 ],
@@ -524,7 +551,7 @@ class _ActivityTileState extends State<_ActivityTile> {
               Container(
                 margin: const EdgeInsets.only(left: 16),
                 height: 0.5,
-                color: CupertinoColors.separator.resolveFrom(context),
+                color: CupertinoDynamicColor.resolve(AppColors.divider, context),
               ),
           ],
         ),

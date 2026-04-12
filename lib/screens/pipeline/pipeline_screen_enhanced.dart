@@ -21,17 +21,25 @@ class PipelineScreenEnhanced extends ConsumerStatefulWidget {
 
 class _PipelineScreenEnhancedState
     extends ConsumerState<PipelineScreenEnhanced> {
-  final Map<BusinessStatus, bool> _expandedSections = {
-    BusinessStatus.found: true,
-    BusinessStatus.audited: true,
-    BusinessStatus.demoCreated: true,
-    BusinessStatus.contacted: true,
-    BusinessStatus.interested: true,
-    BusinessStatus.closed: false,
-    BusinessStatus.lost: false,
-  };
+  final Map<BusinessStatus, bool> _expandedSections = {};
+  bool _needsActionExpanded = true;
 
   BusinessStatus? _filterStatus;
+  bool _sectionsInitialized = false;
+
+  // Memoization cache for _computeNeedsAction — recalculated only when
+  // the pipeline map identity changes.
+  Map<BusinessStatus, List<Business>>? _cachedPipeline;
+  List<(Business, String)>? _cachedNeedsAction;
+
+  List<(Business, String)> _getNeedsAction(
+      Map<BusinessStatus, List<Business>> pipeline) {
+    if (!identical(pipeline, _cachedPipeline) || _cachedNeedsAction == null) {
+      _cachedPipeline = pipeline;
+      _cachedNeedsAction = _computeNeedsAction(pipeline);
+    }
+    return _cachedNeedsAction!;
+  }
 
   @override
   void initState() {
@@ -45,36 +53,25 @@ class _PipelineScreenEnhancedState
     });
   }
 
-  void _showFilterSheet() {
-    Haptics.light();
-    showCupertinoModalPopup(
-      context: context,
-      builder: (context) => CupertinoActionSheet(
-        title: const Text('Filter by Status'),
-        actions: [
-          CupertinoActionSheetAction(
-            isDefaultAction: _filterStatus == null,
-            onPressed: () {
-              setState(() => _filterStatus = null);
-              Navigator.pop(context);
-            },
-            child: const Text('All Stages'),
-          ),
-          ...BusinessStatus.values.map((status) => CupertinoActionSheetAction(
-                isDefaultAction: _filterStatus == status,
-                onPressed: () {
-                  setState(() => _filterStatus = status);
-                  Navigator.pop(context);
-                },
-                child: Text(_getStatusTitle(status)),
-              )),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-      ),
-    );
+  void _initExpandedSections(Map<BusinessStatus, List<Business>> pipeline) {
+    if (_sectionsInitialized) return;
+    _sectionsInitialized = true;
+
+    // Find the stage with the most leads
+    BusinessStatus? busiestStage;
+    int maxCount = 0;
+    for (final status in BusinessStatus.values) {
+      final count = (pipeline[status] ?? []).length;
+      if (count > maxCount) {
+        maxCount = count;
+        busiestStage = status;
+      }
+    }
+
+    // All collapsed except the busiest stage
+    for (final status in BusinessStatus.values) {
+      _expandedSections[status] = status == busiestStage;
+    }
   }
 
   void _exportPipeline(Map<BusinessStatus, List<Business>> pipeline) {
@@ -163,7 +160,8 @@ class _PipelineScreenEnhancedState
           CupertinoDynamicColor.resolve(AppColors.background, context),
       child: pipelineAsync.when(
         data: (pipeline) {
-          final needsAction = _computeNeedsAction(pipeline);
+          _initExpandedSections(pipeline);
+          final needsAction = _getNeedsAction(pipeline);
           return CustomScrollView(
             physics: const BouncingScrollPhysics(
               parent: AlwaysScrollableScrollPhysics(),
@@ -174,12 +172,12 @@ class _PipelineScreenEnhancedState
                   await ref.read(businessesProvider.notifier).load();
                 },
               ),
-              // Custom title header
+              // Title header (export only — filter & refresh removed)
               SliverToBoxAdapter(
                 child: SafeArea(
                   bottom: false,
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(
+                    padding: const EdgeInsets.fromLTRB(
                       AppConstants.pageHorizontal,
                       16,
                       AppConstants.pageHorizontal,
@@ -196,47 +194,13 @@ class _PipelineScreenEnhancedState
                         ),
                         CupertinoButton(
                           padding: EdgeInsets.zero,
-                          minSize: 0,
-                          onPressed: _showFilterSheet,
-                          child: Text(
-                            _filterStatus != null ? 'Filtered' : 'Filter',
-                            style:
-                                AppTypography.titleMedium(context).copyWith(
-                              color: CupertinoDynamicColor.resolve(
-                                _filterStatus != null
-                                    ? AppColors.accent
-                                    : AppColors.textSecondary,
-                                context,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        CupertinoButton(
-                          padding: EdgeInsets.zero,
-                          minSize: 0,
                           onPressed: () {
                             final data =
                                 ref.read(pipelineProvider).valueOrNull;
                             if (data != null) _exportPipeline(data);
-                          },
+                          }, minimumSize: const Size(0, 0),
                           child: Icon(
                             CupertinoIcons.share,
-                            size: 20,
-                            color: CupertinoDynamicColor.resolve(
-                                AppColors.textSecondary, context),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        CupertinoButton(
-                          padding: EdgeInsets.zero,
-                          minSize: 0,
-                          onPressed: () {
-                            Haptics.light();
-                            ref.read(businessesProvider.notifier).load();
-                          },
-                          child: Icon(
-                            CupertinoIcons.refresh,
                             size: 20,
                             color: CupertinoDynamicColor.resolve(
                                 AppColors.textSecondary, context),
@@ -248,31 +212,28 @@ class _PipelineScreenEnhancedState
                 ),
               ),
 
-              if (_filterStatus != null)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      AppConstants.pageHorizontal,
-                      0,
-                      AppConstants.pageHorizontal,
-                      AppConstants.itemGap,
-                    ),
-                    child: Text(
-                      'SHOWING: ${_getStatusTitle(_filterStatus!).toUpperCase()}',
-                      style: AppTypography.labelSmall(context).copyWith(
-                        color: CupertinoDynamicColor.resolve(
-                            AppColors.textSecondary, context),
-                      ),
-                    ),
-                  ),
+              // Funnel summary bar
+              SliverToBoxAdapter(
+                child: _PipelineFunnelBar(
+                  pipeline: pipeline,
+                  activeFilter: _filterStatus,
+                  onTap: (status) {
+                    Haptics.light();
+                    setState(() {
+                      _filterStatus =
+                          _filterStatus == status ? null : status;
+                    });
+                  },
+                  getTitle: _getStatusTitle,
                 ),
+              ),
 
               if (needsAction.isNotEmpty && _filterStatus == null)
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(
+                    padding: const EdgeInsets.fromLTRB(
                       AppConstants.pageHorizontal,
-                      0,
+                      AppConstants.itemGap,
                       AppConstants.pageHorizontal,
                       AppConstants.itemGap,
                     ),
@@ -282,7 +243,7 @@ class _PipelineScreenEnhancedState
 
               // Pipeline sections
               SliverPadding(
-                padding: EdgeInsets.fromLTRB(
+                padding: const EdgeInsets.fromLTRB(
                   AppConstants.pageHorizontal,
                   0,
                   AppConstants.pageHorizontal,
@@ -290,55 +251,15 @@ class _PipelineScreenEnhancedState
                 ),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    if (_filterStatus == null ||
-                        _filterStatus == BusinessStatus.found)
-                      _buildSection(
-                        'Found',
-                        BusinessStatus.found,
-                        pipeline[BusinessStatus.found] ?? [],
-                      ),
-                    if (_filterStatus == null ||
-                        _filterStatus == BusinessStatus.audited)
-                      _buildSection(
-                        'Audited',
-                        BusinessStatus.audited,
-                        pipeline[BusinessStatus.audited] ?? [],
-                      ),
-                    if (_filterStatus == null ||
-                        _filterStatus == BusinessStatus.demoCreated)
-                      _buildSection(
-                        'Demo Created',
-                        BusinessStatus.demoCreated,
-                        pipeline[BusinessStatus.demoCreated] ?? [],
-                      ),
-                    if (_filterStatus == null ||
-                        _filterStatus == BusinessStatus.contacted)
-                      _buildSection(
-                        'Contacted',
-                        BusinessStatus.contacted,
-                        pipeline[BusinessStatus.contacted] ?? [],
-                      ),
-                    if (_filterStatus == null ||
-                        _filterStatus == BusinessStatus.interested)
-                      _buildSection(
-                        'Interested',
-                        BusinessStatus.interested,
-                        pipeline[BusinessStatus.interested] ?? [],
-                      ),
-                    if (_filterStatus == null ||
-                        _filterStatus == BusinessStatus.closed)
-                      _buildSection(
-                        'Closed',
-                        BusinessStatus.closed,
-                        pipeline[BusinessStatus.closed] ?? [],
-                      ),
-                    if (_filterStatus == null ||
-                        _filterStatus == BusinessStatus.lost)
-                      _buildSection(
-                        'Lost',
-                        BusinessStatus.lost,
-                        pipeline[BusinessStatus.lost] ?? [],
-                      ),
+                    for (final status in BusinessStatus.values)
+                      if (_filterStatus == status ||
+                          (_filterStatus == null &&
+                              (pipeline[status] ?? []).isNotEmpty))
+                        _buildSection(
+                          _getStatusTitle(status),
+                          status,
+                          pipeline[status] ?? [],
+                        ),
                   ]),
                 ),
               ),
@@ -386,71 +307,122 @@ class _PipelineScreenEnhancedState
   }
 
   Widget _buildNeedsActionSection(List<(Business, String)> items) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'NEEDS ACTION',
-                  style: AppTypography.labelSmall(context).copyWith(
-                    color: CupertinoDynamicColor.resolve(
-                        AppColors.scoreMid, context),
-                  ),
-                ),
-              ),
-              Text(
-                items.length.toString(),
-                style: AppTypography.labelLarge(context).copyWith(
-                  color: CupertinoDynamicColor.resolve(
-                      AppColors.scoreMid, context),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Container(
-          height: 0.5,
-          color: CupertinoDynamicColor.resolve(AppColors.divider, context),
-        ),
-        ...items.map((item) {
-          final (business, action) = item;
-          return GestureDetector(
+    final orangeColor =
+        CupertinoDynamicColor.resolve(AppColors.scoreMid, context);
+    final orangeBg =
+        CupertinoDynamicColor.resolve(AppColors.scoreMidBg, context);
+    final previewItems = items.take(2).toList();
+    final remaining = items.length - previewItems.length;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: orangeBg,
+        borderRadius: BorderRadius.circular(AppColors.radiusM),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header — tappable to collapse
+          GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: () => context.push('/business/${business.id}'),
+            onTap: () {
+              Haptics.light();
+              setState(() => _needsActionExpanded = !_needsActionExpanded);
+            },
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
               child: Row(
                 children: [
+                  Text(
+                    '\u26A0 ',
+                    style: TextStyle(fontSize: 14, color: orangeColor),
+                  ),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(business.name,
-                            style: AppTypography.titleMedium(context)),
-                        const SizedBox(height: 2),
-                        Text(action,
-                            style: AppTypography.labelLarge(context).copyWith(
-                              color: CupertinoDynamicColor.resolve(
-                                  AppColors.scoreMid, context),
-                            )),
-                      ],
+                    child: Text(
+                      '${items.length} lead${items.length == 1 ? '' : 's'} need action',
+                      style: AppTypography.titleMedium(context).copyWith(
+                        color: orangeColor,
+                      ),
                     ),
                   ),
-                  Icon(CupertinoIcons.chevron_right,
+                  AnimatedRotation(
+                    turns: _needsActionExpanded ? 0.5 : 0.0,
+                    duration: AppConstants.standardAnimation,
+                    child: Icon(
+                      CupertinoIcons.chevron_down,
+                      color: orangeColor,
                       size: 14,
-                      color: CupertinoDynamicColor.resolve(
-                          AppColors.textTertiary, context)),
+                    ),
+                  ),
                 ],
               ),
             ),
-          );
-        }),
-        SizedBox(height: AppConstants.itemGap),
-      ],
+          ),
+          if (_needsActionExpanded) ...[
+            // Preview items (max 2)
+            ...previewItems.map((item) {
+              final (business, action) = item;
+              return GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => context.push('/business/${business.id}'),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${business.name} — $action',
+                          style: AppTypography.labelLarge(context).copyWith(
+                            color: orangeColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Icon(CupertinoIcons.chevron_right,
+                          size: 12, color: orangeColor),
+                    ],
+                  ),
+                ),
+              );
+            }),
+            // "+N more" and "See All"
+            if (remaining > 0)
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  // Navigate to first stagnant lead
+                  context.push('/business/${items.first.$1.id}');
+                },
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '+$remaining more',
+                          style: AppTypography.labelLarge(context).copyWith(
+                            color: orangeColor.withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        'See All \u2192',
+                        style: AppTypography.chip(context).copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: orangeColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ],
+      ),
     );
   }
 
@@ -551,23 +523,11 @@ class _PipelineScreenEnhancedState
                 ],
               );
             }),
-            Padding(
-              padding: const EdgeInsets.only(top: 4, bottom: 12),
-              child: Center(
-                child: Text(
-                  'Swipe right to advance, left to remove',
-                  style: AppTypography.chip(context).copyWith(
-                    color: CupertinoDynamicColor.resolve(
-                        AppColors.textTertiary, context),
-                  ),
-                ),
-              ),
-            ),
           ],
         ],
 
         // Bottom spacing between sections
-        SizedBox(height: AppConstants.itemGap),
+        const SizedBox(height: AppConstants.itemGap),
       ],
     );
   }
@@ -589,6 +549,71 @@ class _PipelineScreenEnhancedState
       case BusinessStatus.lost:
         return 'Lost';
     }
+  }
+}
+
+/// Horizontal scrollable row of pill-shaped stage counts
+class _PipelineFunnelBar extends StatelessWidget {
+  final Map<BusinessStatus, List<Business>> pipeline;
+  final BusinessStatus? activeFilter;
+  final ValueChanged<BusinessStatus> onTap;
+  final String Function(BusinessStatus) getTitle;
+
+  const _PipelineFunnelBar({
+    required this.pipeline,
+    required this.activeFilter,
+    required this.onTap,
+    required this.getTitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 38,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding:
+            const EdgeInsets.symmetric(horizontal: AppConstants.pageHorizontal),
+        itemCount: BusinessStatus.values.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final status = BusinessStatus.values[index];
+          final count = (pipeline[status] ?? []).length;
+          final isActive = activeFilter == status;
+          final isEmpty = count == 0;
+
+          return GestureDetector(
+            onTap: () => onTap(status),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: CupertinoDynamicColor.resolve(
+                  isActive ? AppColors.chipActive : AppColors.chipInactive,
+                  context,
+                ),
+                borderRadius: BorderRadius.circular(AppColors.radiusXL),
+              ),
+              child: Text(
+                '${getTitle(status)} $count',
+                style: AppTypography.chip(context).copyWith(
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                  color: CupertinoDynamicColor.resolve(
+                    isActive
+                        ? AppColors.chipActiveFg
+                        : isEmpty
+                            ? AppColors.textTertiary
+                            : AppColors.textSecondary,
+                    context,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 }
 
