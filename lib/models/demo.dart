@@ -9,6 +9,12 @@ enum DemoTemplate {
   @JsonValue('restaurant') restaurant,
   @JsonValue('professional') professional,
   @JsonValue('health_beauty') healthBeauty,
+  @JsonValue('warm_organic') warmOrganic,
+  @JsonValue('soft_glass') softGlass,
+  @JsonValue('editorial_luxury') editorialLuxury,
+  @JsonValue('bold_modern') boldModern,
+  @JsonValue('fresh_startup') freshStartup,
+  @JsonValue('dark_premium') darkPremium,
 }
 
 @freezed
@@ -41,6 +47,18 @@ extension DemoX on Demo {
         return 'Professional Services';
       case DemoTemplate.healthBeauty:
         return 'Health & Beauty';
+      case DemoTemplate.warmOrganic:
+        return 'Warm Organic';
+      case DemoTemplate.softGlass:
+        return 'Soft Glassmorphism';
+      case DemoTemplate.editorialLuxury:
+        return 'Editorial Luxury';
+      case DemoTemplate.boldModern:
+        return 'Bold Modern';
+      case DemoTemplate.freshStartup:
+        return 'Fresh Startup';
+      case DemoTemplate.darkPremium:
+        return 'Dark Premium';
     }
   }
 }
