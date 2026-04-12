@@ -11,7 +11,9 @@ import '../../services/supabase_service.dart';
 import '../../utils/haptics.dart';
 import '../../utils/breakpoints.dart';
 import '../../providers/auto_audit_provider.dart';
+import '../../providers/organization_provider.dart';
 import '../../widgets/ios_toast.dart';
+import 'team_settings_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -379,6 +381,53 @@ class SettingsScreen extends ConsumerWidget {
                   loading: () => const SizedBox(),
                   error: (_, __) => const SizedBox(),
                 ),
+
+                // -- Team --
+                Builder(
+                  builder: (context) {
+                    final orgAsync = ref.watch(organizationProvider);
+                    final orgName = orgAsync.valueOrNull?.name;
+                    final hasOrg = orgName != null;
+                    return CupertinoListSection.insetGrouped(
+                      header: Text(
+                        'TEAM',
+                        style: AppTypography.labelSmall(context).copyWith(
+                          color: CupertinoDynamicColor.resolve(
+                              AppColors.textSecondary, context),
+                        ),
+                      ),
+                      children: [
+                        CupertinoListTile(
+                          leading: Icon(
+                            CupertinoIcons.person_2,
+                            color: CupertinoDynamicColor.resolve(
+                                AppColors.accent, context),
+                          ),
+                          title: const Text('Team'),
+                          subtitle: Text(
+                            hasOrg ? orgName : 'Create or join a team',
+                          ),
+                          trailing: const CupertinoListTileChevron(),
+                          onTap: () {
+                            Haptics.light();
+                            Navigator.of(context).push(
+                              CupertinoPageRoute<void>(
+                                builder: (_) => const TeamSettingsScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    )
+                        .animate(delay: 180.ms)
+                        .fadeIn(duration: 300.ms)
+                        .slideY(
+                            begin: 0.03,
+                            duration: 400.ms,
+                            curve: Curves.easeOutCubic);
+                  },
+                ),
+                const SizedBox(height: 8),
 
                 // -- Preferences --
                 CupertinoListSection.insetGrouped(
