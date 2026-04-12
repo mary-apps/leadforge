@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show FunctionException, Supabase, HttpMethod;
 
 // ---------------------------------------------------------------------------
 // Exceptions
@@ -13,6 +15,15 @@ import 'package:http/http.dart' as http;
 class LimitReachedException implements Exception {
   final String message;
   const LimitReachedException(this.message);
+
+  @override
+  String toString() => message;
+}
+
+/// Auth session expired or JWT invalid (401)
+class AuthExpiredException implements Exception {
+  final String message;
+  const AuthExpiredException(this.message);
 
   @override
   String toString() => message;
@@ -74,6 +85,117 @@ Future<bool> hasConnectivity() async {
 }
 
 // ---------------------------------------------------------------------------
+// Supabase Edge Function invocation (uses SDK auth automatically)
+// ---------------------------------------------------------------------------
+
+/// Invoke a Supabase Edge Function using the SDK client.
+///
+/// The SDK automatically sends the current session's access token and apikey.
+/// On 401, we refresh the session and retry once before giving up.
+Future<Map<String, dynamic>> invokeEdgeFunction(
+  String functionName, {
+  Map<String, dynamic>? body,
+  int maxRetries = 2,
+  Duration timeout = const Duration(seconds: 30),
+}) async {
+  if (!await hasConnectivity()) {
+    throw const NoConnectionException();
+  }
+
+  final client = Supabase.instance.client;
+
+  // Ensure we have a session before calling the function.
+  if (client.auth.currentSession == null) {
+    throw const AuthExpiredException('Session expired. Please sign in again.');
+  }
+
+  // Pre-refresh if the token is about to expire (within 60s).
+  final expiresAt = client.auth.currentSession?.expiresAt;
+  if (expiresAt != null &&
+      DateTime.now().isAfter(
+        DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000)
+            .subtract(const Duration(seconds: 60)),
+      )) {
+    try {
+      await client.auth.refreshSession();
+    } catch (e) {
+      debugPrint('[$functionName] pre-refresh failed: $e');
+    }
+  }
+
+  var delay = const Duration(milliseconds: 500);
+  bool hasRetriedAuth = false;
+
+  for (var attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      // Let the SDK handle Authorization and apikey headers automatically.
+      final response = await client.functions
+          .invoke(
+            functionName,
+            body: body,
+            method: HttpMethod.post,
+          )
+          .timeout(timeout);
+
+      final data = response.data;
+      if (data is Map<String, dynamic>) return data;
+      if (data is String) {
+        final decoded = json.decode(data);
+        if (decoded is Map<String, dynamic>) return decoded;
+      }
+      return {'data': data};
+    } on FunctionException catch (e) {
+      final status = e.status;
+      if (status == 401) {
+        if (!hasRetriedAuth) {
+          hasRetriedAuth = true;
+          debugPrint('[$functionName] got 401, forcing token refresh...');
+          try {
+            await client.auth.refreshSession();
+          } catch (refreshError) {
+            debugPrint('[$functionName] refresh failed: $refreshError');
+            throw const AuthExpiredException(
+                'Session expired. Please sign in again.');
+          }
+          continue;
+        }
+        debugPrint('[$functionName] still 401 after refresh — '
+            'session invalid');
+        throw const AuthExpiredException(
+            'Session expired. Please sign in again.');
+      }
+      if (status == 402) {
+        throw const LimitReachedException('Free tier limit reached');
+      }
+      if (status == 403) {
+        final details = e.details?.toString() ?? '';
+        if (details.toLowerCase().contains('pro')) {
+          throw const ProRequiredException('This feature requires Pro');
+        }
+        throw Exception('Forbidden: $details');
+      }
+      if (status >= 500 && attempt < maxRetries) {
+        debugPrint(
+            'Edge function $functionName error $status, retrying in ${delay.inMilliseconds}ms...');
+        await Future.delayed(delay);
+        delay *= 2;
+        continue;
+      }
+      throw Exception(
+          'Edge function error: ${e.details ?? e.reasonPhrase ?? "unknown"}');
+    } on TimeoutException {
+      if (attempt == maxRetries) {
+        throw const ServerException(408, 'Request timed out');
+      }
+      await Future.delayed(delay);
+      delay *= 2;
+    }
+  }
+
+  throw const ServerException(500, 'Max retries exceeded');
+}
+
+// ---------------------------------------------------------------------------
 // Retry wrapper for HTTP calls
 // ---------------------------------------------------------------------------
 
@@ -118,6 +240,9 @@ Future<http.Response> httpWithRetry(
     }
 
     // Client errors — don't retry
+    if (response.statusCode == 401) {
+      throw const AuthExpiredException('Session expired. Please sign in again.');
+    }
     if (response.statusCode == 402) {
       throw const LimitReachedException(
         'Free tier limit reached',

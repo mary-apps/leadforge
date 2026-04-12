@@ -75,7 +75,7 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
     _focusNode.unfocus();
 
     final profileAsync = ref.read(profileNotifierProvider);
-    final profile = profileAsync.value;
+    final profile = profileAsync.valueOrNull;
 
     if (profile != null && !profile.canSearch) {
       Haptics.heavy();
@@ -301,7 +301,7 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
                             // Fire auto-audit in background if enabled and business not yet audited
                             final autoAudit = ref.read(autoAuditProvider);
                             if (autoAudit && !business.isAudited) {
-                              final profile = ref.read(profileNotifierProvider).value;
+                              final profile = ref.read(profileNotifierProvider).valueOrNull;
                               final canAudit = profile == null ||
                                   profile.isPro ||
                                   profile.auditsThisMonth < 3;
@@ -411,10 +411,10 @@ class _DiscoveryView extends StatelessWidget {
   });
 
   static const _categories = [
-    _Category('Dentists', CupertinoIcons.heart, Color(0xFF6366F1)),
-    _Category('Restaurants', CupertinoIcons.cart, Color(0xFF18181B)),
-    _Category('Plumbers', CupertinoIcons.wrench, Color(0xFF166534)),
-    _Category('Lawyers', CupertinoIcons.book, Color(0xFF92400E)),
+    _Category('Dentists', CupertinoIcons.heart, AppColors.accent),
+    _Category('Restaurants', CupertinoIcons.cart, AppColors.accent),
+    _Category('Plumbers', CupertinoIcons.wrench, AppColors.scoreGood),
+    _Category('Lawyers', CupertinoIcons.book, AppColors.scoreMid),
     _Category('Hair Salons', CupertinoIcons.scissors, Color(0xFFFF6B9D)),
     _Category('Gyms', CupertinoIcons.sportscourt, Color(0xFF38BDF8)),
     _Category('Cafes', CupertinoIcons.drop, Color(0xFFFFD166)),
@@ -749,6 +749,7 @@ class _CategoryCardState extends State<_CategoryCard> {
   @override
   Widget build(BuildContext context) {
     final cat = widget.category;
+    final catColor = CupertinoDynamicColor.resolve(cat.color, context);
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
@@ -767,7 +768,7 @@ class _CategoryCardState extends State<_CategoryCard> {
             color: CupertinoDynamicColor.resolve(AppColors.surface, context),
             borderRadius: BorderRadius.circular(AppColors.radiusL),
             border: Border.all(
-              color: cat.color.withValues(alpha: 0.12),
+              color: catColor.withValues(alpha: 0.12),
               width: 0.5,
             ),
           ),
@@ -779,15 +780,15 @@ class _CategoryCardState extends State<_CategoryCard> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      cat.color.withValues(alpha: 0.15),
-                      cat.color.withValues(alpha: 0.04),
+                      catColor.withValues(alpha: 0.15),
+                      catColor.withValues(alpha: 0.04),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(cat.icon, size: 18, color: cat.color),
+                child: Icon(cat.icon, size: 18, color: catColor),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -923,6 +924,7 @@ class _FeaturedCategoryCardState extends State<_FeaturedCategoryCard> {
   @override
   Widget build(BuildContext context) {
     final cat = widget.category;
+    final catColor = CupertinoDynamicColor.resolve(cat.color, context);
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
@@ -953,15 +955,15 @@ class _FeaturedCategoryCardState extends State<_FeaturedCategoryCard> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      cat.color.withValues(alpha: 0.2),
-                      cat.color.withValues(alpha: 0.06),
+                      catColor.withValues(alpha: 0.2),
+                      catColor.withValues(alpha: 0.06),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(cat.icon, size: 22, color: cat.color),
+                child: Icon(cat.icon, size: 22, color: catColor),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -979,17 +981,16 @@ class _FeaturedCategoryCardState extends State<_FeaturedCategoryCard> {
                     const SizedBox(height: 2),
                     Text(
                       'Most popular niche',
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: AppTypography.chip(context).copyWith(
                         fontWeight: FontWeight.w500,
-                        color: cat.color.withValues(alpha: 0.7),
+                        color: catColor.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
                 ),
               ),
               Icon(CupertinoIcons.chevron_forward,
-                  size: 14, color: cat.color),
+                  size: 14, color: catColor),
             ],
           ),
         ),

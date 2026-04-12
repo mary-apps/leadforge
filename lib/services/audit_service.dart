@@ -1,40 +1,20 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-
-import '../config/constants.dart';
 import '../models/audit_result.dart';
 import '../utils/network.dart';
-import 'supabase_service.dart';
 
 class AuditService {
   /// Run AI audit on a business
   static Future<AuditResult> auditBusiness(String businessId) async {
-    final token = await SupabaseService.getAuthToken();
+    final data = await invokeEdgeFunction(
+      'audit',
+      body: {'business_id': businessId},
+      timeout: const Duration(seconds: 60),
+    );
 
-    if (token == null) {
-      throw Exception('Not authenticated');
-    }
+    // Edge function may return audit nested under a key or flat
+    final auditJson = data['audit'] as Map<String, dynamic>? ??
+        data['result'] as Map<String, dynamic>? ??
+        data;
 
-    final response = await httpWithRetry(() => http.post(
-      Uri.parse(AppConstants.auditEndpoint),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: json.encode({
-        'business_id': businessId,
-      }),
-    ));
-
-    final dynamic data;
-    try {
-      data = json.decode(response.body);
-    } catch (e) {
-      throw Exception('Invalid response from audit service');
-    }
-    if (data is! Map<String, dynamic>) {
-      throw Exception('Unexpected audit response format');
-    }
-    return AuditResult.fromJson(data);
+    return AuditResult.fromJson(auditJson);
   }
 }
