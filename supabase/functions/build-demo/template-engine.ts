@@ -3,7 +3,7 @@
 export interface AiContent {
   headline: string
   subheadline: string
-  services: string[]
+  services: { name: string; desc: string }[] | string[]
   about: string
   why_us: string[]
   cta_text: string
@@ -49,12 +49,14 @@ function escapeHtml(str: unknown): string {
 // Service cards
 // ---------------------------------------------------------------------------
 
-function buildServiceCards(services: string[]): string {
+function buildServiceCards(services: { name: string; desc: string }[] | string[]): string {
   if (!services || services.length === 0) return ''
   return services
     .map((service) => {
-      const safe = escapeHtml(service)
-      return `<div class="service-card"><h3>${safe}</h3><p></p></div>`
+      if (typeof service === 'string') {
+        return `<div class="service-card"><h3>${escapeHtml(service)}</h3></div>`
+      }
+      return `<div class="service-card"><h3>${escapeHtml(service.name)}</h3><p>${escapeHtml(service.desc)}</p></div>`
     })
     .join('\n')
 }
@@ -199,10 +201,11 @@ export function fallbackContent(business: BusinessData, language: string): AiCon
     ? business.categories
     : isSpanish ? ['Servicios Profesionales'] : ['Professional Services']
 
-  // Build service list from categories (capitalize each)
-  const services = categories.slice(0, 6).map((cat) =>
-    cat.charAt(0).toUpperCase() + cat.slice(1)
-  )
+  // Build service list from categories
+  const services = categories.slice(0, 6).map((cat) => ({
+    name: cat.charAt(0).toUpperCase() + cat.slice(1),
+    desc: isSpanish ? 'Servicio profesional de calidad' : 'Quality professional service',
+  }))
 
   const headline = name
   const subheadline = isSpanish

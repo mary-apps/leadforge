@@ -156,7 +156,10 @@ Return a JSON object with exactly these fields:
 {
   "headline": "Short punchy business tagline (max 8 words)",
   "subheadline": "One compelling sentence about what makes this business special (max 20 words)",
-  "services": ["Service or product 1", "Service or product 2", "Service or product 3", "Service or product 4", "Service or product 5", "Service or product 6"],
+  "services": [
+    {"name": "Service Name", "desc": "Short compelling description (8-15 words)"},
+    {"name": "Service Name 2", "desc": "Short compelling description (8-15 words)"}
+  ],
   "about": "2-3 sentence paragraph about the business, its specialties, and location. Make it warm and authentic.",
   "why_us": ["Compelling reason 1 with a unicode symbol prefix", "Compelling reason 2 with a unicode symbol prefix", "Compelling reason 3 with a unicode symbol prefix"],
   "cta_text": "Call-to-action button text (max 4 words)",
@@ -172,7 +175,7 @@ Return a JSON object with exactly these fields:
 }
 
 For the palette, choose colors that fit the business type and feel premium. Use real hex color codes.
-For services, use 4-6 real items from the scraped content if available, otherwise create realistic specific items for this business type.`
+For services, include 4-6 items with name and a compelling description. Use real items from the scraped content if available, otherwise create realistic specific items for this business type.`
 
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 30000)
