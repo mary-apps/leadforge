@@ -44,16 +44,16 @@ class DailyDigest extends StatelessWidget {
       ));
     }
 
-    final needsDemo = businesses
+    final needsReport = businesses
         .where((b) => b.status == BusinessStatus.audited)
         .toList();
-    if (needsDemo.isNotEmpty) {
-      final first = needsDemo.last;
+    if (needsReport.isNotEmpty) {
+      final first = needsReport.last;
       items.add(DigestItem(
         icon: CupertinoIcons.globe,
-        title: '${needsDemo.length} demo${needsDemo.length == 1 ? '' : 's'} ready to create',
+        title: '${needsReport.length} report${needsReport.length == 1 ? '' : 's'} ready to generate',
         subtitle: 'Start with ${first.name}',
-        onTap: () => onNavigate('/business/${first.id}/build-demo'),
+        onTap: () => onNavigate('/business/${first.id}'),
       ));
     }
 

@@ -272,11 +272,11 @@ abstract class AppLocalizations {
   /// **'AI Analysis'**
   String get aiAnalysis;
 
-  /// No description provided for @generateDemo.
+  /// No description provided for @generateReport.
   ///
   /// In en, this message translates to:
-  /// **'Generate Demo'**
-  String get generateDemo;
+  /// **'Generate Report'**
+  String get generateReport;
 
   /// No description provided for @createMessage.
   ///
@@ -308,17 +308,17 @@ abstract class AppLocalizations {
   /// **'Calculating score...'**
   String get calculatingScore;
 
-  /// No description provided for @buildDemoSite.
+  /// No description provided for @generateAuditReport.
   ///
   /// In en, this message translates to:
-  /// **'Build Demo Site'**
-  String get buildDemoSite;
+  /// **'Generate Audit Report'**
+  String get generateAuditReport;
 
-  /// No description provided for @createDemoFor.
+  /// No description provided for @createReportFor.
   ///
   /// In en, this message translates to:
-  /// **'Create a demo website for'**
-  String get createDemoFor;
+  /// **'Create an audit report for'**
+  String get createReportFor;
 
   /// No description provided for @chooseTemplate.
   ///
@@ -326,17 +326,11 @@ abstract class AppLocalizations {
   /// **'Choose Template'**
   String get chooseTemplate;
 
-  /// No description provided for @generateDemoSite.
+  /// No description provided for @reportCreated.
   ///
   /// In en, this message translates to:
-  /// **'Generate Demo Site'**
-  String get generateDemoSite;
-
-  /// No description provided for @demoSiteCreated.
-  ///
-  /// In en, this message translates to:
-  /// **'Demo Site Created!'**
-  String get demoSiteCreated;
+  /// **'Report Created!'**
+  String get reportCreated;
 
   /// No description provided for @shareWithProspect.
   ///
@@ -362,17 +356,17 @@ abstract class AppLocalizations {
   /// **'Open'**
   String get open;
 
-  /// No description provided for @demoLimitReached.
+  /// No description provided for @reportLimitReached.
   ///
   /// In en, this message translates to:
-  /// **'Demo Limit Reached'**
-  String get demoLimitReached;
+  /// **'Report Limit Reached'**
+  String get reportLimitReached;
 
-  /// No description provided for @demoLimitMessage.
+  /// No description provided for @reportLimitMessage.
   ///
   /// In en, this message translates to:
-  /// **'You\'ve used your free demo this month. Upgrade to Pro for unlimited demos.'**
-  String get demoLimitMessage;
+  /// **'You\'ve used your free report this month. Upgrade to Pro for unlimited reports.'**
+  String get reportLimitMessage;
 
   /// No description provided for @maybeLater.
   ///
@@ -500,11 +494,11 @@ abstract class AppLocalizations {
   /// **'Audited'**
   String get audited;
 
-  /// No description provided for @demosSent.
+  /// No description provided for @reportsSent.
   ///
   /// In en, this message translates to:
-  /// **'Demos Sent'**
-  String get demosSent;
+  /// **'Reports Sent'**
+  String get reportsSent;
 
   /// No description provided for @closedDeals.
   ///
@@ -554,11 +548,11 @@ abstract class AppLocalizations {
   /// **'Found'**
   String get found;
 
-  /// No description provided for @demoCreated.
+  /// No description provided for @reportSent.
   ///
   /// In en, this message translates to:
-  /// **'Demo Created'**
-  String get demoCreated;
+  /// **'Report Sent'**
+  String get reportSent;
 
   /// No description provided for @contacted.
   ///
@@ -662,11 +656,11 @@ abstract class AppLocalizations {
   /// **'Audits'**
   String get audits;
 
-  /// No description provided for @demos.
+  /// No description provided for @reports.
   ///
   /// In en, this message translates to:
-  /// **'Demos'**
-  String get demos;
+  /// **'Reports'**
+  String get reports;
 
   /// No description provided for @unlimited.
   ///

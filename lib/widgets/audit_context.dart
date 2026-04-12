@@ -38,7 +38,7 @@ class AuditContext extends StatelessWidget {
     final tip = score < 40
         ? 'This business has a weak online presence — they\'re likely to need your services. Strong lead.'
         : score < 70
-            ? 'Room for improvement. A demo site could show them what\'s possible.'
+            ? 'Room for improvement. An audit report could show them what needs improvement.'
             : 'Decent online presence. Focus your pitch on specific gaps.';
 
     final goodColor = CupertinoDynamicColor.resolve(AppColors.scoreGood, context);

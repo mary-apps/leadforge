@@ -101,7 +101,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get aiAnalysis => 'Análisis IA';
 
   @override
-  String get generateDemo => 'Generar Demo';
+  String get generateReport => 'Generar Reporte';
 
   @override
   String get createMessage => 'Crear Mensaje';
@@ -119,19 +119,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get calculatingScore => 'Calculando puntuación...';
 
   @override
-  String get buildDemoSite => 'Crear Sitio Demo';
+  String get generateAuditReport => 'Generar Reporte de Auditoría';
 
   @override
-  String get createDemoFor => 'Crear un sitio web demo para';
+  String get createReportFor => 'Crear un reporte de auditoría para';
 
   @override
   String get chooseTemplate => 'Elegir Plantilla';
 
   @override
-  String get generateDemoSite => 'Generar Sitio Demo';
-
-  @override
-  String get demoSiteCreated => '¡Sitio Demo Creado!';
+  String get reportCreated => '¡Reporte Creado!';
 
   @override
   String get shareWithProspect => 'Comparte este link con tu prospecto';
@@ -146,11 +143,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get open => 'Abrir';
 
   @override
-  String get demoLimitReached => 'Límite de Demos Alcanzado';
+  String get reportLimitReached => 'Límite de Reportes Alcanzado';
 
   @override
-  String get demoLimitMessage =>
-      'Ya usaste tu demo gratuito este mes. Actualiza a Pro para demos ilimitados.';
+  String get reportLimitMessage =>
+      'Ya usaste tu reporte gratuito este mes. Actualiza a Pro para reportes ilimitados.';
 
   @override
   String get maybeLater => 'Quizás Después';
@@ -217,7 +214,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get audited => 'Auditados';
 
   @override
-  String get demosSent => 'Demos Enviados';
+  String get reportsSent => 'Reportes Enviados';
 
   @override
   String get closedDeals => 'Negocios Cerrados';
@@ -244,7 +241,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get found => 'Encontrado';
 
   @override
-  String get demoCreated => 'Demo Creado';
+  String get reportSent => 'Reporte Enviado';
 
   @override
   String get contacted => 'Contactado';
@@ -302,7 +299,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get audits => 'Auditorías';
 
   @override
-  String get demos => 'Demos';
+  String get reports => 'Reportes';
 
   @override
   String get unlimited => '∞';

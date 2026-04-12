@@ -11,7 +11,7 @@ class OutreachService {
     required OutreachChannel channel,
     required String tone,
     required String language,
-    String? demoUrl,
+    bool? reportAvailable,
   }) async {
     final data = await invokeEdgeFunction(
       'outreach',
@@ -20,7 +20,7 @@ class OutreachService {
         'channel': channel.name,
         'tone': tone,
         'language': language,
-        if (demoUrl != null) 'demo_url': demoUrl,
+        if (reportAvailable != null) 'has_report': reportAvailable,
       },
     );
 

@@ -46,7 +46,7 @@ class _PaywallSheetState extends ConsumerState<_PaywallSheet> {
 
     final features = [
       'Unlimited searches',
-      'Unlimited audits & demo sites',
+      'Unlimited audits & reports',
       'AI outreach — all 4 channels',
       'English + Spanish support',
     ];
