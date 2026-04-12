@@ -9,6 +9,7 @@ import '../../providers/profile_provider.dart';
 import '../../providers/subscription_provider.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/haptics.dart';
+import '../../utils/breakpoints.dart';
 import '../../providers/auto_audit_provider.dart';
 import '../../widgets/ios_toast.dart';
 
@@ -20,13 +21,11 @@ class SettingsScreen extends ConsumerWidget {
     final profileAsync = ref.watch(profileNotifierProvider);
     final isProAsync = ref.watch(subscriptionProvider);
 
-    return CupertinoPageScaffold(
-      backgroundColor: CupertinoDynamicColor.resolve(AppColors.background, context),
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(
-          parent: AlwaysScrollableScrollPhysics(),
-        ),
-        slivers: [
+    final scrollView = CustomScrollView(
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
+      slivers: [
           const CupertinoSliverNavigationBar(
             largeTitle: Text('Settings'),
             border: null,
@@ -493,7 +492,21 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
         ],
-      ),
+    );
+
+    Widget body = scrollView;
+    if (!isCompact(context)) {
+      body = Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: scrollView,
+        ),
+      );
+    }
+
+    return CupertinoPageScaffold(
+      backgroundColor: CupertinoDynamicColor.resolve(AppColors.background, context),
+      child: body,
     );
   }
 }

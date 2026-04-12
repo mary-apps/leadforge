@@ -7,6 +7,7 @@ import '../../config/theme.dart';
 import '../../models/business.dart';
 import '../../providers/businesses_provider.dart';
 import '../../utils/haptics.dart';
+import '../../utils/breakpoints.dart';
 import '../../widgets/error_state.dart';
 import '../../widgets/ios_toast.dart';
 import '../../widgets/skeleton_loaders.dart';
@@ -162,7 +163,7 @@ class _PipelineScreenEnhancedState
         data: (pipeline) {
           _initExpandedSections(pipeline);
           final needsAction = _getNeedsAction(pipeline);
-          return CustomScrollView(
+          final scrollView = CustomScrollView(
             physics: const BouncingScrollPhysics(
               parent: AlwaysScrollableScrollPhysics(),
             ),
@@ -265,6 +266,15 @@ class _PipelineScreenEnhancedState
               ),
             ],
           );
+          if (!isCompact(context)) {
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1000),
+                child: scrollView,
+              ),
+            );
+          }
+          return scrollView;
         },
         loading: () => const PipelineSkeleton(),
         error: (error, _) => ErrorState(

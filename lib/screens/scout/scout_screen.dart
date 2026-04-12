@@ -17,6 +17,7 @@ import '../../widgets/skeleton_loaders.dart';
 import '../../widgets/search_suggestions.dart';
 import '../../widgets/app_button.dart';
 import '../../utils/haptics.dart';
+import '../../utils/breakpoints.dart';
 import '../../utils/network.dart';
 import '../../widgets/paywall_dialog.dart';
 
@@ -135,86 +136,96 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(
-          parent: AlwaysScrollableScrollPhysics(),
-        ),
-        slivers: [
-          // Title area
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                AppConstants.pageHorizontal,
-                MediaQuery.of(context).padding.top + 20,
-                AppConstants.pageHorizontal,
-                0,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Scout',
-                    style: AppTypography.displayLarge(context),
-                  ),
-                  const SizedBox(height: AppConstants.contentGap),
-                  Text(
-                    'Find businesses to help',
-                    style: AppTypography.bodyLarge(context).copyWith(
-                      color: CupertinoDynamicColor.resolve(
-                        AppColors.textSecondary,
-                        context,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Segmented control
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppConstants.pageHorizontal,
-                AppConstants.sectionGap,
-                AppConstants.pageHorizontal,
-                0,
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                child: CupertinoSlidingSegmentedControl<_ScoutTab>(
-                  groupValue: _activeTab,
-                  children: const {
-                    _ScoutTab.quickSearch: Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Text('Quick Search',
-                          style: TextStyle(fontSize: 13)),
-                    ),
-                    _ScoutTab.territories: Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Text('Territories',
-                          style: TextStyle(fontSize: 13)),
-                    ),
-                  },
-                  onValueChanged: (tab) {
-                    if (tab == null) return;
-                    Haptics.selection();
-                    setState(() => _activeTab = tab);
-                  },
-                ),
-              ),
-            ),
-          ),
-
-          // Tab content
-          if (_activeTab == _ScoutTab.quickSearch) ..._buildQuickSearch(),
-          if (_activeTab == _ScoutTab.territories) ..._buildTerritories(),
-        ],
+    final scrollView = CustomScrollView(
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
       ),
+      slivers: [
+        // Title area
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppConstants.pageHorizontal,
+              MediaQuery.of(context).padding.top + 20,
+              AppConstants.pageHorizontal,
+              0,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Scout',
+                  style: AppTypography.displayLarge(context),
+                ),
+                const SizedBox(height: AppConstants.contentGap),
+                Text(
+                  'Find businesses to help',
+                  style: AppTypography.bodyLarge(context).copyWith(
+                    color: CupertinoDynamicColor.resolve(
+                      AppColors.textSecondary,
+                      context,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Segmented control
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppConstants.pageHorizontal,
+              AppConstants.sectionGap,
+              AppConstants.pageHorizontal,
+              0,
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              child: CupertinoSlidingSegmentedControl<_ScoutTab>(
+                groupValue: _activeTab,
+                children: const {
+                  _ScoutTab.quickSearch: Padding(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Text('Quick Search',
+                        style: TextStyle(fontSize: 13)),
+                  ),
+                  _ScoutTab.territories: Padding(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Text('Territories',
+                        style: TextStyle(fontSize: 13)),
+                  ),
+                },
+                onValueChanged: (tab) {
+                  if (tab == null) return;
+                  Haptics.selection();
+                  setState(() => _activeTab = tab);
+                },
+              ),
+            ),
+          ),
+        ),
+
+        // Tab content
+        if (_activeTab == _ScoutTab.quickSearch) ..._buildQuickSearch(),
+        if (_activeTab == _ScoutTab.territories) ..._buildTerritories(),
+      ],
     );
+
+    Widget body = scrollView;
+    if (!isCompact(context)) {
+      body = Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1000),
+          child: scrollView,
+        ),
+      );
+    }
+
+    return CupertinoPageScaffold(child: body);
   }
 
   // -------------------------------------------------------------------------

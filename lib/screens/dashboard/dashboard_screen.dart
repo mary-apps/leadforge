@@ -14,6 +14,7 @@ import '../../widgets/error_state.dart';
 import '../../widgets/daily_digest.dart';
 import '../../widgets/weekly_activity_graph.dart';
 import '../../widgets/getting_started_guide.dart';
+import '../../utils/breakpoints.dart';
 
 
 String _timeAwareGreeting() {
@@ -82,7 +83,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ? businesses.sublist(businesses.length - 5)
               : businesses;
 
-          return CustomScrollView(
+          final scrollView = CustomScrollView(
             physics: const BouncingScrollPhysics(
               parent: AlwaysScrollableScrollPhysics(),
             ),
@@ -312,6 +313,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ],
             ],
           );
+          if (!isCompact(context)) {
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1000),
+                child: scrollView,
+              ),
+            );
+          }
+          return scrollView;
         },
         loading: () => const DashboardSkeleton(),
         error: (error, _) => ErrorState(

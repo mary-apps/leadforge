@@ -34,6 +34,7 @@ import '../../widgets/share_business_sheet.dart';
 import '../../widgets/error_state.dart';
 import '../../widgets/skeleton_loaders.dart';
 import '../../utils/haptics.dart';
+import '../../utils/breakpoints.dart';
 import '../../utils/network.dart';
 
 class BusinessDetailScreen extends ConsumerStatefulWidget {
@@ -215,14 +216,16 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
               ),
             ),
           ),
-          child: CustomScrollView(
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
-            ),
-            slivers: [
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppConstants.pageHorizontal),
+          child: Builder(
+            builder: (context) {
+              final scrollView = CustomScrollView(
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppConstants.pageHorizontal),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     const SizedBox(height: 16),
@@ -355,6 +358,17 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                 ),
               ),
             ],
+          );
+              if (!isCompact(context)) {
+                return Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 800),
+                    child: scrollView,
+                  ),
+                );
+              }
+              return scrollView;
+            },
           ),
         );
       },
