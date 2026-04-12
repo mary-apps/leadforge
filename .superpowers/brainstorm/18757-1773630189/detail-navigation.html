@@ -1,0 +1,50 @@
+<h2>¿Navegación en pantallas de detalle?</h2>
+<p class="subtitle">Business detail, Build Demo, Outreach — actualmente usan slide+fade custom sin nav bar</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Actual — Sin nav bar, transición custom</div>
+    <div class="mockup-body" style="background:#0A0A0F; padding:0; text-align:center;">
+      <div style="padding:16px; display:flex; align-items:center;">
+        <div style="color:#F59E0B; font-size:14px;">← Volver</div>
+      </div>
+      <div style="padding:20px; color:#888; font-size:13px;">
+        <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#F59E0B,#E879F9);margin:0 auto 12px;"></div>
+        <div style="color:#fff;font-size:18px;font-weight:700;">Business Name</div>
+        <div style="color:#666;margin-top:4px;">Score gauge, details...</div>
+      </div>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">Cupertino — Nav bar con back button</div>
+    <div class="mockup-body" style="background:#F2F2F7; padding:0; text-align:center;">
+      <div style="background:rgba(249,249,249,0.94); backdrop-filter:blur(10px); border-bottom:0.5px solid #C6C6C8; padding:12px 16px; display:flex; align-items:center; justify-content:space-between;">
+        <div style="color:#007AFF; font-size:17px;">‹ Pipeline</div>
+        <div style="color:#000; font-size:17px; font-weight:600;">Detalle</div>
+        <div style="width:60px;"></div>
+      </div>
+      <div style="padding:20px; color:#888; font-size:13px;">
+        <div style="width:80px;height:80px;border-radius:50%;background:#C7C7CC;margin:0 auto 12px;"></div>
+        <div style="color:#000;font-size:18px;font-weight:600;">Business Name</div>
+        <div style="color:#8E8E93;margin-top:4px;">Score gauge, details...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="options" style="margin-top:24px;">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>CupertinoNavigationBar estándar</h3>
+      <p>Nav bar translúcido con blur, botón back con título de la pantalla anterior, transición push/pop nativa. Exactamente como Settings o Contactos de Apple.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>CupertinoSliverNavigationBar (large title)</h3>
+      <p>Título grande que se colapsa al hacer scroll (como App Store o Música). Más espacio para el contenido, se siente premium y moderno.</p>
+    </div>
+  </div>
+</div>

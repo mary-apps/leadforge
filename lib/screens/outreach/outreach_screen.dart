@@ -11,6 +11,7 @@ import '../../services/outreach_service.dart';
 import '../../providers/businesses_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../providers/subscription_provider.dart';
+import '../../utils/network.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/error_state.dart';
 import '../../widgets/ios_toast.dart';
@@ -83,6 +84,17 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
         Haptics.medium();
         IosToast.show(context, 'Message generated');
       }
+    } on AuthExpiredException {
+      if (mounted) {
+        setState(() => _isGenerating = false);
+        IosToast.show(context, 'Session expired. Please sign in again.');
+      }
+    } on ProRequiredException {
+      if (mounted) {
+        setState(() => _isGenerating = false);
+        Haptics.heavy();
+        _showPaywall();
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _isGenerating = false);
@@ -116,157 +128,222 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
     final businessAsync = ref.watch(businessProvider(widget.businessId));
 
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('Create Outreach'),
-      ),
-      child: SafeArea(
-        child: businessAsync.when(
-          data: (business) {
-            if (business == null) {
-              return const Center(child: Text('Business not found'));
-            }
+      backgroundColor:
+          CupertinoDynamicColor.resolve(AppColors.background, context),
+      child: businessAsync.when(
+        data: (business) {
+          if (business == null) {
+            return const Center(child: Text('Business not found'));
+          }
 
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Generate message for',
-                    style: AppTypography.bodyMedium(context).copyWith(
-                      color: CupertinoDynamicColor.resolve(
-                          AppColors.textTertiary, context),
+          return CustomScrollView(
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            slivers: [
+              // Header with back button
+              SliverToBoxAdapter(
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppConstants.pageHorizontal,
+                      12,
+                      AppConstants.pageHorizontal,
+                      0,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    business.name,
-                    style: AppTypography.headlineLarge(context).copyWith(
-                      fontSize: 22,
-                      letterSpacing: -0.5,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Channel selector
-                  Text(
-                    'CHANNEL',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
-                      color: CupertinoDynamicColor.resolve(
-                          AppColors.textTertiary, context),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: OutreachChannel.values.map((channel) {
-                      final isSelected = channel == _selectedChannel;
-                      return _ChannelChip(
-                        channel: channel,
-                        isSelected: isSelected,
-                        onTap: () {
-                          setState(() => _selectedChannel = channel);
-                          Haptics.light();
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Tone selector
-                  Text(
-                    'TONE',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
-                      color: CupertinoDynamicColor.resolve(
-                          AppColors.textTertiary, context),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: _tones.map((tone) {
-                      final isSelected = tone == _selectedTone;
-                      return _ToneChip(
-                        tone: tone,
-                        isSelected: isSelected,
-                        onTap: () {
-                          setState(() => _selectedTone = tone);
-                          Haptics.light();
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Language selector
-                  Text(
-                    'LANGUAGE',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
-                      color: CupertinoDynamicColor.resolve(
-                          AppColors.textTertiary, context),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            Haptics.light();
+                            if (context.canPop()) {
+                              context.pop();
+                            } else {
+                              context.go('/business/${widget.businessId}');
+                            }
+                          },
+                          behavior: HitTestBehavior.opaque,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  CupertinoIcons.chevron_back,
+                                  size: 18,
+                                  color: CupertinoDynamicColor.resolve(
+                                      AppColors.accent, context),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  business.name,
+                                  style: AppTypography.bodyMedium(context)
+                                      .copyWith(
+                                    color: CupertinoDynamicColor.resolve(
+                                        AppColors.accent, context),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Create Outreach',
+                          style: AppTypography.displayLarge(context),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Generate a personalized message',
+                          style: AppTypography.bodyMedium(context).copyWith(
+                            color: CupertinoDynamicColor.resolve(
+                                AppColors.textSecondary, context),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 10,
-                    children: _languages.entries.map((entry) {
-                      final isSelected = entry.key == _selectedLanguage;
-                      return _ToneChip(
-                        tone: entry.value,
-                        isSelected: isSelected,
-                        onTap: () {
-                          setState(() => _selectedLanguage = entry.key);
-                          Haptics.light();
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 32),
-
-                  if (_generatedMessage == null && !_isGenerating)
-                    _GradientCTA(
-                      label: 'Generate Message',
-                      icon: CupertinoIcons.sparkles,
-                      onPressed: () => _generateMessage(business),
-                    ),
-
-                  if (_isGenerating) const _GeneratingAnimation(),
-
-                  if (_generatedMessage != null)
-                    _MessageResult(
-                      message: _generatedMessage!,
-                      onCopy: _copyMessage,
-                      onRegenerate: () => _regenerate(business),
-                    ),
-                ],
+                ),
               ),
-            );
-          },
-          loading: () => const Center(child: CupertinoActivityIndicator()),
-          error: (error, _) => ErrorState(
-            error: error,
-            onRetry: () => ref.invalidate(businessProvider(widget.businessId)),
-          ),
+
+              // Options
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppConstants.pageHorizontal,
+                  AppConstants.sectionGap,
+                  AppConstants.pageHorizontal,
+                  AppConstants.sectionGap,
+                ),
+                sliver: SliverList.list(
+                  children: [
+                    // Channel
+                    const _SectionLabel('CHANNEL'),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: OutreachChannel.values.map((channel) {
+                        final isSelected = channel == _selectedChannel;
+                        return _ChannelChip(
+                          channel: channel,
+                          isSelected: isSelected,
+                          onTap: () {
+                            setState(() => _selectedChannel = channel);
+                            Haptics.light();
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 22),
+
+                    // Tone + Language in a single row
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Tone
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const _SectionLabel('TONE'),
+                              const SizedBox(height: 10),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: _tones.map((tone) {
+                                  final isSelected = tone == _selectedTone;
+                                  return _ToneChip(
+                                    tone: tone,
+                                    isSelected: isSelected,
+                                    onTap: () {
+                                      setState(() => _selectedTone = tone);
+                                      Haptics.light();
+                                    },
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        // Language
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const _SectionLabel('LANG'),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 8,
+                              children: _languages.entries.map((entry) {
+                                final isSelected =
+                                    entry.key == _selectedLanguage;
+                                return _ToneChip(
+                                  tone: entry.value,
+                                  isSelected: isSelected,
+                                  onTap: () {
+                                    setState(
+                                        () => _selectedLanguage = entry.key);
+                                    Haptics.light();
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 28),
+
+                    if (_generatedMessage == null && !_isGenerating)
+                      _GradientCTA(
+                        label: 'Generate Message',
+                        icon: CupertinoIcons.paperplane,
+                        onPressed: () => _generateMessage(business),
+                      ),
+
+                    if (_isGenerating) const _GeneratingAnimation(),
+
+                    if (_generatedMessage != null)
+                      _MessageResult(
+                        message: _generatedMessage!,
+                        onCopy: _copyMessage,
+                        onRegenerate: () => _regenerate(business),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+        loading: () => const SafeArea(
+            child: Center(child: CupertinoActivityIndicator())),
+        error: (error, _) => ErrorState(
+          error: error,
+          onRetry: () => ref.invalidate(businessProvider(widget.businessId)),
         ),
       ),
     );
   }
 }
 
-// Channel chip with selected state
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: AppTypography.labelSmall(context).copyWith(
+        color: CupertinoDynamicColor.resolve(
+            AppColors.textSecondary, context),
+      ),
+    );
+  }
+}
+
 class _ChannelChip extends StatelessWidget {
   final OutreachChannel channel;
   final bool isSelected;
@@ -315,7 +392,8 @@ class _ChannelChip extends StatelessWidget {
             Icon(
               info['icon'] as IconData,
               color: isSelected
-                  ? CupertinoColors.white
+                  ? CupertinoDynamicColor.resolve(
+                      AppColors.chipActiveFg, context)
                   : CupertinoDynamicColor.resolve(
                       AppColors.textTertiary, context),
               size: 18,
@@ -325,7 +403,8 @@ class _ChannelChip extends StatelessWidget {
               info['name'] as String,
               style: AppTypography.bodyMedium(context).copyWith(
                 color: isSelected
-                    ? CupertinoColors.white
+                    ? CupertinoDynamicColor.resolve(
+                        AppColors.chipActiveFg, context)
                     : CupertinoDynamicColor.resolve(
                         AppColors.textPrimary, context),
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
@@ -340,38 +419,38 @@ class _ChannelChip extends StatelessWidget {
 
   Map<String, dynamic> _getChannelInfo(
       OutreachChannel channel, BuildContext context) {
+    final chipColor =
+        CupertinoDynamicColor.resolve(AppColors.chipActive, context);
     switch (channel) {
       case OutreachChannel.email:
         return {
           'name': 'Email',
           'icon': CupertinoIcons.mail,
-          'color': CupertinoDynamicColor.resolve(AppColors.accent, context),
+          'color': chipColor,
         };
       case OutreachChannel.whatsapp:
         return {
           'name': 'WhatsApp',
           'icon': CupertinoIcons.chat_bubble,
-          'color': CupertinoDynamicColor.resolve(AppColors.scoreGood, context),
+          'color': chipColor,
         };
       case OutreachChannel.instagram:
         return {
           'name': 'Instagram',
           'icon': CupertinoIcons.camera,
-          'color':
-              CupertinoDynamicColor.resolve(AppColors.textSecondary, context),
+          'color': chipColor,
         };
       case OutreachChannel.phone:
         return {
           'name': 'Phone',
           'icon': CupertinoIcons.phone,
-          'color': CupertinoDynamicColor.resolve(AppColors.accent, context),
+          'color': chipColor,
         };
       case OutreachChannel.other:
         return {
           'name': 'Other',
           'icon': CupertinoIcons.ellipsis,
-          'color':
-              CupertinoDynamicColor.resolve(AppColors.textSecondary, context),
+          'color': chipColor,
         };
     }
   }
@@ -651,7 +730,7 @@ class _MessageResult extends StatelessWidget {
                       .withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(CupertinoIcons.sparkles,
+                child: Icon(CupertinoIcons.checkmark_seal_fill,
                     color: CupertinoDynamicColor.resolve(
                         AppColors.scoreGood, context),
                     size: 14),

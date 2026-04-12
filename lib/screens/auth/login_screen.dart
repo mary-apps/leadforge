@@ -224,7 +224,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             boxShadow: isActive
                 ? [
                     BoxShadow(
-                      color: const Color(0xFF000000).withValues(alpha: 0.08),
+                      color: CupertinoDynamicColor.resolve(AppColors.accent, context).withValues(alpha: 0.08),
                       blurRadius: 4,
                       spreadRadius: 0,
                     ),
@@ -234,8 +234,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Text(
             label,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 15,
+            style: AppTypography.button(context).copyWith(
               fontWeight: FontWeight.w700,
               color: isActive ? accentColor : secondaryColor,
             ),
@@ -337,10 +336,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ),
                       suffix: Padding(
-                        padding: const EdgeInsets.only(right: 8),
+                        padding: const EdgeInsets.only(right: 4),
                         child: CupertinoButton(
                           padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
+                          minimumSize: const Size(44, 44),
                           onPressed: () {
                             setState(
                                 () => _obscurePassword = !_obscurePassword);
@@ -384,8 +383,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           onPressed: _forgotPassword,
                           child: Text(
                             'Forgot password?',
-                            style: TextStyle(
-                              fontSize: 13,
+                            style: AppTypography.labelLarge(context).copyWith(
                               color: accentColor,
                             ),
                           ),
@@ -414,9 +412,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             Expanded(
                               child: Text(
                                 _errorMessage!,
-                                style: TextStyle(
+                                style: AppTypography.labelLarge(context).copyWith(
                                   color: scoreBadColor,
-                                  fontSize: 13,
                                 ),
                               ),
                             ),
@@ -448,8 +445,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 const EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
                               'or',
-                              style: TextStyle(
-                                fontSize: 15,
+                              style: AppTypography.bodyLarge(context).copyWith(
                                 color: tertiaryColor,
                               ),
                             ),
@@ -488,19 +484,19 @@ class _HeroSection extends StatelessWidget {
   Widget build(BuildContext context) {
     const heroBg = CupertinoDynamicColor.withBrightness(
       color: Color(0xFF18181B),
-      darkColor: Color(0xFFFAFAFA),
+      darkColor: Color(0xFF111113),
     );
     const heroText = CupertinoDynamicColor.withBrightness(
       color: Color(0xFFFFFFFF),
-      darkColor: Color(0xFF18181B),
+      darkColor: Color(0xFFF0F0F0),
     );
     const heroMuted = CupertinoDynamicColor.withBrightness(
       color: Color(0xFF666666),
-      darkColor: Color(0xFF999999),
+      darkColor: Color(0xFF777777),
     );
     const heroLine = CupertinoDynamicColor.withBrightness(
       color: Color(0x14FFFFFF),
-      darkColor: Color(0x1418181B),
+      darkColor: Color(0x18FFFFFF),
     );
 
     final resolvedBg = CupertinoDynamicColor.resolve(heroBg, context);
@@ -578,8 +574,8 @@ class _HeroStat extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: color)),
-        Text(label, style: TextStyle(fontSize: 10, color: mutedColor)),
+        Text(value, style: AppTypography.titleMedium(context).copyWith(fontSize: 18, fontWeight: FontWeight.w900, color: color)),
+        Text(label, style: AppTypography.chip(context).copyWith(fontSize: 10, color: mutedColor)),
       ],
     );
   }

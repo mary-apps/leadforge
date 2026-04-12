@@ -1,0 +1,60 @@
+<h2>Typography: System font or custom?</h2>
+<p class="subtitle">Typography is the primary design element in a Crisp & Clean direction. The font choice defines the entire personality.</p>
+
+<div class="cards">
+  <div class="card" data-choice="system" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: #fafaf9; padding: 28px; min-height: 200px;">
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;">
+        <div style="font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #999; margin-bottom: 12px;">Dashboard</div>
+        <div style="font-size: 32px; font-weight: 700; color: #18181b; margin-bottom: 2px; letter-spacing: -0.5px;">Good evening, Ben</div>
+        <div style="font-size: 15px; color: #888; margin-bottom: 24px;">3 leads need attention</div>
+        <div style="font-size: 13px; font-weight: 600; color: #18181b; margin-bottom: 8px;">Mario's Pizzeria</div>
+        <div style="font-size: 13px; color: #999; margin-bottom: 16px;">Austin, TX · Score 82</div>
+        <div style="font-size: 13px; font-weight: 600; color: #18181b; margin-bottom: 8px;">Sunset Dental</div>
+        <div style="font-size: 13px; color: #999;">Denver, CO · Score 47</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. System Font (SF Pro)</h3>
+      <p>Keep the current system font. It's readable, familiar, and renders perfectly on iOS. Zero loading overhead. The editorial feel comes from spacing and weight contrast, not the typeface itself.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="inter" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: #fafaf9; padding: 28px; min-height: 200px;">
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+      <div style="font-family: 'Inter', sans-serif;">
+        <div style="font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #999; margin-bottom: 12px;">Dashboard</div>
+        <div style="font-size: 32px; font-weight: 700; color: #18181b; margin-bottom: 2px; letter-spacing: -0.5px;">Good evening, Ben</div>
+        <div style="font-size: 15px; color: #888; margin-bottom: 24px;">3 leads need attention</div>
+        <div style="font-size: 13px; font-weight: 600; color: #18181b; margin-bottom: 8px;">Mario's Pizzeria</div>
+        <div style="font-size: 13px; color: #999; margin-bottom: 16px;">Austin, TX · Score 82</div>
+        <div style="font-size: 13px; font-weight: 600; color: #18181b; margin-bottom: 8px;">Sunset Dental</div>
+        <div style="font-size: 13px; color: #999;">Denver, CO · Score 47</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Inter</h3>
+      <p>Popular in modern SaaS (Linear, Vercel, Resend). Tighter metrics than SF Pro, excellent readability at small sizes. Gives a slightly more "designed" feel while staying neutral. Adds ~100KB bundle.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="mixed" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: #fafaf9; padding: 28px; min-height: 200px;">
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+      <div>
+        <div style="font-family: -apple-system, system-ui, sans-serif; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #999; margin-bottom: 12px;">Dashboard</div>
+        <div style="font-family: 'DM Sans', sans-serif; font-size: 32px; font-weight: 700; color: #18181b; margin-bottom: 2px; letter-spacing: -0.5px;">Good evening, Ben</div>
+        <div style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; color: #888; margin-bottom: 24px;">3 leads need attention</div>
+        <div style="font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; color: #18181b; margin-bottom: 8px;">Mario's Pizzeria</div>
+        <div style="font-family: -apple-system, system-ui, sans-serif; font-size: 13px; color: #999; margin-bottom: 16px;">Austin, TX · Score 82</div>
+        <div style="font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; color: #18181b; margin-bottom: 8px;">Sunset Dental</div>
+        <div style="font-family: -apple-system, system-ui, sans-serif; font-size: 13px; color: #999;">Denver, CO · Score 47</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. DM Sans + System</h3>
+      <p>DM Sans for headings and emphasis (warm geometric shapes), system font for body text. Two-font pairing creates subtle personality without sacrificing iOS native feel in running text.</p>
+    </div>
+  </div>
+</div>

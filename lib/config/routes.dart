@@ -36,7 +36,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLoggingIn = state.matchedLocation == '/login';
       final isOnboarding = state.matchedLocation == '/onboarding';
 
-      // Not logged in -> go to login
+      // Guard business sub-routes (build-demo, outreach) for unauthenticated users
+      if (!isLoggedIn && state.matchedLocation.contains('/business/')) {
+        return '/login';
+      }
+
+      // Not logged in -> go to login (allow login page itself)
       if (!isLoggedIn && !isLoggingIn) {
         return '/login';
       }
@@ -124,7 +129,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/business/:id',
         pageBuilder: (context, state) {
           final id = state.pathParameters['id'];
-          if (id == null) return const CupertinoPage(child: SizedBox.shrink());
+          if (id == null || id.length < 10) {
+            return const CupertinoPage(child: SizedBox.shrink());
+          }
           return CupertinoPage(child: BusinessDetailScreen(businessId: id));
         },
       ),
@@ -134,7 +141,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/business/:id/build-demo',
         pageBuilder: (context, state) {
           final id = state.pathParameters['id'];
-          if (id == null) return const CupertinoPage(child: SizedBox.shrink());
+          if (id == null || id.length < 10) {
+            return const CupertinoPage(child: SizedBox.shrink());
+          }
           return CupertinoPage(child: BuildDemoScreen(businessId: id));
         },
       ),
@@ -144,7 +153,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/business/:id/outreach',
         pageBuilder: (context, state) {
           final id = state.pathParameters['id'];
-          if (id == null) return const CupertinoPage(child: SizedBox.shrink());
+          if (id == null || id.length < 10) {
+            return const CupertinoPage(child: SizedBox.shrink());
+          }
           return CupertinoPage(child: OutreachScreen(businessId: id));
         },
       ),

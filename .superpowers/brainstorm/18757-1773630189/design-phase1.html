@@ -1,0 +1,82 @@
+<h2>Fase 1: Theme + CupertinoApp Base</h2>
+<p class="subtitle">Fundamento sobre el que se construye todo lo demás</p>
+
+<div class="section">
+  <h3>Cambios principales</h3>
+  <div class="mockup">
+    <div class="mockup-header">Arquitectura del Theme</div>
+    <div class="mockup-body" style="font-family:monospace; font-size:13px; line-height:1.8; padding:20px; background:#1a1a2e; color:#e0e0e0;">
+      <div><span style="color:#82aaff;">MaterialApp</span> → <span style="color:#c3e88d;">CupertinoApp</span></div>
+      <div style="margin-top:12px;"><span style="color:#82aaff;">AppTheme (custom)</span> → <span style="color:#c3e88d;">CupertinoThemeData</span></div>
+      <div style="margin-left:20px;">├─ brightness: <span style="color:#f78c6c;">Brightness.light / .dark (auto)</span></div>
+      <div style="margin-left:20px;">├─ primaryColor: <span style="color:#f78c6c;">CupertinoColors.systemBlue</span></div>
+      <div style="margin-left:20px;">├─ scaffoldBackgroundColor: <span style="color:#f78c6c;">CupertinoColors.systemGroupedBackground</span></div>
+      <div style="margin-left:20px;">├─ textTheme: <span style="color:#f78c6c;">SF Pro (nativo iOS)</span></div>
+      <div style="margin-left:20px;">└─ barBackgroundColor: <span style="color:#f78c6c;">translúcido con blur</span></div>
+      <div style="margin-top:12px;"><span style="color:#82aaff;">Space Grotesk / google_fonts</span> → <span style="color:#c3e88d;">SF Pro (system font)</span></div>
+      <div style="margin-top:8px;"><span style="color:#82aaff;">Custom color tokens</span> → <span style="color:#c3e88d;">CupertinoColors.systemX</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Colores: Antes → Después</h3>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:12px;">
+    <div class="mockup">
+      <div class="mockup-header">Actual (Dark Only)</div>
+      <div class="mockup-body" style="padding:12px;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <div style="width:60px;text-align:center;">
+            <div style="width:40px;height:40px;border-radius:8px;background:#0A0A0F;margin:0 auto;border:1px solid #333;"></div>
+            <div style="font-size:10px;margin-top:4px;color:#888;">BG</div>
+          </div>
+          <div style="width:60px;text-align:center;">
+            <div style="width:40px;height:40px;border-radius:8px;background:#141418;margin:0 auto;border:1px solid #333;"></div>
+            <div style="font-size:10px;margin-top:4px;color:#888;">Surface</div>
+          </div>
+          <div style="width:60px;text-align:center;">
+            <div style="width:40px;height:40px;border-radius:8px;background:#F59E0B;margin:0 auto;"></div>
+            <div style="font-size:10px;margin-top:4px;color:#888;">Primary</div>
+          </div>
+          <div style="width:60px;text-align:center;">
+            <div style="width:40px;height:40px;border-radius:8px;background:#E879F9;margin:0 auto;"></div>
+            <div style="font-size:10px;margin-top:4px;color:#888;">Secondary</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header">Nuevo (Light Mode)</div>
+      <div class="mockup-body" style="padding:12px;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <div style="width:60px;text-align:center;">
+            <div style="width:40px;height:40px;border-radius:8px;background:#F2F2F7;margin:0 auto;border:1px solid #ddd;"></div>
+            <div style="font-size:10px;margin-top:4px;color:#888;">BG</div>
+          </div>
+          <div style="width:60px;text-align:center;">
+            <div style="width:40px;height:40px;border-radius:8px;background:#FFFFFF;margin:0 auto;border:1px solid #ddd;"></div>
+            <div style="font-size:10px;margin-top:4px;color:#888;">Surface</div>
+          </div>
+          <div style="width:60px;text-align:center;">
+            <div style="width:40px;height:40px;border-radius:8px;background:#007AFF;margin:0 auto;"></div>
+            <div style="font-size:10px;margin-top:4px;color:#888;">Primary</div>
+          </div>
+          <div style="width:60px;text-align:center;">
+            <div style="width:40px;height:40px;border-radius:8px;background:#8E8E93;margin:0 auto;"></div>
+            <div style="font-size:10px;margin-top:4px;color:#888;">Secondary</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Archivos afectados en Fase 1</h3>
+  <ul style="line-height:2;">
+    <li><code>lib/config/theme.dart</code> — reescribir con CupertinoThemeData + helper para colores dinámicos</li>
+    <li><code>lib/main.dart</code> — MaterialApp → CupertinoApp</li>
+    <li><code>lib/config/routes.dart</code> — adaptar GoRouter para Cupertino page transitions</li>
+    <li><code>pubspec.yaml</code> — remover google_fonts (SF Pro es system font en iOS)</li>
+  </ul>
+</div>

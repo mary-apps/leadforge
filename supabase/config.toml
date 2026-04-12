@@ -45,3 +45,20 @@ enable_confirmations = false
 enabled = true
 client_id = "YOUR_APPLE_CLIENT_ID"
 secret = "YOUR_APPLE_SECRET"
+
+# Edge Functions verify JWT internally via auth.getUser(),
+# so disable gateway-level verification which rejects ES256 tokens.
+[functions.scout]
+verify_jwt = false
+
+[functions.audit]
+verify_jwt = false
+
+[functions.build-demo]
+verify_jwt = false
+
+[functions.outreach]
+verify_jwt = false
+
+[functions.demo]
+verify_jwt = false

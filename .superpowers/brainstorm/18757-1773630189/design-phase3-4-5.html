@@ -1,0 +1,70 @@
+<h2>Fases 3, 4 y 5</h2>
+<p class="subtitle">Widgets, pantallas y limpieza</p>
+
+<div class="section">
+  <h3>Fase 3: Widgets Comunes</h3>
+  <div class="mockup">
+    <div class="mockup-header">Migración de widgets</div>
+    <div class="mockup-body" style="padding:20px; font-family:monospace; font-size:13px; line-height:1.7; background:#1a1a2e; color:#e0e0e0;">
+      <div><span style="color:#82aaff;">BrutalButton</span> → <span style="color:#c3e88d;">CupertinoButton / CupertinoButton.filled</span></div>
+      <div><span style="color:#82aaff;">BrutalCard</span> → <span style="color:#c3e88d;">CupertinoListSection / Container con estilo iOS</span></div>
+      <div><span style="color:#82aaff;">BusinessCard</span> → <span style="color:#c3e88d;">CupertinoListTile con avatar y chevron</span></div>
+      <div><span style="color:#82aaff;">NicheChips</span> → <span style="color:#c3e88d;">Segmented control o pills con CupertinoColors</span></div>
+      <div><span style="color:#82aaff;">EmptyState</span> → <span style="color:#c3e88d;">Simplificar: SF Symbol + texto + CupertinoButton</span></div>
+      <div><span style="color:#82aaff;">StatCardAnimated</span> → <span style="color:#c3e88d;">Mantener con colores iOS, sin gradientes</span></div>
+      <div><span style="color:#82aaff;">AnimatedScoreGauge</span> → <span style="color:#c3e88d;">Mantener, adaptar colores a CupertinoColors</span></div>
+      <div><span style="color:#82aaff;">SearchSuggestions</span> → <span style="color:#c3e88d;">CupertinoSearchTextField + lista nativa</span></div>
+      <div><span style="color:#82aaff;">SkeletonLoaders</span> → <span style="color:#c3e88d;">Mantener, adaptar colores</span></div>
+      <div><span style="color:#82aaff;">WeeklyActivityGraph</span> → <span style="color:#c3e88d;">Mantener (fl_chart), adaptar colores</span></div>
+      <div><span style="color:#82aaff;">ShareBusinessSheet</span> → <span style="color:#c3e88d;">CupertinoActionSheet</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Fase 4: Pantallas (una por una)</h3>
+  <div class="mockup">
+    <div class="mockup-header">Adaptación por pantalla</div>
+    <div class="mockup-body" style="padding:20px; font-family:monospace; font-size:13px; line-height:1.7; background:#1a1a2e; color:#e0e0e0;">
+      <div style="color:#c3e88d;">// Cada pantalla:</div>
+      <div>1. Reemplazar Scaffold → CupertinoPageScaffold</div>
+      <div>2. Usar widgets Cupertino migrados en Fase 3</div>
+      <div>3. Adaptar layouts a patrones iOS (grouped lists, insets)</div>
+      <div style="margin-top:12px;">
+      <div><span style="color:#f78c6c;">Dashboard</span> — CupertinoSliverNavigationBar("LeadForge"), grouped sections</div>
+      <div><span style="color:#f78c6c;">Pipeline</span> — CupertinoSegmentedControl para stages, lista agrupada</div>
+      <div><span style="color:#f78c6c;">Scout</span> — CupertinoSearchTextField, resultados en lista nativa</div>
+      <div><span style="color:#f78c6c;">Messages</span> — CupertinoListSection con avatars</div>
+      <div><span style="color:#f78c6c;">Settings</span> — CupertinoListSection.insetGrouped (estilo Settings de iOS)</div>
+      <div><span style="color:#f78c6c;">Login</span> — CupertinoTextField, CupertinoButton, SignInWithApple</div>
+      <div><span style="color:#f78c6c;">Onboarding</span> — CupertinoPageScaffold, estilo setup de iOS</div>
+      <div><span style="color:#f78c6c;">BusinessDetail</span> — Score gauge + CupertinoListSection para info</div>
+      <div><span style="color:#f78c6c;">BuildDemo</span> — CupertinoFormSection</div>
+      <div><span style="color:#f78c6c;">Outreach</span> — CupertinoFormSection</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Fase 5: Limpieza</h3>
+  <div class="mockup">
+    <div class="mockup-header">Eliminar widgets y dependencias obsoletos</div>
+    <div class="mockup-body" style="padding:20px; font-family:monospace; font-size:13px; line-height:1.7; background:#1a1a2e; color:#e0e0e0;">
+      <div style="color:#ff5370;">// Eliminar archivos:</div>
+      <div style="color:#ff5370;">lib/widgets/aurora_background.dart</div>
+      <div style="color:#ff5370;">lib/widgets/glow_card.dart</div>
+      <div style="color:#ff5370;">lib/widgets/shimmer_text.dart</div>
+      <div style="color:#ff5370;">lib/widgets/pulse_dot.dart</div>
+      <div style="color:#ff5370;">lib/widgets/forge_loader.dart</div>
+      <div style="color:#ff5370;">lib/widgets/glass_container.dart (si existe)</div>
+      <div style="margin-top:12px;color:#ff5370;">// Eliminar dependencias (pubspec.yaml):</div>
+      <div style="color:#ff5370;">google_fonts (SF Pro es system font)</div>
+      <div style="color:#ff5370;">confetti (ya no se usa)</div>
+      <div style="color:#ff5370;">shimmer (reemplazado por skeleton adaptado)</div>
+      <div style="margin-top:12px;color:#c3e88d;">// Mantener:</div>
+      <div style="color:#c3e88d;">flutter_animate (para staggered lists)</div>
+      <div style="color:#c3e88d;">fl_chart (para gráficas)</div>
+    </div>
+  </div>
+</div>

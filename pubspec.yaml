@@ -26,7 +26,10 @@ dependencies:
   fl_chart: ^0.66.0
   cached_network_image: ^3.3.0
   google_fonts: ^6.1.0
-  
+
+  # HTTP
+  http: ^1.1.0
+
   # Web & Content
   webview_flutter: ^4.4.0
   url_launcher: ^6.2.0

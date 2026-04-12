@@ -1,0 +1,88 @@
+<h2>How should the audit score be displayed?</h2>
+<p class="subtitle">The score (0-100) is the core data point for each business. It needs to communicate quality at a glance without being visually heavy.</p>
+
+<div class="cards">
+  <div class="card" data-choice="number-only" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: #fafaf9; padding: 32px; min-height: 200px; display: flex; align-items: center; justify-content: center;">
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+      <div style="text-align: center;">
+        <div style="font-family: 'DM Sans', sans-serif; font-size: 72px; font-weight: 800; color: #18181b; letter-spacing: -2px; line-height: 1;">82</div>
+        <div style="font-family: -apple-system, system-ui, sans-serif; font-size: 13px; color: #999; margin-top: 8px; letter-spacing: 1px; text-transform: uppercase;">Audit Score</div>
+        <div style="display: flex; justify-content: center; gap: 4px; margin-top: 12px;">
+          <div style="width: 40px; height: 3px; border-radius: 2px; background: #166534;"></div>
+          <div style="width: 40px; height: 3px; border-radius: 2px; background: #166534;"></div>
+          <div style="width: 40px; height: 3px; border-radius: 2px; background: #166534;"></div>
+          <div style="width: 40px; height: 3px; border-radius: 2px; background: #166534;"></div>
+          <div style="width: 40px; height: 3px; border-radius: 2px; background: #e5e5e3;"></div>
+        </div>
+        <div style="font-family: -apple-system, system-ui, sans-serif; font-size: 13px; color: #166534; font-weight: 500; margin-top: 8px;">Good</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. Large Number + Bar</h3>
+      <p>Giant typographic number, tiny segmented bar underneath for quick visual read. Maximum minimalism. The number IS the design.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="thin-ring" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: #fafaf9; padding: 32px; min-height: 200px; display: flex; align-items: center; justify-content: center;">
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+      <div style="text-align: center; position: relative;">
+        <!-- Thin ring using CSS -->
+        <div style="width: 120px; height: 120px; border-radius: 50%; border: 2px solid #e5e5e3; position: relative; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+          <!-- Progress arc simulation -->
+          <div style="position: absolute; inset: -2px; border-radius: 50%; border: 2px solid transparent; border-top-color: #166534; border-right-color: #166534; border-bottom-color: #166534; transform: rotate(20deg);"></div>
+          <div>
+            <div style="font-family: 'DM Sans', sans-serif; font-size: 36px; font-weight: 700; color: #18181b; letter-spacing: -1px;">82</div>
+          </div>
+        </div>
+        <div style="font-family: -apple-system, system-ui, sans-serif; font-size: 13px; color: #166534; font-weight: 500; margin-top: 12px;">Good</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Thin Ring</h3>
+      <p>Ultra-thin circular progress (2px stroke). Number centered inside. Familiar pattern but dramatically simplified from the current thick gradient ring. Subtle and refined.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="inline-badge" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: #fafaf9; padding: 28px; min-height: 200px;">
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+      <div style="font-family: -apple-system, system-ui, sans-serif;">
+        <div style="font-family: 'DM Sans', sans-serif; font-size: 20px; font-weight: 700; color: #18181b; margin-bottom: 4px;">Mario's Pizzeria</div>
+        <div style="font-size: 14px; color: #999; margin-bottom: 20px;">Austin, TX</div>
+
+        <div style="display: flex; align-items: center; gap: 12px; padding: 16px 0; border-top: 1px solid #f0f0ee; border-bottom: 1px solid #f0f0ee;">
+          <div style="font-family: 'DM Sans', sans-serif; font-size: 36px; font-weight: 800; color: #18181b; letter-spacing: -1px;">82</div>
+          <div>
+            <div style="font-size: 13px; font-weight: 500; color: #166534;">Good web presence</div>
+            <div style="font-size: 12px; color: #999; margin-top: 2px;">Mobile-friendly, has SEO basics</div>
+          </div>
+        </div>
+
+        <div style="padding: 12px 0; border-bottom: 1px solid #f0f0ee;">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="font-size: 13px; color: #666;">Mobile</span>
+            <span style="font-size: 13px; font-weight: 600; color: #166534;">Pass</span>
+          </div>
+        </div>
+        <div style="padding: 12px 0; border-bottom: 1px solid #f0f0ee;">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="font-size: 13px; color: #666;">SEO</span>
+            <span style="font-size: 13px; font-weight: 600; color: #166534;">Pass</span>
+          </div>
+        </div>
+        <div style="padding: 12px 0; border-bottom: 1px solid #f0f0ee;">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="font-size: 13px; color: #666;">Content</span>
+            <span style="font-size: 13px; font-weight: 600; color: #92400e;">Weak</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. Inline Score</h3>
+      <p>No separate gauge at all. Score displayed inline as a large number beside the business info, with breakdown as a simple list below. Fully integrated into the detail page flow.</p>
+    </div>
+  </div>
+</div>

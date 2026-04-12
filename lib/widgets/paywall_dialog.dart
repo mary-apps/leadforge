@@ -116,14 +116,13 @@ class _PaywallSheetState extends ConsumerState<_PaywallSheet> {
                     final result = await ref
                         .read(subscriptionProvider.notifier)
                         .purchase(package);
-                    if (mounted) {
-                      setState(() => _isPurchasing = false);
-                      if (result.success) {
-                        Navigator.pop(context);
-                        IosToast.show(context, 'Welcome to Pro!');
-                      } else if (result.error != null) {
-                        IosToast.show(context, result.error!);
-                      }
+                    if (!context.mounted) return;
+                    setState(() => _isPurchasing = false);
+                    if (result.success) {
+                      Navigator.pop(context);
+                      IosToast.show(context, 'Welcome to Pro!');
+                    } else if (result.error != null) {
+                      IosToast.show(context, result.error!);
                     }
                   },
             child: Container(
@@ -164,13 +163,12 @@ class _PaywallSheetState extends ConsumerState<_PaywallSheet> {
                   final result = await ref
                       .read(subscriptionProvider.notifier)
                       .restore();
-                  if (mounted) {
-                    if (result.isPro) {
-                      Navigator.pop(context);
-                      IosToast.show(context, 'Pro restored!');
-                    } else {
-                      IosToast.show(context, 'No previous purchase found');
-                    }
+                  if (!context.mounted) return;
+                  if (result.isPro) {
+                    Navigator.pop(context);
+                    IosToast.show(context, 'Pro restored!');
+                  } else {
+                    IosToast.show(context, 'No previous purchase found');
                   }
                 },
                 child: Text(

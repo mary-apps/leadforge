@@ -1,0 +1,47 @@
+<h2>Fase 2: Navegación</h2>
+<p class="subtitle">Tab bar + navigation bars + transiciones</p>
+
+<div class="section">
+  <h3>Bottom Navigation</h3>
+  <div class="mockup">
+    <div class="mockup-header">CupertinoTabScaffold + CupertinoTabBar</div>
+    <div class="mockup-body" style="padding:20px; font-family:monospace; font-size:13px; line-height:1.8; background:#1a1a2e; color:#e0e0e0;">
+      <div><span style="color:#82aaff;">AppBottomNav (floating glass + FAB)</span></div>
+      <div style="margin-left:20px;">→ <span style="color:#c3e88d;">CupertinoTabBar</span></div>
+      <div style="margin-left:40px;">├─ Tab 0: Dashboard (house.fill)</div>
+      <div style="margin-left:40px;">├─ Tab 1: Pipeline (chart.bar.fill)</div>
+      <div style="margin-left:40px;">├─ Tab 2: Scout (magnifyingglass)</div>
+      <div style="margin-left:40px;">├─ Tab 3: Messages (bubble.left.fill)</div>
+      <div style="margin-left:40px;">└─ Tab 4: Settings (gearshape.fill)</div>
+      <div style="margin-top:12px;color:#f78c6c;">Eliminar: scout orb FAB, breathing animation, glass effect</div>
+      <div style="color:#f78c6c;">Eliminar: lib/widgets/app_bottom_nav.dart (reemplazar completo)</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Detail Navigation</h3>
+  <div class="mockup">
+    <div class="mockup-header">CupertinoNavigationBar en pantallas de detalle</div>
+    <div class="mockup-body" style="padding:20px; font-family:monospace; font-size:13px; line-height:1.8; background:#1a1a2e; color:#e0e0e0;">
+      <div><span style="color:#c3e88d;">CupertinoNavigationBar(</span></div>
+      <div style="margin-left:20px;">previousPageTitle: "Pipeline",</div>
+      <div style="margin-left:20px;">middle: Text("Business Name"),</div>
+      <div style="margin-left:20px;">backgroundColor: translúcido,</div>
+      <div><span style="color:#c3e88d;">)</span></div>
+      <div style="margin-top:12px;color:#f78c6c;">Eliminar: custom slide+fade transitions</div>
+      <div style="color:#c3e88d;">Usar: CupertinoPageRoute (push/pop nativo)</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Archivos afectados en Fase 2</h3>
+  <ul style="line-height:2;">
+    <li><code>lib/widgets/app_bottom_nav.dart</code> — reescribir como CupertinoTabBar</li>
+    <li><code>lib/config/routes.dart</code> — CupertinoPageRoute para detalles</li>
+    <li><code>lib/screens/audit/business_detail_screen.dart</code> — agregar CupertinoNavigationBar</li>
+    <li><code>lib/screens/build/build_demo_screen.dart</code> — agregar CupertinoNavigationBar</li>
+    <li><code>lib/screens/outreach/outreach_screen.dart</code> — agregar CupertinoNavigationBar</li>
+  </ul>
+</div>

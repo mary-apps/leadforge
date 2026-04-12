@@ -1,8 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 
-import '../config/constants.dart';
 import '../models/message.dart';
 import '../utils/network.dart';
 import 'supabase_service.dart';
@@ -16,29 +13,18 @@ class OutreachService {
     required String language,
     String? demoUrl,
   }) async {
-    final token = await SupabaseService.getAuthToken();
-
-    if (token == null) {
-      throw Exception('Not authenticated');
-    }
-
-    final response = await httpWithRetry(() => http.post(
-      Uri.parse(AppConstants.outreachEndpoint),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: json.encode({
+    final data = await invokeEdgeFunction(
+      'outreach',
+      body: {
         'business_id': businessId,
         'channel': channel.name,
         'tone': tone,
         'language': language,
         if (demoUrl != null) 'demo_url': demoUrl,
-      }),
-    ));
+      },
+    );
 
     try {
-      final data = json.decode(response.body) as Map<String, dynamic>;
       if (data['message'] != null) {
         return Message.fromJson(data['message'] as Map<String, dynamic>);
       }
@@ -62,7 +48,9 @@ class OutreachService {
         .eq('business_id', businessId)
         .order('created_at', ascending: false);
 
-    return (response as List)
+    final list = response as List?;
+    if (list == null) return [];
+    return list
         .map((json) => Message.fromJson(json as Map<String, dynamic>))
         .toList();
   }
@@ -96,5 +84,3 @@ class OutreachService {
         .eq('id', messageId);
   }
 }
-
-// ProRequiredException is in utils/network.dart

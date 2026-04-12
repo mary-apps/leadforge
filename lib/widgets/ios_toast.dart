@@ -99,7 +99,7 @@ class _ToastWidgetState extends State<_ToastWidget>
             ),
             child: Text(
               widget.message,
-              style: TextStyle(fontSize: 15, color: fgColor),
+              style: AppTypography.bodyLarge(context).copyWith(color: fgColor),
             ),
           ),
         ),

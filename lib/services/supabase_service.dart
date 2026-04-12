@@ -52,18 +52,21 @@ class SupabaseService {
     var session = client.auth.currentSession;
     if (session == null) return null;
 
-    // Check if token is expired or about to expire (within 30s)
+    // Check if token is expired or about to expire (within 60s)
     final expiresAt = session.expiresAt;
-    if (expiresAt != null) {
-      final expiresDate = DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
-      if (DateTime.now().isAfter(expiresDate.subtract(const Duration(seconds: 30)))) {
-        try {
-          final response = await client.auth.refreshSession();
-          session = response.session;
-        } catch (_) {
-          // If refresh fails, return current token and let the server reject it
-          return session?.accessToken;
-        }
+    final needsRefresh = expiresAt == null ||
+        DateTime.now().isAfter(
+          DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000)
+              .subtract(const Duration(seconds: 60)),
+        );
+
+    if (needsRefresh) {
+      try {
+        final response = await client.auth.refreshSession();
+        session = response.session;
+      } catch (_) {
+        // Refresh failed — still return existing token and let the server
+        // decide via 401 whether it's truly expired.
       }
     }
     return session?.accessToken;

@@ -36,10 +36,14 @@ void main() async {
     anonKey: AppConstants.supabaseAnonKey,
   );
 
-  // Initialize RevenueCat
-  await Purchases.setLogLevel(kReleaseMode ? LogLevel.warn : LogLevel.error);
-  final configuration = PurchasesConfiguration(AppConstants.revenueCatApiKey);
-  await Purchases.configure(configuration);
+  // Initialize RevenueCat (non-fatal — app works without subscriptions)
+  try {
+    await Purchases.setLogLevel(kReleaseMode ? LogLevel.warn : LogLevel.error);
+    final configuration = PurchasesConfiguration(AppConstants.revenueCatApiKey);
+    await Purchases.configure(configuration);
+  } catch (e) {
+    debugPrint('RevenueCat init failed (subscriptions unavailable): $e');
+  }
 
   runApp(
     const ProviderScope(

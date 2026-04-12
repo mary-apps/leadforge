@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LeadForge — Full Design Preview</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0f; color: white; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif; }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+  h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 8px; }
+  .subtitle { color: rgba(255,255,255,0.5); font-size: 14px; margin-bottom: 32px; }
+  h2 { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: rgba(255,255,255,0.8); }
+
+  .screens { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
+
+  .phone {
+    width: 320px;
+    margin: 0 auto;
+    background: #080810;
+    border-radius: 36px;
+    padding: 12px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .phone-inner {
+    background: #080810;
+    border-radius: 28px;
+    overflow: hidden;
+    min-height: 640px;
+    display: flex;
+    flex-direction: column;
+  }
+  .screen-label {
+    text-align: center;
+    color: rgba(255,255,255,0.4);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    margin-top: 12px;
+    text-transform: uppercase;
+  }
+
+  /* Design tokens */
+  :root {
+    --bg: #080810;
+    --surface: #111118;
+    --surface-light: #18181F;
+    --primary: #00B4D8;
+    --primary-dark: #0096B4;
+    --primary-light: #48CAE4;
+    --text: #FFFFFF;
+    --text-secondary: rgba(255,255,255,0.45);
+    --text-tertiary: rgba(255,255,255,0.3);
+    --border: rgba(255,255,255,0.06);
+    --success: #34D399;
+    --warning: #FBBF24;
+    --danger: #F87171;
+  }
+
+  /* ============ COLOR PALETTE SECTION ============ */
+  .palette-section {
+    margin-bottom: 40px;
+    padding: 24px;
+    background: var(--surface);
+    border-radius: 16px;
+  }
+  .palette-row {
+    display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+  }
+  .swatch {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .swatch-color {
+    width: 48px; height: 48px; border-radius: 12px;
+  }
+  .swatch-label {
+    font-size: 10px; color: var(--text-secondary); font-family: 'SF Mono', monospace;
+  }
+  .swatch-name {
+    font-size: 11px; color: var(--text-tertiary);
+  }
+
+  /* ============ SHARED SCREEN STYLES ============ */
+  .s-pad { padding: 20px; }
+  .s-gap { display: flex; flex-direction: column; }
+  .s-row { display: flex; gap: 10px; }
+
+  .stat-card {
+    flex: 1;
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 14px;
+  }
+  .stat-label {
+    color: var(--text-tertiary);
+    font-size: 11px;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .stat-value {
+    color: white;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -1px;
+  }
+  .stat-trend {
+    font-size: 11px;
+    margin-top: 2px;
+  }
+
+  .btn-primary {
+    background: var(--primary);
+    color: var(--bg);
+    border: none;
+    border-radius: 10px;
+    padding: 13px 20px;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: -0.2px;
+    text-align: center;
+    width: 100%;
+  }
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--text);
+    border: none;
+    border-radius: 10px;
+    padding: 13px 20px;
+    font-weight: 600;
+    font-size: 14px;
+    text-align: center;
+  }
+
+  /* Nav bar */
+  .nav-bar {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 8px 16px 6px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    margin-top: auto;
+  }
+  .nav-item {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    font-size: 10px; color: var(--text-tertiary); font-weight: 500;
+  }
+  .nav-item.active { color: var(--primary); }
+  .nav-icon { font-size: 20px; }
+  .nav-fab {
+    width: 44px; height: 44px; background: var(--primary); border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--bg); font-size: 20px; margin-top: -20px;
+  }
+
+  /* Section divider */
+  .section-title {
+    color: var(--text-tertiary);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin: 16px 0 10px;
+  }
+
+  /* Search bar */
+  .search-bar {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-tertiary);
+    font-size: 15px;
+  }
+  .search-bar .icon { color: var(--text-tertiary); font-size: 18px; }
+
+  /* Chips */
+  .chips { display: flex; gap: 8px; overflow: hidden; }
+  .chip {
+    background: var(--surface);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .chip.active {
+    background: var(--primary);
+    color: var(--bg);
+    font-weight: 600;
+  }
+
+  /* Business card */
+  .biz-card {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .biz-avatar {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: rgba(0,180,216,0.1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .biz-info { flex: 1; min-width: 0; }
+  .biz-name { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
+  .biz-address { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+  .biz-meta { display: flex; gap: 12px; margin-top: 6px; }
+  .biz-badge {
+    font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px;
+  }
+  .biz-score { background: rgba(52,211,153,0.12); color: var(--success); }
+  .biz-status { background: rgba(0,180,216,0.1); color: var(--primary-light); }
+
+  /* Detail header */
+  .detail-header {
+    padding: 20px;
+    background: linear-gradient(180deg, rgba(0,180,216,0.06) 0%, transparent 100%);
+  }
+  .detail-back { color: var(--primary); font-size: 14px; font-weight: 500; margin-bottom: 16px; }
+  .detail-name { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+  .detail-address { font-size: 13px; color: var(--text-tertiary); margin-top: 4px; }
+
+  /* Contact actions */
+  .contact-actions { display: flex; gap: 10px; }
+  .contact-btn {
+    flex: 1; background: var(--surface); border-radius: 10px; padding: 12px 8px;
+    text-align: center;
+  }
+  .contact-icon { font-size: 20px; margin-bottom: 4px; }
+  .contact-label { font-size: 11px; color: var(--text-secondary); font-weight: 500; }
+
+  /* Score gauge */
+  .score-ring {
+    width: 100px; height: 100px; border-radius: 50%;
+    background: conic-gradient(var(--success) 0% 72%, rgba(255,255,255,0.05) 72% 100%);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto;
+  }
+  .score-inner {
+    width: 80px; height: 80px; border-radius: 50%; background: var(--bg);
+    display: flex; align-items: center; justify-content: center; flex-direction: column;
+  }
+  .score-num { font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+  .score-label { font-size: 9px; color: var(--text-tertiary); font-weight: 500; }
+
+  /* Login */
+  .login-logo { text-align: center; margin-bottom: 32px; padding-top: 60px; }
+  .login-logo-icon { font-size: 36px; color: var(--primary); margin-bottom: 8px; }
+  .login-logo-text { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+  .login-tagline { font-size: 13px; color: var(--text-tertiary); margin-top: 4px; }
+
+  .login-toggle {
+    display: flex; background: var(--surface); border-radius: 10px; padding: 3px; margin-bottom: 20px;
+  }
+  .login-tab {
+    flex: 1; text-align: center; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 600;
+    color: var(--text-tertiary);
+  }
+  .login-tab.active { background: var(--primary); color: var(--bg); }
+
+  .input-field {
+    background: var(--surface); border: none; border-radius: 10px;
+    padding: 14px 16px; width: 100%; color: white; font-size: 15px;
+    margin-bottom: 12px; outline: none;
+  }
+  .input-field::placeholder { color: var(--text-tertiary); }
+
+  /* Pipeline */
+  .pipeline-stage {
+    background: var(--surface); border-radius: 12px; padding: 14px; margin-bottom: 10px;
+  }
+  .stage-header {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .stage-name { font-size: 14px; font-weight: 600; }
+  .stage-count {
+    font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 6px;
+    font-family: 'SF Mono', monospace;
+  }
+  .stage-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 0;
+    border-top: 1px solid var(--border); margin-top: 10px;
+  }
+  .stage-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* Settings */
+  .settings-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 0; border-bottom: 1px solid var(--border);
+  }
+  .settings-label { font-size: 15px; }
+  .settings-value { font-size: 14px; color: var(--text-tertiary); }
+  .usage-bar { height: 4px; border-radius: 2px; background: rgba(255,255,255,0.06); margin-top: 8px; }
+  .usage-fill { height: 100%; border-radius: 2px; }
+
+  /* Responsive grid */
+  @media (max-width: 700px) { .screens { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>LeadForge — Minimal Sharp + Cyan Frost</h1>
+<p class="subtitle">Complete design system preview. All screens use the new style.</p>
+
+<!-- Color Palette -->
+<div class="palette-section">
+  <h2>Color Palette</h2>
+  <div class="palette-row">
+    <div class="swatch">
+      <div class="swatch-color" style="background: #00B4D8;"></div>
+      <div class="swatch-label">#00B4D8</div>
+      <div class="swatch-name">Primary</div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background: #48CAE4;"></div>
+      <div class="swatch-label">#48CAE4</div>
+      <div class="swatch-name">Primary Light</div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background: #0096B4;"></div>
+      <div class="swatch-label">#0096B4</div>
+      <div class="swatch-name">Primary Dark</div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background: #34D399;"></div>
+      <div class="swatch-label">#34D399</div>
+      <div class="swatch-name">Success</div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background: #FBBF24;"></div>
+      <div class="swatch-label">#FBBF24</div>
+      <div class="swatch-name">Warning</div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background: #F87171;"></div>
+      <div class="swatch-label">#F87171</div>
+      <div class="swatch-name">Danger</div>
+    </div>
+  </div>
+  <div class="palette-row">
+    <div class="swatch">
+      <div class="swatch-color" style="background: #080810;"></div>
+      <div class="swatch-label">#080810</div>
+      <div class="swatch-name">Background</div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background: #111118; border: 1px solid rgba(255,255,255,0.08);"></div>
+      <div class="swatch-label">#111118</div>
+      <div class="swatch-name">Surface</div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background: #18181F; border: 1px solid rgba(255,255,255,0.08);"></div>
+      <div class="swatch-label">#18181F</div>
+      <div class="swatch-name">Surface Light</div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREENS -->
+<div class="screens">
+
+  <!-- LOGIN -->
+  <div>
+    <div class="phone">
+      <div class="phone-inner" style="background: var(--bg);">
+        <div class="s-pad" style="flex: 1;">
+          <div class="login-logo">
+            <div class="login-logo-icon">⚡</div>
+            <div class="login-logo-text">LeadForge</div>
+            <div class="login-tagline">Find leads. Close deals.</div>
+          </div>
+
+          <div class="login-toggle">
+            <div class="login-tab active">Sign In</div>
+            <div class="login-tab">Create Account</div>
+          </div>
+
+          <input class="input-field" placeholder="Email" style="border: none;">
+          <input class="input-field" placeholder="Password" type="password" style="border: none;">
+
+          <div style="text-align: right; margin-bottom: 20px;">
+            <span style="color: var(--primary); font-size: 13px; font-weight: 500;">Forgot password?</span>
+          </div>
+
+          <div class="btn-primary">Sign In</div>
+
+          <div style="text-align: center; margin-top: 20px; color: var(--text-tertiary); font-size: 13px;">or</div>
+
+          <div class="btn-secondary" style="margin-top: 12px; border: 1px solid var(--border);">
+             Continue with Apple
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="screen-label">Login</div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div>
+    <div class="phone">
+      <div class="phone-inner" style="background: var(--bg);">
+        <div class="s-pad s-gap" style="gap: 16px; flex: 1;">
+          <!-- Header -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 16px;">
+            <div>
+              <div style="color: var(--text-tertiary); font-size: 13px;">Good morning</div>
+              <div style="font-size: 22px; font-weight: 700; letter-spacing: -0.5px;">Benjamin</div>
+            </div>
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(0,180,216,0.1); display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 14px; font-weight: 600;">B</div>
+          </div>
+
+          <!-- Stats -->
+          <div class="s-row">
+            <div class="stat-card">
+              <div class="stat-label">Leads</div>
+              <div class="stat-value">24</div>
+              <div class="stat-trend" style="color: var(--success);">+3</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Audits</div>
+              <div class="stat-value">12</div>
+              <div class="stat-trend" style="color: var(--primary-light);">+1</div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="section-title">Quick actions</div>
+          <div class="s-row">
+            <div style="flex: 1; background: var(--primary); border-radius: 12px; padding: 14px; text-align: center;">
+              <div style="font-size: 20px; margin-bottom: 4px;">🔍</div>
+              <div style="color: var(--bg); font-size: 12px; font-weight: 700;">Scout</div>
+            </div>
+            <div style="flex: 1; background: var(--surface); border-radius: 12px; padding: 14px; text-align: center;">
+              <div style="font-size: 20px; margin-bottom: 4px;">📊</div>
+              <div style="color: var(--text-secondary); font-size: 12px; font-weight: 600;">Pipeline</div>
+            </div>
+            <div style="flex: 1; background: var(--surface); border-radius: 12px; padding: 14px; text-align: center;">
+              <div style="font-size: 20px; margin-bottom: 4px;">✉️</div>
+              <div style="color: var(--text-secondary); font-size: 12px; font-weight: 600;">Outreach</div>
+            </div>
+          </div>
+
+          <!-- Recent -->
+          <div class="section-title">Recent leads</div>
+          <div class="biz-card">
+            <div class="biz-avatar">🦷</div>
+            <div class="biz-info">
+              <div class="biz-name">Bright Smile Dental</div>
+              <div class="biz-address">123 Main St, LA</div>
+              <div class="biz-meta">
+                <span class="biz-badge biz-score">72</span>
+                <span class="biz-badge biz-status">Audited</span>
+              </div>
+            </div>
+          </div>
+          <div class="biz-card" style="margin-top: 8px;">
+            <div class="biz-avatar">🍕</div>
+            <div class="biz-info">
+              <div class="biz-name">Roma Pizza Kitchen</div>
+              <div class="biz-address">456 Oak Ave, LA</div>
+              <div class="biz-meta">
+                <span class="biz-badge" style="background: rgba(248,113,113,0.12); color: var(--danger);">31</span>
+                <span class="biz-badge biz-status">Found</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-bar">
+          <div class="nav-item active"><span class="nav-icon">🏠</span>Home</div>
+          <div class="nav-item"><span class="nav-icon">📋</span>Pipeline</div>
+          <div class="nav-fab">🔍</div>
+          <div class="nav-item"><span class="nav-icon">🕐</span>Activity</div>
+          <div class="nav-item"><span class="nav-icon">⚙️</span>Settings</div>
+        </div>
+      </div>
+    </div>
+    <div class="screen-label">Dashboard</div>
+  </div>
+
+  <!-- SCOUT -->
+  <div>
+    <div class="phone">
+      <div class="phone-inner" style="background: var(--bg);">
+        <div class="s-pad s-gap" style="gap: 12px; flex: 1;">
+          <div style="text-align: center; font-size: 18px; font-weight: 600; padding-top: 16px; letter-spacing: -0.3px;">Scout</div>
+
+          <div class="search-bar">
+            <span class="icon">🔍</span>
+            <span>dentists Los Angeles</span>
+            <span style="margin-left: auto; color: var(--primary); font-size: 16px;">→</span>
+          </div>
+
+          <div class="chips">
+            <div class="chip active">Dentists</div>
+            <div class="chip">Restaurants</div>
+            <div class="chip">Plumbers</div>
+            <div class="chip">Lawyers</div>
+          </div>
+
+          <div style="color: var(--text-tertiary); font-size: 12px; font-weight: 500;">20 results</div>
+
+          <div class="biz-card">
+            <div class="biz-avatar" style="background: rgba(248,113,113,0.1);">🦷</div>
+            <div class="biz-info">
+              <div class="biz-name">SmileCare Dental</div>
+              <div class="biz-address">789 Sunset Blvd</div>
+              <div class="biz-meta">
+                <span style="font-size: 12px; color: var(--warning);">⭐ 4.2</span>
+                <span style="font-size: 11px; color: var(--text-tertiary);">No website</span>
+              </div>
+            </div>
+          </div>
+          <div class="biz-card">
+            <div class="biz-avatar" style="background: rgba(0,180,216,0.1);">🦷</div>
+            <div class="biz-info">
+              <div class="biz-name">LA Dental Group</div>
+              <div class="biz-address">321 Beverly Dr</div>
+              <div class="biz-meta">
+                <span style="font-size: 12px; color: var(--warning);">⭐ 3.8</span>
+                <span style="font-size: 11px; color: var(--danger);">Poor site</span>
+              </div>
+            </div>
+          </div>
+          <div class="biz-card">
+            <div class="biz-avatar" style="background: rgba(52,211,153,0.1);">🦷</div>
+            <div class="biz-info">
+              <div class="biz-name">Bright Smile Dental</div>
+              <div class="biz-address">123 Main St</div>
+              <div class="biz-meta">
+                <span style="font-size: 12px; color: var(--warning);">⭐ 4.7</span>
+                <span style="font-size: 11px; color: var(--success);">Has website</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-bar">
+          <div class="nav-item"><span class="nav-icon">🏠</span>Home</div>
+          <div class="nav-item"><span class="nav-icon">📋</span>Pipeline</div>
+          <div class="nav-fab" style="background: var(--primary);">🔍</div>
+          <div class="nav-item"><span class="nav-icon">🕐</span>Activity</div>
+          <div class="nav-item"><span class="nav-icon">⚙️</span>Settings</div>
+        </div>
+      </div>
+    </div>
+    <div class="screen-label">Scout Search</div>
+  </div>
+
+  <!-- BUSINESS DETAIL -->
+  <div>
+    <div class="phone">
+      <div class="phone-inner" style="background: var(--bg);">
+        <div style="flex: 1;">
+          <div class="detail-header">
+            <div class="detail-back">← Back</div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(0,180,216,0.1); display: flex; align-items: center; justify-content: center; font-size: 24px;">🦷</div>
+              <div>
+                <div class="detail-name">SmileCare Dental</div>
+                <div class="detail-address">789 Sunset Blvd, LA · ⭐ 4.2</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="s-pad s-gap" style="gap: 14px;">
+            <!-- Contact -->
+            <div class="contact-actions">
+              <div class="contact-btn"><div class="contact-icon">📞</div><div class="contact-label">Call</div></div>
+              <div class="contact-btn"><div class="contact-icon">🌐</div><div class="contact-label">Website</div></div>
+              <div class="contact-btn"><div class="contact-icon">📍</div><div class="contact-label">Maps</div></div>
+            </div>
+
+            <!-- Score -->
+            <div style="background: var(--surface); border-radius: 14px; padding: 20px; text-align: center;">
+              <div class="score-ring">
+                <div class="score-inner">
+                  <div class="score-num">72</div>
+                  <div class="score-label">SCORE</div>
+                </div>
+              </div>
+              <div style="margin-top: 12px; font-size: 14px; font-weight: 600; color: var(--success);">Strong</div>
+            </div>
+
+            <!-- Diagnosis -->
+            <div style="background: var(--surface); border-radius: 12px; padding: 14px;">
+              <div style="font-size: 13px; font-weight: 600; margin-bottom: 6px;">AI Analysis</div>
+              <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">Good rating and reviews. Website exists but is outdated and not mobile-friendly. No social media presence detected.</div>
+            </div>
+
+            <!-- CTAs -->
+            <div class="s-row">
+              <div class="btn-primary" style="flex: 1; padding: 12px;">Build Demo</div>
+              <div class="btn-secondary" style="flex: 1; padding: 12px; background: rgba(52,211,153,0.1); color: var(--success);">Outreach</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="screen-label">Business Detail</div>
+  </div>
+
+  <!-- PIPELINE -->
+  <div>
+    <div class="phone">
+      <div class="phone-inner" style="background: var(--bg);">
+        <div class="s-pad s-gap" style="gap: 10px; flex: 1;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 16px;">
+            <div style="font-size: 18px; font-weight: 600; letter-spacing: -0.3px;">Pipeline</div>
+            <div style="color: var(--primary); font-size: 13px; font-weight: 500;">Filter</div>
+          </div>
+
+          <div class="pipeline-stage">
+            <div class="stage-header">
+              <div class="stage-name">🔵 Found</div>
+              <div class="stage-count" style="background: rgba(0,180,216,0.1); color: var(--primary);">8</div>
+            </div>
+            <div class="stage-item">
+              <div class="stage-dot" style="background: var(--primary);"></div>
+              <div style="flex: 1; font-size: 13px;">Roma Pizza Kitchen</div>
+              <span class="biz-badge" style="background: rgba(248,113,113,0.12); color: var(--danger); font-size: 10px;">31</span>
+            </div>
+          </div>
+
+          <div class="pipeline-stage">
+            <div class="stage-header">
+              <div class="stage-name">🟢 Audited</div>
+              <div class="stage-count" style="background: rgba(52,211,153,0.1); color: var(--success);">5</div>
+            </div>
+            <div class="stage-item">
+              <div class="stage-dot" style="background: var(--success);"></div>
+              <div style="flex: 1; font-size: 13px;">Bright Smile Dental</div>
+              <span class="biz-badge biz-score" style="font-size: 10px;">72</span>
+            </div>
+          </div>
+
+          <div class="pipeline-stage">
+            <div class="stage-header">
+              <div class="stage-name">🟡 Contacted</div>
+              <div class="stage-count" style="background: rgba(251,191,36,0.1); color: var(--warning);">2</div>
+            </div>
+          </div>
+
+          <div class="pipeline-stage">
+            <div class="stage-header">
+              <div class="stage-name">✅ Closed</div>
+              <div class="stage-count" style="background: rgba(52,211,153,0.1); color: var(--success);">1</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-bar">
+          <div class="nav-item"><span class="nav-icon">🏠</span>Home</div>
+          <div class="nav-item active"><span class="nav-icon">📋</span>Pipeline</div>
+          <div class="nav-fab">🔍</div>
+          <div class="nav-item"><span class="nav-icon">🕐</span>Activity</div>
+          <div class="nav-item"><span class="nav-icon">⚙️</span>Settings</div>
+        </div>
+      </div>
+    </div>
+    <div class="screen-label">Pipeline</div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div>
+    <div class="phone">
+      <div class="phone-inner" style="background: var(--bg);">
+        <div class="s-pad" style="flex: 1;">
+          <div style="text-align: center; font-size: 18px; font-weight: 600; padding-top: 16px; letter-spacing: -0.3px; margin-bottom: 20px;">Settings</div>
+
+          <!-- Profile -->
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+            <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(0,180,216,0.1); display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 18px; font-weight: 700;">BG</div>
+            <div>
+              <div style="font-size: 16px; font-weight: 600;">Benjamin Gonzalez</div>
+              <div style="font-size: 13px; color: var(--text-tertiary);">LeadForge Agency</div>
+            </div>
+          </div>
+
+          <!-- Subscription -->
+          <div style="background: var(--surface); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 14px; font-weight: 600;">Free Plan</div>
+                <div style="font-size: 12px; color: var(--text-tertiary);">5 searches/month</div>
+              </div>
+              <div style="background: var(--primary); color: var(--bg); padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700;">Upgrade</div>
+            </div>
+          </div>
+
+          <!-- Usage -->
+          <div class="section-title">Usage this month</div>
+          <div style="background: var(--surface); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+            <div style="font-size: 13px; margin-bottom: 4px;">Searches <span style="float: right; color: var(--text-tertiary);">3/5</span></div>
+            <div class="usage-bar"><div class="usage-fill" style="width: 60%; background: var(--primary);"></div></div>
+
+            <div style="font-size: 13px; margin-top: 12px; margin-bottom: 4px;">Audits <span style="float: right; color: var(--text-tertiary);">1/3</span></div>
+            <div class="usage-bar"><div class="usage-fill" style="width: 33%; background: var(--success);"></div></div>
+
+            <div style="font-size: 13px; margin-top: 12px; margin-bottom: 4px;">Demos <span style="float: right; color: var(--text-tertiary);">0/1</span></div>
+            <div class="usage-bar"><div class="usage-fill" style="width: 0%; background: var(--warning);"></div></div>
+          </div>
+
+          <!-- Options -->
+          <div class="settings-item">
+            <span class="settings-label">Language</span>
+            <span class="settings-value">English ›</span>
+          </div>
+          <div class="settings-item">
+            <span class="settings-label">About</span>
+            <span class="settings-value">v1.0.0 ›</span>
+          </div>
+
+          <div style="margin-top: 24px;">
+            <div class="btn-secondary" style="background: rgba(248,113,113,0.08); color: var(--danger); border: none; font-weight: 600;">Sign Out</div>
+          </div>
+        </div>
+
+        <div class="nav-bar">
+          <div class="nav-item"><span class="nav-icon">🏠</span>Home</div>
+          <div class="nav-item"><span class="nav-icon">📋</span>Pipeline</div>
+          <div class="nav-fab">🔍</div>
+          <div class="nav-item"><span class="nav-icon">🕐</span>Activity</div>
+          <div class="nav-item active"><span class="nav-icon">⚙️</span>Settings</div>
+        </div>
+      </div>
+    </div>
+    <div class="screen-label">Settings</div>
+  </div>
+
+</div>
+
+<!-- Design Principles -->
+<div class="palette-section" style="margin-top: 32px;">
+  <h2>Design Principles</h2>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+    <div>
+      <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">Minimal Sharp</div>
+      <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">No borders or hard shadows. Depth through background contrast only. Cards are subtle surface-colored containers.</div>
+    </div>
+    <div>
+      <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">Expressive Animations</div>
+      <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">Spring physics for interactive elements. Staggered list entrances. Smooth 300ms page transitions. Numbers animate up on load.</div>
+    </div>
+    <div>
+      <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">Tight Typography</div>
+      <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">Negative letter-spacing on headings (-0.5px). Heavy weights (700-800) for numbers and titles. Light weights for labels.</div>
+    </div>
+    <div>
+      <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">Color Restraint</div>
+      <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">Cyan only for primary CTAs and active states. Semantic colors (green/yellow/red) for status. Most UI is monochrome with subtle tints.</div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

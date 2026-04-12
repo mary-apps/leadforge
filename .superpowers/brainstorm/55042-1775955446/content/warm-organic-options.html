@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warm Organic — 3 Directions</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&family=Nunito:wght@300;400;600&family=Fraunces:wght@400;600;700;900&family=Libre+Baskerville:wght@400;700&family=Josefin+Sans:wght@300;400;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #0a0a0a; color: #fff; padding: 32px 24px; }
+  h1 { font-size: 24px; font-weight: 700; text-align: center; margin-bottom: 6px; }
+  .subtitle { text-align: center; color: #888; font-size: 13px; margin-bottom: 36px; }
+
+  .options { display: flex; flex-direction: column; gap: 28px; max-width: 800px; margin: 0 auto; }
+
+  .option-card {
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.3s, box-shadow 0.3s;
+    border: 2px solid transparent;
+  }
+  .option-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
+  .option-card.selected { border-color: #667eea; }
+
+  .option-card .preview {
+    height: 320px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .option-card .label-bar {
+    padding: 14px 20px;
+    background: #161616;
+    border-top: 1px solid #222;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .option-card .label-bar h3 { font-size: 15px; font-weight: 600; }
+  .option-card .label-bar p { font-size: 12px; color: #888; }
+  .letter-badge {
+    width: 28px; height: 28px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+
+  /* ── A: Rustic Elegance ── */
+  .opt-a .preview {
+    background: #1a1510;
+    color: #f0e6d2;
+  }
+  .opt-a .preview .hero-img {
+    flex: 1;
+    background: linear-gradient(to bottom, rgba(26,21,16,0) 0%, rgba(26,21,16,0.95) 100%),
+                url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80') center/cover;
+  }
+  .opt-a .preview .hero-content {
+    position: absolute; bottom: 0; left: 0; right: 0; padding: 32px 28px;
+  }
+  .opt-a .hero-content .overline {
+    font-family: 'Josefin Sans', sans-serif; font-size: 11px; letter-spacing: 4px; text-transform: uppercase;
+    color: #c9956b; margin-bottom: 12px;
+  }
+  .opt-a .hero-content h2 {
+    font-family: 'Fraunces', serif; font-size: 38px; font-weight: 900; line-height: 1.05;
+    margin-bottom: 10px; color: #f0e6d2;
+  }
+  .opt-a .hero-content .desc {
+    font-family: 'Josefin Sans', sans-serif; font-size: 13px; color: rgba(240,230,210,0.6); margin-bottom: 16px;
+  }
+  .opt-a .hero-content .cta {
+    display: inline-block; padding: 10px 28px; background: #c9956b; color: #1a1510;
+    font-family: 'Josefin Sans', sans-serif; font-size: 12px; font-weight: 600;
+    letter-spacing: 1px; text-transform: uppercase; border-radius: 2px;
+  }
+
+  /* ── B: Sunlit Modern ── */
+  .opt-b .preview {
+    background: #faf6f1;
+    color: #2c1810;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 32px;
+  }
+  .opt-b .preview .top-bar {
+    position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    background: linear-gradient(90deg, #d4956b, #b8704a, #8B5E3C);
+  }
+  .opt-b .preview .logo-mark {
+    width: 48px; height: 48px; border-radius: 50%; border: 2px solid #c9956b;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Libre Baskerville', serif; font-size: 22px; font-weight: 700;
+    color: #c9956b; margin-bottom: 20px;
+  }
+  .opt-b .preview h2 {
+    font-family: 'Libre Baskerville', serif; font-size: 32px; font-weight: 700;
+    line-height: 1.15; margin-bottom: 10px; color: #2c1810;
+  }
+  .opt-b .preview .tagline {
+    font-family: 'Nunito', sans-serif; font-size: 14px; color: #8B7355; margin-bottom: 20px;
+  }
+  .opt-b .preview .cta {
+    display: inline-block; padding: 10px 32px; background: #2c1810; color: #faf6f1;
+    font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 600;
+    border-radius: 28px; letter-spacing: 0.5px;
+  }
+  .opt-b .preview .nav-dots {
+    position: absolute; bottom: 16px; display: flex; gap: 6px;
+  }
+  .opt-b .preview .nav-dots span { width: 6px; height: 6px; border-radius: 50%; background: #d4c4b0; }
+  .opt-b .preview .nav-dots span:first-child { background: #8B5E3C; }
+
+  /* ── C: Moody Warmth ── */
+  .opt-c .preview {
+    background: linear-gradient(160deg, #2d1f14 0%, #1a120a 50%, #0f0a06 100%);
+    color: #e8d5b7;
+    justify-content: flex-end;
+    padding: 0;
+  }
+  .opt-c .preview .texture {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 30% 20%, rgba(201,149,107,0.08) 0%, transparent 60%);
+  }
+  .opt-c .preview .content {
+    position: relative; z-index: 1; padding: 32px 28px;
+  }
+  .opt-c .preview .badge {
+    display: inline-block; padding: 4px 14px; border: 1px solid rgba(201,149,107,0.3);
+    border-radius: 20px; font-family: 'Nunito', sans-serif; font-size: 10px;
+    letter-spacing: 2px; text-transform: uppercase; color: #c9956b; margin-bottom: 16px;
+  }
+  .opt-c .preview h2 {
+    font-family: 'Lora', serif; font-size: 36px; font-weight: 700; line-height: 1.1;
+    margin-bottom: 10px;
+  }
+  .opt-c .preview .desc {
+    font-family: 'Nunito', sans-serif; font-size: 13px; color: rgba(232,213,183,0.5);
+    margin-bottom: 18px; line-height: 1.6;
+  }
+  .opt-c .preview .cta-row { display: flex; gap: 12px; }
+  .opt-c .preview .cta-primary {
+    padding: 10px 24px; background: #c9956b; color: #1a120a;
+    font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 600;
+    border-radius: 4px;
+  }
+  .opt-c .preview .cta-secondary {
+    padding: 10px 24px; border: 1px solid rgba(201,149,107,0.4); color: #c9956b;
+    font-family: 'Nunito', sans-serif; font-size: 12px; border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+  <h1>Warm Organic — 3 Directions</h1>
+  <p class="subtitle">Cuál de estas direcciones funciona mejor para restaurantes, cafés y food?</p>
+
+  <div class="options">
+    <!-- Option A -->
+    <div class="option-card opt-a" onclick="this.classList.toggle('selected')">
+      <div class="preview">
+        <div class="hero-img"></div>
+        <div class="hero-content">
+          <div class="overline">Est. 1987 &bull; Ciudad de México</div>
+          <h2>Sabores que cuentan historias</h2>
+          <div class="desc">Cocina tradicional mexicana con alma contemporánea</div>
+          <div class="cta">Explorar el menú</div>
+        </div>
+      </div>
+      <div class="label-bar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="letter-badge">A</div>
+          <div>
+            <h3>Rustic Elegance</h3>
+            <p>Foto hero full-bleed, dark overlay, serif moderna (Fraunces). Sofisticado pero cálido.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Option B -->
+    <div class="option-card opt-b" onclick="this.classList.toggle('selected')">
+      <div class="preview">
+        <div class="top-bar"></div>
+        <div class="logo-mark">C</div>
+        <h2>La Cocina de María</h2>
+        <div class="tagline">Recetas de familia, sabor de siempre</div>
+        <div class="cta">Reservar mesa</div>
+        <div class="nav-dots"><span></span><span></span><span></span></div>
+      </div>
+      <div class="label-bar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="letter-badge">B</div>
+          <div>
+            <h3>Sunlit Modern</h3>
+            <p>Fondo claro cálido, centrado, logo mark circular, botón pill. Limpio y acogedor.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Option C -->
+    <div class="option-card opt-c" onclick="this.classList.toggle('selected')">
+      <div class="preview">
+        <div class="texture"></div>
+        <div class="content">
+          <div class="badge">Desde 1987</div>
+          <h2>La Cocina del Abuelo</h2>
+          <div class="desc">Donde cada platillo cuenta la historia de tres generaciones de tradición culinaria</div>
+          <div class="cta-row">
+            <div class="cta-primary">Ver el menú</div>
+            <div class="cta-secondary">Reservar</div>
+          </div>
+        </div>
+      </div>
+      <div class="label-bar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="letter-badge">C</div>
+          <div>
+            <h3>Moody Warmth</h3>
+            <p>Fondo oscuro con tonos tierra, glow sutil, serif clásica (Lora). Íntimo y premium.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

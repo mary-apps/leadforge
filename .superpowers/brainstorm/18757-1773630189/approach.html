@@ -1,0 +1,30 @@
+<h2>¿Cómo abordamos la migración?</h2>
+<p class="subtitle">Dos estrategias con diferentes trade-offs</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Migración completa de una vez</h3>
+      <p><strong>Qué:</strong> Cambiar CupertinoApp, theme, todas las pantallas y widgets de golpe.</p>
+      <p><strong>Pro:</strong> Resultado consistente inmediato. Sin estados intermedios "mitad Material, mitad Cupertino".</p>
+      <p><strong>Contra:</strong> Cambio masivo, más riesgo de romper cosas. Más difícil de debuggear si algo falla.</p>
+      <p><strong>Alcance:</strong> ~35+ archivos modificados en una sola iteración.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Migración por capas (recomendado)</h3>
+      <p><strong>Qué:</strong> Migrar en fases: 1) Theme + CupertinoApp base, 2) Navigation (tab bar + nav bars), 3) Widgets comunes (buttons, cards, lists), 4) Pantallas una por una, 5) Limpieza de animaciones y widgets obsoletos.</p>
+      <p><strong>Pro:</strong> Cada fase se puede probar independientemente. Si algo se rompe, sabes exactamente dónde. La app funciona en cada paso intermedio.</p>
+      <p><strong>Contra:</strong> Habrá momentos donde la app se ve "mixta". Toma más commits.</p>
+      <p><strong>Alcance:</strong> Los mismos ~35+ archivos, pero en 5 fases manejables.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <h3>Mi recomendación: Opción B</h3>
+  <p>La migración por capas es más segura y permite validar cada paso. Con tantos archivos afectados, hacer todo de golpe es arriesgado — un error en el theme puede cascadear a todas las pantallas.</p>
+</div>

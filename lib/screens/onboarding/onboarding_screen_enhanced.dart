@@ -488,7 +488,7 @@ class _MockupPreview extends StatelessWidget {
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(AppColors.radiusM), border: Border.all(color: border, width: 0.5)),
-        child: Row(children: [Icon(CupertinoIcons.search, size: 14, color: tertiary), const SizedBox(width: 8), Text('restaurants in Miami...', style: TextStyle(fontSize: 12, color: tertiary))]),
+        child: Row(children: [Icon(CupertinoIcons.search, size: 14, color: tertiary), const SizedBox(width: 8), Text('restaurants in Miami...', style: AppTypography.chip(context).copyWith(color: tertiary))]),
       ),
       const SizedBox(height: 8),
       Row(children: [
@@ -504,9 +504,9 @@ class _MockupPreview extends StatelessWidget {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(AppColors.radiusS + 2), border: Border.all(color: border, width: 0.5)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(name, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: secondary)),
+        Text(name, style: AppTypography.chip(context).copyWith(fontWeight: FontWeight.w600, color: secondary)),
         const SizedBox(height: 2),
-        Text(detail, style: TextStyle(fontSize: 10, color: tertiary)),
+        Text(detail, style: AppTypography.chip(context).copyWith(fontSize: 10, color: tertiary)),
       ]),
     );
   }
@@ -517,13 +517,13 @@ class _MockupPreview extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(AppColors.radiusM), border: Border.all(color: border, width: 0.5)),
       child: Row(children: [
-        Text('32', style: TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: scoreBadColor)),
-        Text('/100', style: TextStyle(fontSize: 14, color: tertiary)),
+        Text('32', style: AppTypography.headlineLarge(context).copyWith(fontSize: 36, fontWeight: FontWeight.w900, color: scoreBadColor)),
+        Text('/100', style: AppTypography.bodyMedium(context).copyWith(color: tertiary)),
         const SizedBox(width: 16),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('No website found', style: TextStyle(fontSize: 11, color: secondary)),
-          Text('Few reviews', style: TextStyle(fontSize: 11, color: secondary)),
-          Text('No social media', style: TextStyle(fontSize: 11, color: secondary)),
+          Text('No website found', style: AppTypography.labelSmall(context).copyWith(letterSpacing: 0, color: secondary)),
+          Text('Few reviews', style: AppTypography.labelSmall(context).copyWith(letterSpacing: 0, color: secondary)),
+          Text('No social media', style: AppTypography.labelSmall(context).copyWith(letterSpacing: 0, color: secondary)),
         ])),
       ]),
     );
@@ -543,7 +543,7 @@ class _MockupPreview extends StatelessWidget {
             Expanded(child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(color: CupertinoDynamicColor.resolve(AppColors.chipInactive, context), borderRadius: BorderRadius.circular(4)),
-              child: Text('casaluna.leadforge.site', style: TextStyle(fontSize: 10, color: tertiary)),
+              child: Text('casaluna.leadforge.site', style: AppTypography.chip(context).copyWith(fontSize: 10, color: tertiary)),
             )),
           ]),
         ),
@@ -569,7 +569,7 @@ class _MockupPreview extends StatelessWidget {
       Container(
         width: double.infinity, padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(AppColors.radiusM), border: Border.all(color: border, width: 0.5)),
-        child: Text("Hi! I noticed your restaurant could benefit from a stronger online presence. I've prepared a demo website...", style: TextStyle(fontSize: 12, color: secondary, height: 1.5)),
+        child: Text("Hi! I noticed your restaurant could benefit from a stronger online presence. I've prepared a demo website...", style: AppTypography.chip(context).copyWith(color: secondary, height: 1.5)),
       ),
       const SizedBox(height: 8),
       Row(children: [
@@ -584,7 +584,7 @@ class _MockupPreview extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(border: Border.all(color: accent.withValues(alpha: 0.2), width: 0.5), borderRadius: BorderRadius.circular(12)),
-      child: Text(label, style: TextStyle(fontSize: 10, color: accent)),
+      child: Text(label, style: AppTypography.chip(context).copyWith(fontSize: 10, color: accent)),
     );
   }
 }

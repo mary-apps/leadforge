@@ -1,0 +1,104 @@
+<h2>UI/UX Diagnosis: 8 Screens</h2>
+<p class="subtitle">My assessment of what each screen needs &mdash; click to agree or disagree with any classification</p>
+
+<div style="margin-bottom: 32px;">
+  <h3 style="margin-bottom: 4px; color: #dc2626;">Needs UX Redesign</h3>
+  <p class="subtitle" style="margin-bottom: 16px;">Structure/flow problems &mdash; not just visual</p>
+
+  <div class="options">
+    <div class="option" data-choice="login-agree" onclick="toggleSelect(this)">
+      <div class="letter" style="background: #dc2626;">1</div>
+      <div class="content">
+        <h3>Login Screen &mdash; Redesign</h3>
+        <p><strong>Issues:</strong> Generic auth form with no brand identity. Just "LeadForge" text + subtitle + fields. No visual hook, no trust signals, no value proposition. The pill toggle (Sign In/Sign Up) works but the overall page feels like a template. First impression of the app &mdash; needs to sell.</p>
+        <p><strong>Proposed:</strong> Add brand presence (icon/illustration), social proof or value props, better visual hierarchy. Make it feel like a product, not a code exercise.</p>
+      </div>
+    </div>
+
+    <div class="option" data-choice="onboarding-agree" onclick="toggleSelect(this)">
+      <div class="letter" style="background: #dc2626;">2</div>
+      <div class="content">
+        <h3>Onboarding &mdash; Redesign</h3>
+        <p><strong>Issues:</strong> 4 feature pages with just icon + title + description is the most generic onboarding pattern. No visual differentiation between pages (same layout, different icon). Profile setup page (page 5) is disconnected from the feature tour. Dot indicators are tiny and hard to see.</p>
+        <p><strong>Proposed:</strong> Richer illustrations or mockup previews per feature. Progress indicator that shows journey. Smoother transition from "learn" to "setup" phase.</p>
+      </div>
+    </div>
+
+    <div class="option" data-choice="activity-agree" onclick="toggleSelect(this)">
+      <div class="letter" style="background: #dc2626;">3</div>
+      <div class="content">
+        <h3>Activity Screen &mdash; Redesign</h3>
+        <p><strong>Issues:</strong> This is just a list of businesses sorted by date, not a real activity feed. It shows businesses grouped by time (Today/This Week/Earlier) but doesn't show WHAT happened &mdash; "Found", "Audited", "Demo created" are generic labels, not events. The "featured" card for Today's first item adds visual weight but not information. Empty state is weak.</p>
+        <p><strong>Proposed:</strong> True event-based timeline with verbs ("You audited...", "Demo generated for..."). Rich cards with contextual actions. Better empty state with onboarding.</p>
+      </div>
+    </div>
+
+    <div class="option" data-choice="business-detail-agree" onclick="toggleSelect(this)">
+      <div class="letter" style="background: #dc2626;">4</div>
+      <div class="content">
+        <h3>Business Detail &mdash; Redesign</h3>
+        <p><strong>Issues:</strong> This is the most important screen in the app but reads as a long vertical scroll of disconnected sections. Contact links (Call/Website/Maps) are flat text that's easy to miss. The flow from Audit &rarr; Demo &rarr; Outreach has no visual journey/stepper. Audit result, AI Analysis, Demo status, and Outreach status all look like different UI languages. No clear "what to do next" guidance.</p>
+        <p><strong>Proposed:</strong> Visual workflow stepper (Audit &rarr; Demo &rarr; Outreach). Unified card styles. Prominent contact section. Clear next-action CTA at each stage.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-bottom: 32px;">
+  <h3 style="margin-bottom: 4px; color: #f59e0b;">Needs Visual Polish</h3>
+  <p class="subtitle" style="margin-bottom: 16px;">Structure is fine, just needs to look/feel better</p>
+
+  <div class="options">
+    <div class="option" data-choice="getting-started-agree" onclick="toggleSelect(this)">
+      <div class="letter" style="background: #f59e0b;">5</div>
+      <div class="content">
+        <h3>Dashboard "Getting Started" &mdash; Polish</h3>
+        <p><strong>Issues:</strong> The 3-step guide is clear but visually flat. No step numbers, no progress feeling, the "Start Scouting" button blends in. Steps lack visual connectors between them.</p>
+        <p><strong>Proposed:</strong> Numbered steps with visual connector line. Better contrast for the CTA. Maybe a dismissible card wrapper so it doesn't linger forever.</p>
+      </div>
+    </div>
+
+    <div class="option" data-choice="pipeline-agree" onclick="toggleSelect(this)">
+      <div class="letter" style="background: #f59e0b;">6</div>
+      <div class="content">
+        <h3>Pipeline &mdash; Polish</h3>
+        <p><strong>Issues:</strong> Structure is solid (funnel bar + collapsible sections + swipe actions). But the sections feel like plain lists with no visual weight. The "Needs Action" card is good but business cards within sections are bare (just name + address + score + chevron). No status colors on individual items.</p>
+        <p><strong>Proposed:</strong> Status color accents on section headers/items. Richer business cards with status badges. Better visual separation between sections.</p>
+      </div>
+    </div>
+
+    <div class="option" data-choice="build-demo-agree" onclick="toggleSelect(this)">
+      <div class="letter" style="background: #f59e0b;">7</div>
+      <div class="content">
+        <h3>Build Demo &mdash; Polish</h3>
+        <p><strong>Issues:</strong> The data summary chips and custom instructions field work well. But the overall layout is centered text that feels like a wizard without visual grounding. The "AI WILL USE THIS DATA" section is informative but doesn't feel exciting for what's essentially a "build me a website" action.</p>
+        <p><strong>Proposed:</strong> More visual excitement before generation. Better visual hierarchy between data preview and CTA. The preview screen (WebView) is fine.</p>
+      </div>
+    </div>
+
+    <div class="option" data-choice="outreach-agree" onclick="toggleSelect(this)">
+      <div class="letter" style="background: #f59e0b;">8</div>
+      <div class="content">
+        <h3>Outreach &mdash; Polish</h3>
+        <p><strong>Issues:</strong> (As seen in your screenshot) Flat layout, excessive whitespace below, channel/tone/language chips are functional but have no visual personality. The sections (Channel, Tone, Lang) feel crammed together without rhythm. No preview of what the business looks like before generating.</p>
+        <p><strong>Proposed:</strong> Business context card at top. Better section spacing and grouping. More visual personality on the channel chips (color coding per channel). Fill the empty space with helpful context.</p>
+      </div>
+    </div>
+
+    <div class="option" data-choice="settings-agree" onclick="toggleSelect(this)">
+      <div class="letter" style="background: #f59e0b;">9</div>
+      <div class="content">
+        <h3>Settings &mdash; Polish</h3>
+        <p><strong>Issues:</strong> The profile card with left accent border looks good. Usage pills are well-designed. But the Preferences section uses CupertinoListSection which is native iOS but clashes with the custom design language of the rest of the app. The sign-out section feels disconnected.</p>
+        <p><strong>Proposed:</strong> Custom preference cards matching app design language instead of native CupertinoListSection. Better visual flow from usage to preferences to account actions.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; margin-top: 24px;">
+  <h3 style="margin-top: 0;">Priority Recommendation</h3>
+  <p style="margin-bottom: 8px;"><strong>Batch 1 (highest impact):</strong> Login + Onboarding + Business Detail &mdash; these are the first impression, the core workflow, and the most-used screen.</p>
+  <p style="margin-bottom: 8px;"><strong>Batch 2:</strong> Outreach + Build Demo + Pipeline &mdash; the revenue-driving features that need to feel premium.</p>
+  <p style="margin-bottom: 0;"><strong>Batch 3:</strong> Activity + Settings + Getting Started &mdash; supporting screens.</p>
+</div>

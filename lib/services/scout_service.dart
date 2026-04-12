@@ -1,7 +1,3 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-
-import '../config/constants.dart';
 import '../models/business.dart';
 import '../utils/network.dart';
 import 'supabase_service.dart';
@@ -9,30 +5,12 @@ import 'supabase_service.dart';
 class ScoutService {
   /// Search for businesses using Google Places API via Edge Function
   static Future<List<Business>> searchBusinesses(String query) async {
-    final token = await SupabaseService.getAuthToken();
+    final data = await invokeEdgeFunction(
+      'scout',
+      body: {'query': query},
+    );
 
-    if (token == null) {
-      throw Exception('Not authenticated');
-    }
-
-    final response = await httpWithRetry(() => http.post(
-      Uri.parse(AppConstants.scoutEndpoint),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: json.encode({
-        'query': query,
-      }),
-    ));
-
-    final dynamic data;
-    try {
-      data = json.decode(response.body);
-    } catch (e) {
-      throw Exception('Invalid response from scout service');
-    }
-    if (data is! Map<String, dynamic> || data['businesses'] is! List) {
+    if (data['businesses'] is! List) {
       throw Exception('Unexpected scout response format');
     }
     final businessesJson = data['businesses'] as List;
@@ -41,7 +19,7 @@ class ScoutService {
         .map((json) => Business.fromJson(json as Map<String, dynamic>))
         .toList();
   }
-  
+
   /// Fetch businesses from local database
   static Future<List<Business>> fetchMyBusinesses({
     BusinessStatus? status,
@@ -49,7 +27,7 @@ class ScoutService {
   }) async {
     final userId = SupabaseService.userId;
     if (userId == null) throw Exception('Not authenticated');
-    
+
     var query = SupabaseService.client
         .from('businesses')
         .select()
@@ -62,12 +40,14 @@ class ScoutService {
     final response = await query
         .order('created_at', ascending: false)
         .limit(limit);
-    
-    return (response as List)
+
+    final list = response as List?;
+    if (list == null) return [];
+    return list
         .map((json) => Business.fromJson(json as Map<String, dynamic>))
         .toList();
   }
-  
+
   /// Fetch single business by ID
   static Future<Business?> fetchBusiness(String businessId) async {
     final response = await SupabaseService.client
@@ -75,12 +55,12 @@ class ScoutService {
         .select()
         .eq('id', businessId)
         .maybeSingle();
-    
+
     if (response == null) return null;
-    
+
     return Business.fromJson(response);
   }
-  
+
   /// Update business notes
   static Future<void> updateNotes(String businessId, String notes) async {
     await SupabaseService.client
@@ -88,7 +68,7 @@ class ScoutService {
         .update({'notes': notes})
         .eq('id', businessId);
   }
-  
+
   /// Update business status
   static Future<void> updateStatus(String businessId, BusinessStatus status) async {
     await SupabaseService.client
@@ -99,7 +79,7 @@ class ScoutService {
         })
         .eq('id', businessId);
   }
-  
+
   /// Update deal value
   static Future<void> updateDealValue(String businessId, double? value) async {
     await SupabaseService.client
@@ -107,7 +87,7 @@ class ScoutService {
         .update({'deal_value': value})
         .eq('id', businessId);
   }
-  
+
   /// Delete business
   static Future<void> deleteBusiness(String businessId) async {
     await SupabaseService.client
@@ -116,5 +96,3 @@ class ScoutService {
         .eq('id', businessId);
   }
 }
-
-// LimitReachedException is in utils/network.dart

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -42,21 +43,57 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // Listen to auth state changes
     _authSubscription = SupabaseService.authStateChanges.listen((data) {
       final event = data.event;
-      if (event == AuthChangeEvent.signedIn) {
-        state = state.copyWith(user: data.session?.user, isLoading: false);
-        _checkOnboarding();
+      final user = data.session?.user;
+
+      if (event == AuthChangeEvent.signedIn ||
+          event == AuthChangeEvent.initialSession) {
+        state = state.copyWith(user: user, isLoading: false);
+        if (user != null) _checkOnboarding();
+      } else if (event == AuthChangeEvent.tokenRefreshed) {
+        // Keep user in sync without re-checking onboarding
+        if (user != null) {
+          state = state.copyWith(user: user);
+        }
       } else if (event == AuthChangeEvent.signedOut) {
-        state = state.copyWith(user: null, isLoading: false);
+        state = AuthState(user: null, isLoading: false, needsOnboarding: false);
       }
     });
     
-    // Check current session
+    // Check current session and validate it's still refreshable
     final currentUser = SupabaseService.currentUser;
-    state = state.copyWith(user: currentUser, isLoading: false);
-    
     if (currentUser != null) {
-      _checkOnboarding();
+      _validateSession(currentUser);
+    } else {
+      state = state.copyWith(user: null, isLoading: false);
     }
+  }
+
+  Future<void> _validateSession(User cachedUser) async {
+    final session = SupabaseService.client.auth.currentSession;
+    if (session == null) {
+      state = AuthState(user: null, isLoading: false);
+      return;
+    }
+
+    final expiresAt = session.expiresAt;
+    final isExpired = expiresAt != null &&
+        DateTime.now().isAfter(
+          DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000),
+        );
+
+    if (isExpired) {
+      try {
+        await SupabaseService.client.auth.refreshSession();
+        // Refresh succeeded — stream listener will update state
+      } catch (e) {
+        debugPrint('Session validation failed, signing out: $e');
+        await signOut();
+        return;
+      }
+    }
+
+    state = state.copyWith(user: cachedUser, isLoading: false);
+    _checkOnboarding();
   }
   
   Future<void> _checkOnboarding() async {

@@ -21,7 +21,7 @@ class SettingsScreen extends ConsumerWidget {
     final isProAsync = ref.watch(subscriptionProvider);
 
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
+      backgroundColor: CupertinoDynamicColor.resolve(AppColors.background, context),
       child: CustomScrollView(
         physics: const BouncingScrollPhysics(
           parent: AlwaysScrollableScrollPhysics(),
@@ -87,10 +87,11 @@ class SettingsScreen extends ConsumerWidget {
                               alignment: Alignment.center,
                               child: Text(
                                 initials,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w800,
-                                  color: CupertinoColors.white,
+                                  color: CupertinoDynamicColor.resolve(
+                                      AppColors.chipActiveFg, context),
                                 ),
                               ),
                             ),
@@ -129,13 +130,14 @@ class SettingsScreen extends ConsumerWidget {
                                         borderRadius:
                                             BorderRadius.circular(8),
                                       ),
-                                      child: const Text(
+                                      child: Text(
                                         'PRO',
                                         style: TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w800,
                                           letterSpacing: 1,
-                                          color: CupertinoColors.white,
+                                          color: CupertinoDynamicColor.resolve(
+                                              AppColors.chipActiveFg, context),
                                         ),
                                       ),
                                     )
@@ -143,7 +145,8 @@ class SettingsScreen extends ConsumerWidget {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: CupertinoColors.tertiarySystemFill.resolveFrom(context),
+                                        color: CupertinoDynamicColor.resolve(
+                                            AppColors.chipInactive, context),
                                         borderRadius:
                                             BorderRadius.circular(8),
                                       ),
@@ -153,7 +156,8 @@ class SettingsScreen extends ConsumerWidget {
                                           fontSize: 11,
                                           fontWeight: FontWeight.w700,
                                           letterSpacing: 1,
-                                          color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                                          color: CupertinoDynamicColor.resolve(
+                                              AppColors.textTertiary, context),
                                         ),
                                       ),
                                     ),
@@ -195,7 +199,8 @@ class SettingsScreen extends ConsumerWidget {
                           height: 52,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: CupertinoColors.tertiarySystemFill.resolveFrom(context),
+                            color: CupertinoDynamicColor.resolve(
+                                AppColors.chipInactive, context),
                           ),
                         ),
                         const SizedBox(width: 14),
@@ -207,7 +212,8 @@ class SettingsScreen extends ConsumerWidget {
                                 width: 120,
                                 height: 16,
                                 decoration: BoxDecoration(
-                                  color: CupertinoColors.tertiarySystemFill.resolveFrom(context),
+                                  color: CupertinoDynamicColor.resolve(
+                                      AppColors.chipInactive, context),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                               ),
@@ -216,7 +222,8 @@ class SettingsScreen extends ConsumerWidget {
                                 width: 80,
                                 height: 12,
                                 decoration: BoxDecoration(
-                                  color: CupertinoColors.tertiarySystemFill.resolveFrom(context),
+                                  color: CupertinoDynamicColor.resolve(
+                                      AppColors.chipInactive, context),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                               ),
@@ -321,9 +328,10 @@ class SettingsScreen extends ConsumerWidget {
                                   AppColors.accent, context),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               CupertinoIcons.bolt_fill,
-                              color: CupertinoColors.white,
+                              color: CupertinoDynamicColor.resolve(
+                                  AppColors.chipActiveFg, context),
                               size: 22,
                             ),
                           ),
@@ -411,7 +419,7 @@ class SettingsScreen extends ConsumerWidget {
                           context: context,
                           builder: (context) => CupertinoAlertDialog(
                             title: const Text('LeadForge'),
-                            content: Text('Version ${AppConstants.appVersion}'),
+                            content: const Text('Version ${AppConstants.appVersion}'),
                             actions: [
                               CupertinoDialogAction(
                                 onPressed: () => Navigator.pop(context),
@@ -494,85 +502,90 @@ class SettingsScreen extends ConsumerWidget {
 // Edit profile bottom sheet
 // ---------------------------------------------------------------------------
 
-void _showEditProfile(BuildContext context, WidgetRef ref, Profile profile) {
+Future<void> _showEditProfile(BuildContext context, WidgetRef ref, Profile profile) async {
   final nameController = TextEditingController(text: profile.displayName ?? '');
   final bizController = TextEditingController(text: profile.businessName ?? '');
 
-  showCupertinoModalPopup(
-    context: context,
-    builder: (ctx) => Container(
-      padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(ctx).padding.bottom + 24),
-      decoration: BoxDecoration(
-        color: CupertinoDynamicColor.resolve(AppColors.surface, ctx),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            width: 36,
-            height: 4,
-            margin: const EdgeInsets.only(bottom: 20),
-            alignment: Alignment.center,
-            child: Container(
+  try {
+    await showCupertinoModalPopup(
+      context: context,
+      builder: (ctx) => Container(
+        padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(ctx).padding.bottom + 24),
+        decoration: BoxDecoration(
+          color: CupertinoDynamicColor.resolve(AppColors.surface, ctx),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
               width: 36,
               height: 4,
-              decoration: BoxDecoration(
-                color: CupertinoDynamicColor.resolve(AppColors.divider, ctx),
-                borderRadius: BorderRadius.circular(2),
+              margin: const EdgeInsets.only(bottom: 20),
+              alignment: Alignment.center,
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: CupertinoDynamicColor.resolve(AppColors.divider, ctx),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-          ),
-          Text('Edit Profile', style: AppTypography.headlineLarge(ctx)),
-          const SizedBox(height: 20),
-          CupertinoTextField(
-            controller: nameController,
-            placeholder: 'Display Name',
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: CupertinoDynamicColor.resolve(AppColors.searchField, ctx),
-              borderRadius: BorderRadius.circular(AppColors.radiusM),
+            Text('Edit Profile', style: AppTypography.headlineLarge(ctx)),
+            const SizedBox(height: 20),
+            CupertinoTextField(
+              controller: nameController,
+              placeholder: 'Display Name',
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: CupertinoDynamicColor.resolve(AppColors.searchField, ctx),
+                borderRadius: BorderRadius.circular(AppColors.radiusM),
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          CupertinoTextField(
-            controller: bizController,
-            placeholder: 'Business Name',
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: CupertinoDynamicColor.resolve(AppColors.searchField, ctx),
-              borderRadius: BorderRadius.circular(AppColors.radiusM),
+            const SizedBox(height: 12),
+            CupertinoTextField(
+              controller: bizController,
+              placeholder: 'Business Name',
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: CupertinoDynamicColor.resolve(AppColors.searchField, ctx),
+                borderRadius: BorderRadius.circular(AppColors.radiusM),
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          CupertinoButton.filled(
-            onPressed: () async {
-              final name = nameController.text.trim();
-              final biz = bizController.text.trim();
-              if (name.length < 2) return;
+            const SizedBox(height: 20),
+            CupertinoButton.filled(
+              onPressed: () async {
+                final name = nameController.text.trim();
+                final biz = bizController.text.trim();
+                if (name.length < 2) return;
 
-              await SupabaseService.client
-                  .from('profiles')
-                  .update({
-                    'display_name': name,
-                    'business_name': biz.isEmpty ? null : biz,
-                  })
-                  .eq('id', SupabaseService.userId!);
+                await SupabaseService.client
+                    .from('profiles')
+                    .update({
+                      'display_name': name,
+                      'business_name': biz.isEmpty ? null : biz,
+                    })
+                    .eq('id', SupabaseService.userId!);
 
-              ref.read(profileNotifierProvider.notifier).reload();
-              // ignore: use_build_context_synchronously
-              Navigator.pop(ctx);
-              if (context.mounted) {
-                IosToast.show(context, 'Profile updated');
-              }
-            },
-            child: const Text('Save Changes'),
-          ),
-        ],
+                ref.read(profileNotifierProvider.notifier).reload();
+                // ignore: use_build_context_synchronously
+                Navigator.pop(ctx);
+                if (context.mounted) {
+                  IosToast.show(context, 'Profile updated');
+                }
+              },
+              child: const Text('Save Changes'),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  } finally {
+    nameController.dispose();
+    bizController.dispose();
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -606,12 +619,12 @@ class _UsagePill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(context),
+        color: CupertinoDynamicColor.resolve(AppColors.surface, context),
         borderRadius: BorderRadius.circular(AppColors.radiusL),
         border: Border.all(
           color: isAtLimit
               ? dangerColor.withValues(alpha: 0.3)
-              : CupertinoColors.separator.resolveFrom(context),
+              : CupertinoDynamicColor.resolve(AppColors.border, context),
           width: 0.5,
         ),
       ),
@@ -626,7 +639,8 @@ class _UsagePill extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                  color: CupertinoDynamicColor.resolve(
+                      AppColors.textSecondary, context),
                 ),
               ),
               Text(
@@ -652,7 +666,8 @@ class _UsagePill extends StatelessWidget {
                   child: Stack(
                     children: [
                       Container(
-                        color: CupertinoColors.systemGroupedBackground.resolveFrom(context),
+                        color: CupertinoDynamicColor.resolve(
+                            AppColors.chipInactive, context),
                       ),
                       FractionallySizedBox(
                         widthFactor: animatedValue,

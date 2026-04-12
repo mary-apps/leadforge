@@ -31,7 +31,7 @@ class RevenueCatService {
   /// Purchase a package
   static Future<({bool success, String? error})> purchasePackage(Package package) async {
     try {
-      final result = await Purchases.purchasePackage(package);
+      final result = await Purchases.purchase(PurchaseParams.package(package));
 
       if (result.customerInfo.entitlements.active.containsKey('pro')) {
         await _updateSubscriptionTier('pro');
