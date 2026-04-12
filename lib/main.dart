@@ -24,12 +24,6 @@ void main() async {
     const SystemUiOverlayStyle(statusBarBrightness: Brightness.light),
   );
 
-  // Lock to portrait orientation
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-
   // Initialize Supabase
   await Supabase.initialize(
     url: AppConstants.supabaseUrl,
