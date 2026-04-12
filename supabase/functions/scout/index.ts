@@ -14,14 +14,34 @@ serve(async (req) => {
   }
 
   try {
-    // 1. Auth check
-    const authHeader = req.headers.get('Authorization')!
+    // 1. Env var checks
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')
+    const googlePlacesKey = Deno.env.get('GOOGLE_PLACES_API_KEY')
+    if (!supabaseUrl || !supabaseKey) {
+      return new Response(JSON.stringify({ error: 'Server misconfigured' }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    if (!googlePlacesKey) {
+      return new Response(JSON.stringify({ error: 'Server misconfigured' }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // 2. Auth check
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing Authorization header' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
+      supabaseUrl,
+      supabaseKey,
       { global: { headers: { Authorization: authHeader } } }
     )
-    
+
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -29,22 +49,25 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
-    
-    // 2. Check usage limits
+
+    // 3. Check usage limits
     const { data: profile } = await supabase
       .from('profiles')
       .select('subscription_tier, searches_this_month, month_reset_at')
       .eq('id', user.id)
-      .single()
-    
-    if (profile.subscription_tier === 'free' && profile.searches_this_month >= 5) {
+      .maybeSingle()
+
+    const tier = profile?.subscription_tier ?? 'free'
+    const searchesThisMonth = profile?.searches_this_month ?? 0
+
+    if (tier === 'free' && searchesThisMonth >= 5) {
       return new Response(JSON.stringify({ error: 'Free tier limit reached' }), {
         status: 402,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
-    
-    // 3. Parse request
+
+    // 4. Parse request
     const { query } = await req.json()
 
     if (!query || typeof query !== 'string' || query.trim().length === 0) {
@@ -54,33 +77,56 @@ serve(async (req) => {
       })
     }
 
-    // 4. Google Places Text Search
-    const placesUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${Deno.env.get('GOOGLE_PLACES_API_KEY')}`
-    const placesRes = await fetch(placesUrl)
-    const placesData = await placesRes.json()
-    
+    // 5. Google Places Text Search (with timeout)
+    const placesUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${googlePlacesKey}`
+
+    const placesController = new AbortController()
+    const placesTimeout = setTimeout(() => placesController.abort(), 15000)
+    let placesData: any
+    try {
+      const placesRes = await fetch(placesUrl, { signal: placesController.signal })
+      clearTimeout(placesTimeout)
+      placesData = await placesRes.json()
+    } catch (e) {
+      clearTimeout(placesTimeout)
+      return new Response(JSON.stringify({ error: 'Google Places request timed out or failed' }), {
+        status: 504, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
     if (placesData.status !== 'OK') {
       return new Response(JSON.stringify({ error: `Google Places API error: ${placesData.status}` }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
-    
-    // 5. Fetch details for each (parallel, limit 20)
+
+    // 6. Fetch details for each (parallel, limit 20, with timeout)
     const detailsPromises = placesData.results.slice(0, 20).map(async (place: any) => {
-      const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=website,formatted_phone_number,opening_hours,photos&key=${Deno.env.get('GOOGLE_PLACES_API_KEY')}`
-      const detailsRes = await fetch(detailsUrl)
-      const detailsData = await detailsRes.json()
-      
-      return {
-        ...place,
-        details: detailsData.result
+      const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=website,formatted_phone_number,opening_hours,photos&key=${googlePlacesKey}`
+
+      const detailController = new AbortController()
+      const detailTimeout = setTimeout(() => detailController.abort(), 15000)
+      try {
+        const detailsRes = await fetch(detailsUrl, { signal: detailController.signal })
+        clearTimeout(detailTimeout)
+        const detailsData = await detailsRes.json()
+        return {
+          ...place,
+          details: detailsData.result
+        }
+      } catch (e) {
+        clearTimeout(detailTimeout)
+        return {
+          ...place,
+          details: null
+        }
       }
     })
-    
+
     const enrichedPlaces = await Promise.all(detailsPromises)
-    
-    // 6. Format businesses
+
+    // 7. Format businesses
     const businesses = enrichedPlaces.map(place => ({
       place_id: place.place_id,
       name: place.name,
@@ -97,8 +143,8 @@ serve(async (req) => {
       web_presence: !place.details?.website ? 'none' : 'poor',
       user_id: user.id,
     }))
-    
-    // 7. Insert businesses (skip duplicates by place_id per user)
+
+    // 8. Insert businesses (skip duplicates by place_id per user)
     const businessesForInsert = businesses.map(b => ({
       ...b,
       created_at: new Date().toISOString(),
@@ -111,7 +157,7 @@ serve(async (req) => {
         ignoreDuplicates: true
       })
 
-    // 8. Fetch inserted businesses from DB (with generated IDs)
+    // 9. Fetch inserted businesses from DB (with generated IDs)
     const placeIds = businesses.map(b => b.place_id)
     const { data: dbBusinesses } = await supabase
       .from('businesses')
@@ -119,19 +165,24 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .in('place_id', placeIds)
 
-    // 9. Increment usage (atomic via rpc or increment to avoid race)
-    await supabase.rpc('increment_counter', {
-      p_user_id: user.id,
-      p_column: 'searches_this_month',
-    }).then(() => {}, (e: any) => {
-      // Fallback to direct update if RPC not available
-      return supabase
-        .from('profiles')
-        .update({ searches_this_month: profile.searches_this_month + 1 })
-        .eq('id', user.id)
-    })
+    // 10. Increment usage (atomic via rpc or fallback)
+    try {
+      await supabase.rpc('increment_counter', {
+        p_user_id: user.id,
+        p_column: 'searches_this_month',
+      })
+    } catch {
+      try {
+        await supabase
+          .from('profiles')
+          .update({ searches_this_month: searchesThisMonth + 1 })
+          .eq('id', user.id)
+      } catch (e) {
+        console.warn('[scout] Could not increment usage counter:', e)
+      }
+    }
 
-    // 10. Sort results — no website first, then by rating
+    // 11. Sort results — no website first, then by rating
     const sorted = (dbBusinesses || []).sort((a: any, b: any) => {
       if (a.web_presence === 'none' && b.web_presence !== 'none') return -1
       if (a.web_presence !== 'none' && b.web_presence === 'none') return 1
@@ -141,7 +192,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({ businesses: sorted }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
-    
+
   } catch (error) {
     console.error('[scout] Error:', error.message)
     return new Response(JSON.stringify({ error: 'Something went wrong. Please try again.' }), {

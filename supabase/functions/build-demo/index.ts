@@ -248,7 +248,6 @@ serve(async (req) => {
     // Admin client — for storage operations (bypasses RLS)
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
 
-    console.log('[build-demo] Step 1: Authenticating...')
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
       console.error('[build-demo] Auth failed:', authError?.message)
@@ -256,32 +255,8 @@ serve(async (req) => {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
-    console.log('[build-demo] Step 1: OK, user:', user.id)
 
-    // 2. Check limits
-    console.log('[build-demo] Step 2: Checking limits...')
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('subscription_tier, demos_this_month')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError || !profile) {
-      console.error('[build-demo] Profile error:', profileError?.message)
-      return new Response(JSON.stringify({ error: `Profile error: ${profileError?.message || 'not found'}` }), {
-        status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
-    console.log('[build-demo] Step 2: OK, tier:', profile.subscription_tier, 'demos:', profile.demos_this_month)
-
-    if (profile.subscription_tier === 'free' && profile.demos_this_month >= 1) {
-      return new Response(JSON.stringify({ error: 'Free tier demo limit reached' }), {
-        status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
-
-    // 3. Get business and request data
-    console.log('[build-demo] Step 3: Fetching business...')
+    // 2. Parse request body first (needed for parallel fetches below)
     const { business_id, custom_notes } = await req.json()
 
     if (!business_id || typeof business_id !== 'string') {
@@ -294,36 +269,47 @@ serve(async (req) => {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
-    const { data: business, error: bizError } = await supabase
-      .from('businesses')
-      .select('*')
-      .eq('id', business_id)
-      .eq('user_id', user.id)
-      .single()
 
+    // 3. Parallel: check limits + fetch business
+    const [profileResult, businessResult] = await Promise.all([
+      supabase.from('profiles').select('subscription_tier, demos_this_month').eq('id', user.id).single(),
+      supabase.from('businesses').select('*').eq('id', business_id).eq('user_id', user.id).single(),
+    ])
+
+    const { data: profile, error: profileError } = profileResult
+    if (profileError || !profile) {
+      console.error('[build-demo] Profile error:', profileError?.message)
+      return new Response(JSON.stringify({ error: `Profile error: ${profileError?.message || 'not found'}` }), {
+        status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    if (profile.subscription_tier === 'free' && profile.demos_this_month >= 1) {
+      return new Response(JSON.stringify({ error: 'Free tier demo limit reached' }), {
+        status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    const { data: business, error: bizError } = businessResult
     if (bizError || !business) {
       console.error('[build-demo] Business error:', bizError?.message)
       return new Response(JSON.stringify({ error: `Business error: ${bizError?.message || 'not found'}` }), {
         status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
-    console.log('[build-demo] Step 3: OK, business:', business.name)
 
     // 4. Pick template + detect language
     const templateName = pickTemplateName(business)
     const { language, langCode } = detectLanguage(business)
-    console.log('[build-demo] Step 4: Template:', templateName, '| Language:', language)
+    console.log('[build-demo] template:', templateName, '| language:', language)
 
     // 5. Parallel: scrape website + fetch images
-    console.log('[build-demo] Step 5: Scraping website and fetching images...')
     const [scrapedContent, unsplashImages] = await Promise.all([
       scrapeBusinessWebsite(business.website),
       fetchUnsplashImages(business),
     ])
-    console.log('[build-demo] Step 5: Scraped length:', scrapedContent?.length || 0, '| Images:', unsplashImages.length)
 
     // 6. Generate AI content (JSON payload, not full HTML)
-    console.log('[build-demo] Step 6: Generating AI content...')
     const businessData: BusinessData = {
       name: business.name,
       address: business.address,
@@ -341,27 +327,22 @@ serve(async (req) => {
     const rawAiContent = await generateAiContent(business, scrapedContent, custom_notes || null, language)
     if (rawAiContent) {
       aiContent = rawAiContent
-      console.log('[build-demo] Step 6: AI content generated')
     } else {
       aiContent = fallbackContent(businessData, langCode)
-      console.log('[build-demo] Step 6: Using fallback content')
     }
 
     // 7. Get template HTML and render
-    console.log('[build-demo] Step 7: Rendering template...')
     const templateHtml = getTemplate(templateName)
     const images = {
       hero: unsplashImages[0],
       section: unsplashImages[1],
     }
     const html = renderTemplate(templateHtml, aiContent, businessData, images)
-    console.log('[build-demo] Step 7: OK, html length:', html.length)
 
     const slug = generateSlug()
     const storagePath = `demos/${user.id}/${slug}.html`
 
     // 8. Upload to Storage (using admin client to bypass storage RLS)
-    console.log('[build-demo] Step 8: Uploading to storage, path:', storagePath)
     const { error: uploadError } = await supabaseAdmin.storage
       .from('demos')
       .upload(storagePath, new Blob([html], { type: 'text/html' }), {
@@ -373,10 +354,8 @@ serve(async (req) => {
       console.error('[build-demo] Storage upload failed:', uploadError.message)
       throw new Error(`Storage upload failed: ${uploadError.message}`)
     }
-    console.log('[build-demo] Step 8: OK')
 
     // 9. Create demo record
-    console.log('[build-demo] Step 9: Inserting demo record...')
     const { data: demo, error: insertError } = await supabase
       .from('demos')
       .insert({
@@ -404,10 +383,8 @@ serve(async (req) => {
       console.error('[build-demo] Insert failed:', insertError.message)
       throw new Error(`Demo insert failed: ${insertError.message}`)
     }
-    console.log('[build-demo] Step 9: OK, demo id:', demo.id)
 
     // 10. Update business status
-    console.log('[build-demo] Step 10: Updating business status...')
     await supabase
       .from('businesses')
       .update({ status: 'demo_created', updated_at: new Date().toISOString() })
@@ -426,7 +403,7 @@ serve(async (req) => {
         .eq('id', user.id)
     }
 
-    console.log('[build-demo] DONE - success')
+    console.log('[build-demo] success, html length:', html.length)
     return new Response(JSON.stringify({ demo }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })

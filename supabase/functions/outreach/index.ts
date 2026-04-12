@@ -15,17 +15,34 @@ const channelInstructions: Record<string, string> = {
   other: 'Write a brief professional outreach message. Keep it under 150 words.',
 }
 
+const validTones = ['professional', 'friendly', 'casual', 'formal']
+const validLanguages = ['en', 'es', 'pt', 'fr']
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // 1. Auth
-    const authHeader = req.headers.get('Authorization')!
+    // 1. Env var checks
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')
+    if (!supabaseUrl || !supabaseKey) {
+      return new Response(JSON.stringify({ error: 'Server misconfigured' }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // 2. Auth
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing Authorization header' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
+      supabaseUrl,
+      supabaseKey,
       { global: { headers: { Authorization: authHeader } } }
     )
 
@@ -36,20 +53,29 @@ serve(async (req) => {
       })
     }
 
-    // 2. Pro-only check
+    // 3. Pro-only check + rate limiting
     const { data: profile } = await supabase
       .from('profiles')
-      .select('subscription_tier, display_name, business_name')
+      .select('subscription_tier, display_name, business_name, outreach_this_month')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
-    if (profile.subscription_tier !== 'pro') {
+    const tier = profile?.subscription_tier ?? 'free'
+    const outreachThisMonth = profile?.outreach_this_month ?? 0
+
+    if (tier !== 'pro') {
       return new Response(JSON.stringify({ error: 'Outreach requires Pro subscription' }), {
         status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    // 3. Get request data and business
+    if (outreachThisMonth >= 50) {
+      return new Response(JSON.stringify({ error: 'Monthly outreach limit reached' }), {
+        status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // 4. Get request data and business
     const { business_id, channel, tone, language, demo_url } = await req.json()
 
     if (!business_id || typeof business_id !== 'string') {
@@ -59,6 +85,21 @@ serve(async (req) => {
     }
     if (!channel || !['email', 'whatsapp', 'instagram', 'phone', 'other'].includes(channel)) {
       return new Response(JSON.stringify({ error: 'Invalid channel' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    if (tone && !validTones.includes(tone)) {
+      return new Response(JSON.stringify({ error: 'Invalid tone' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    if (language && !validLanguages.includes(language)) {
+      return new Response(JSON.stringify({ error: 'Invalid language' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    if (demo_url && (typeof demo_url !== 'string' || demo_url.length > 500)) {
+      return new Response(JSON.stringify({ error: 'Invalid demo_url' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
@@ -76,14 +117,14 @@ serve(async (req) => {
       })
     }
 
-    // 4. Generate message via OpenAI
+    // 5. Generate message via OpenAI (with timeout)
     const openaiKey = Deno.env.get('OPENAI_API_KEY')
     const channelGuide = channelInstructions[channel] || channelInstructions.other
 
     const prompt = `You are a sales outreach expert helping a web agency reach out to local businesses.
 
-Agency: ${profile.business_name || 'Our Agency'}
-Agent name: ${profile.display_name || 'Sales Representative'}
+Agency: ${profile?.business_name || 'Our Agency'}
+Agent name: ${profile?.display_name || 'Sales Representative'}
 
 Target business: ${business.name}
 Address: ${business.address || 'Unknown'}
@@ -94,27 +135,40 @@ ${business.audit_score != null ? `Audit score: ${business.audit_score}/100 - ${b
 ${demo_url ? `Demo website we built for them: ${demo_url}` : ''}
 
 Channel: ${channel}
-Tone: ${tone}
-Language: ${language === 'es' ? 'Spanish' : 'English'}
+Tone: ${tone || 'professional'}
+Language: ${language === 'es' ? 'Spanish' : language === 'pt' ? 'Portuguese' : language === 'fr' ? 'French' : 'English'}
 
 ${channelGuide}
 
 Write the outreach message now. Output ONLY the message text, nothing else.`
 
-    const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4.1-mini',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-      }),
-    })
+    const aiController = new AbortController()
+    const aiTimeout = setTimeout(() => aiController.abort(), 30000)
+    let aiData: any
+    try {
+      const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.7,
+        }),
+        signal: aiController.signal,
+      })
+      clearTimeout(aiTimeout)
 
-    const aiData = await aiResponse.json()
+      aiData = await aiResponse.json()
+    } catch (e) {
+      clearTimeout(aiTimeout)
+      return new Response(JSON.stringify({ error: 'AI request timed out or failed' }), {
+        status: 504, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
     if (!aiData.choices?.[0]?.message?.content) {
       return new Response(JSON.stringify({ error: 'AI did not return a valid response' }), {
         status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -122,14 +176,14 @@ Write the outreach message now. Output ONLY the message text, nothing else.`
     }
     const messageContent = aiData.choices[0].message.content.trim()
 
-    // 5. Save message to database
+    // 6. Save message to database
     const { data: message, error: insertError } = await supabase
       .from('messages')
       .insert({
         business_id,
         user_id: user.id,
         channel,
-        tone,
+        tone: tone || 'professional',
         language: language || 'en',
         content: messageContent,
       })
@@ -140,12 +194,29 @@ Write the outreach message now. Output ONLY the message text, nothing else.`
       throw new Error(`Message insert failed: ${insertError.message}`)
     }
 
-    // 6. Update business status if early in pipeline
+    // 7. Update business status if early in pipeline
     if (['found', 'audited', 'demo_created'].includes(business.status)) {
       await supabase
         .from('businesses')
         .update({ status: 'contacted', updated_at: new Date().toISOString() })
         .eq('id', business_id)
+    }
+
+    // 8. Increment outreach usage
+    try {
+      await supabase.rpc('increment_counter', {
+        p_user_id: user.id,
+        p_column: 'outreach_this_month',
+      })
+    } catch {
+      try {
+        await supabase
+          .from('profiles')
+          .update({ outreach_this_month: outreachThisMonth + 1 })
+          .eq('id', user.id)
+      } catch (e) {
+        console.warn('[outreach] Could not increment usage counter:', e)
+      }
     }
 
     return new Response(JSON.stringify({ message }), {
