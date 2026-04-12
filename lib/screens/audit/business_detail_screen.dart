@@ -22,10 +22,12 @@ import '../../widgets/audit_context.dart';
 import '../../widgets/outreach_history.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/ios_toast.dart';
+import '../../widgets/paywall_dialog.dart';
 import '../../widgets/share_business_sheet.dart';
 import '../../widgets/error_state.dart';
 import '../../widgets/skeleton_loaders.dart';
 import '../../utils/haptics.dart';
+import '../../utils/network.dart';
 
 class BusinessDetailScreen extends ConsumerStatefulWidget {
   final String businessId;
@@ -43,6 +45,19 @@ class BusinessDetailScreen extends ConsumerStatefulWidget {
 class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
   bool _isAuditing = false;
   AuditResult? _auditResult;
+  bool _autoAuditTriggered = false;
+
+  void _maybeAutoAudit(Business business) {
+    if (_autoAuditTriggered) return;
+    if (business.isAudited || _auditResult != null) return;
+    if (_isAuditing) return;
+
+    final autoAuditEnabled = ref.read(autoAuditProvider);
+    if (!autoAuditEnabled) return;
+
+    _autoAuditTriggered = true;
+    _runAudit(business);
+  }
 
   Future<void> _runAudit(Business business) async {
     setState(() => _isAuditing = true);
@@ -58,10 +73,21 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
 
         ref.invalidate(businessProvider(widget.businessId));
       }
-    } catch (e) {
+    } on AuthExpiredException {
       if (mounted) {
         setState(() => _isAuditing = false);
-        IosToast.show(context, 'Error: $e');
+        IosToast.show(context, 'Session expired. Please sign in again.');
+      }
+    } on LimitReachedException {
+      if (mounted) {
+        setState(() => _isAuditing = false);
+        showPaywallDialog(context, title: 'Audit Limit Reached', message: 'Upgrade to Pro for unlimited audits.');
+      }
+    } catch (e) {
+      debugPrint('Audit error: $e');
+      if (mounted) {
+        setState(() => _isAuditing = false);
+        IosToast.show(context, 'Audit failed: $e');
       }
     }
   }
@@ -81,13 +107,22 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
           );
         }
 
-        final auditState = ref.watch(auditStateProvider(widget.businessId));
+        final isAutoAuditing = ref.watch(
+          auditStateProvider(widget.businessId).select((s) => s is AsyncLoading),
+        );
+        final isAuditStateError = ref.watch(
+          auditStateProvider(widget.businessId).select((s) => s is AsyncError),
+        );
         final autoAuditEnabled = ref.watch(autoAuditProvider);
-        final isAutoAuditing = auditState is AsyncLoading;
         final demoAsync = ref.watch(demoForBusinessProvider(business.id));
         final outreachAsync = ref.watch(outreachForBusinessProvider(business.id));
         final demo = demoAsync.valueOrNull;
         final outreach = outreachAsync.valueOrNull;
+
+        // Auto-trigger audit if enabled and not yet audited
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _maybeAutoAudit(business);
+        });
 
         return CupertinoPageScaffold(
           navigationBar: CupertinoNavigationBar(
@@ -207,7 +242,7 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
                       business: business,
                       isAudited: business.isAudited || _auditResult != null,
                       isAuditing: _isAuditing || isAutoAuditing,
-                      isAuditError: auditState is AsyncError && !business.isAudited,
+                      isAuditError: isAuditStateError && !business.isAudited,
                       autoAuditEnabled: autoAuditEnabled,
                       auditResult: _auditResult,
                       demo: demo,
@@ -246,14 +281,7 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
 
                     // Outreach history
                     const SizedBox(height: AppConstants.sectionGap),
-                    Builder(builder: (context) {
-                      final messagesAsync = ref.watch(messagesForBusinessProvider(business.id));
-                      return messagesAsync.when(
-                        data: (messages) => OutreachHistory(messages: messages),
-                        loading: () => const SizedBox.shrink(),
-                        error: (_, __) => const SizedBox.shrink(),
-                      );
-                    }),
+                    _OutreachHistorySection(businessId: business.id),
                     const SizedBox(height: 120),
                   ]),
                 ),
@@ -569,8 +597,7 @@ class _WorkflowStepper extends StatelessWidget {
       ]));
     }
     if (isAuditError) return _CtaCard(title: 'Retry Analysis', subtitle: 'Auto-analysis failed — tap to retry', onTap: onRetryAudit);
-    if (autoAuditEnabled) return const _FutureCard(title: 'Analyze Business', subtitle: 'Auto-analysis will run automatically');
-    return _CtaCard(title: 'Analyze Business', subtitle: 'AI will score their online presence', onTap: onAudit);
+    return _CtaCard(title: 'Analyze Site', subtitle: 'AI will score their online presence', onTap: onAudit);
   }
 
   Widget _buildDemoCard(BuildContext context, _StepState state) {
@@ -707,5 +734,26 @@ class _FutureCard extends StatelessWidget {
       const SizedBox(height: 2),
       Text(subtitle, style: AppTypography.chip(context).copyWith(color: CupertinoDynamicColor.resolve(AppColors.textTertiary, context))),
     ]));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Outreach history section — isolated ConsumerWidget so only this subtree
+// rebuilds when messagesForBusinessProvider changes
+// ---------------------------------------------------------------------------
+
+class _OutreachHistorySection extends ConsumerWidget {
+  final String businessId;
+
+  const _OutreachHistorySection({required this.businessId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final messagesAsync = ref.watch(messagesForBusinessProvider(businessId));
+    return messagesAsync.when(
+      data: (messages) => OutreachHistory(messages: messages),
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
   }
 }

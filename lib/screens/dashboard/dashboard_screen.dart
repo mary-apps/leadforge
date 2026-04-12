@@ -23,24 +23,61 @@ String _timeAwareGreeting() {
   return 'Good evening';
 }
 
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final businessesAsync = ref.watch(businessesProvider);
-    final profileAsync = ref.watch(profileNotifierProvider);
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
 
-    final displayName = profileAsync.when(
-      data: (p) => p?.displayName,
-      loading: () => null,
-      error: (_, __) => null,
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  // Memoization cache — recalculated only when the businesses list identity changes.
+  List<Business>? _cachedBusinesses;
+  Map<String, dynamic>? _cachedStats;
+  Map<String, List<int>>? _cachedWeeklyData;
+  String? _cachedTrend;
+  bool _cachedTrendComputed = false;
+
+  void _refreshCache(List<Business> businesses) {
+    _cachedBusinesses = businesses;
+    _cachedStats = _calculateStats(businesses);
+    _cachedWeeklyData = _calculateWeeklyData(businesses);
+    _cachedTrend = _calculateTrend(businesses);
+    _cachedTrendComputed = true;
+  }
+
+  Map<String, dynamic> _getStats(List<Business> businesses) {
+    if (!identical(businesses, _cachedBusinesses) || _cachedStats == null) {
+      _refreshCache(businesses);
+    }
+    return _cachedStats!;
+  }
+
+  Map<String, List<int>> _getWeeklyData(List<Business> businesses) {
+    if (!identical(businesses, _cachedBusinesses) || _cachedWeeklyData == null) {
+      _refreshCache(businesses);
+    }
+    return _cachedWeeklyData!;
+  }
+
+  String? _getTrend(List<Business> businesses) {
+    if (!identical(businesses, _cachedBusinesses) || !_cachedTrendComputed) {
+      _refreshCache(businesses);
+    }
+    return _cachedTrend;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final businessesAsync = ref.watch(businessesProvider);
+    final displayName = ref.watch(
+      profileNotifierProvider.select((s) => s.valueOrNull?.displayName),
     );
 
     return CupertinoPageScaffold(
       child: businessesAsync.when(
         data: (businesses) {
-          final stats = _calculateStats(businesses);
+          final stats = _getStats(businesses);
           final recentLeads = businesses.length > 5
               ? businesses.sublist(businesses.length - 5)
               : businesses;
@@ -148,7 +185,7 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                     child: _HeroStat(
                       value: stats['total'] as int,
-                      trend: _calculateTrend(businesses),
+                      trend: _getTrend(businesses),
                     ),
                   ),
                 ),
@@ -248,25 +285,27 @@ class DashboardScreen extends ConsumerWidget {
                     itemBuilder: (context, index) {
                       final business = recentLeads[index];
 
-                      return LeadItem(
-                        business: business,
-                        showDivider: index < recentLeads.length - 1,
-                        onTap: () =>
-                            context.push('/business/${business.id}'),
-                      )
-                          .animate(
-                            delay: Duration(
-                              milliseconds:
-                                  AppConstants.staggerDelay.inMilliseconds *
-                                      index,
+                      return RepaintBoundary(
+                        child: LeadItem(
+                          business: business,
+                          showDivider: index < recentLeads.length - 1,
+                          onTap: () =>
+                              context.push('/business/${business.id}'),
+                        )
+                            .animate(
+                              delay: Duration(
+                                milliseconds:
+                                    AppConstants.staggerDelay.inMilliseconds *
+                                        index,
+                              ),
+                            )
+                            .fadeIn(duration: AppConstants.standardAnimation)
+                            .slideY(
+                              begin: AppConstants.entranceSlideDistance / 100,
+                              duration: AppConstants.standardAnimation + const Duration(milliseconds: 100),
+                              curve: Curves.easeOutCubic,
                             ),
-                          )
-                          .fadeIn(duration: AppConstants.standardAnimation)
-                          .slideY(
-                            begin: AppConstants.entranceSlideDistance / 100,
-                            duration: AppConstants.standardAnimation + const Duration(milliseconds: 100),
-                            curve: Curves.easeOutCubic,
-                          );
+                      );
                     },
                   ),
                 ),
@@ -311,7 +350,7 @@ class DashboardScreen extends ConsumerWidget {
     };
   }
 
-  Map<String, List<int>> _getWeeklyData(List<Business> businesses) {
+  Map<String, List<int>> _calculateWeeklyData(List<Business> businesses) {
     final now = DateTime.now();
     final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     final result = <String, List<int>>{};
@@ -327,8 +366,8 @@ class DashboardScreen extends ConsumerWidget {
         result[days[dayIndex]]![0]++;
       }
       if (b.auditedAt != null) {
-        final diff = now.difference(b.auditedAt!).inDays;
-        if (diff < 7) {
+        final auditDiff = now.difference(b.auditedAt!).inDays;
+        if (auditDiff < 7) {
           final dayIndex = (b.auditedAt!.weekday - 1) % 7;
           result[days[dayIndex]]![1]++;
         }
@@ -337,8 +376,8 @@ class DashboardScreen extends ConsumerWidget {
           b.status == BusinessStatus.interested ||
           b.status == BusinessStatus.closed) {
         if (b.updatedAt != null) {
-          final diff = now.difference(b.updatedAt!).inDays;
-          if (diff < 7) {
+          final updateDiff = now.difference(b.updatedAt!).inDays;
+          if (updateDiff < 7) {
             final dayIndex = (b.updatedAt!.weekday - 1) % 7;
             result[days[dayIndex]]![2]++;
           }
