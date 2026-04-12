@@ -27,6 +27,7 @@ class Business with _$Business {
     required String id,
     String? userId,
     String? searchId,
+    @JsonKey(name: 'territory_id') String? territoryId,
     String? placeId,
     required String name,
     String? address,
