@@ -298,7 +298,7 @@ class _PipelineScreenEnhancedState
     for (final b in pipeline[BusinessStatus.audited] ?? []) {
       final ts = b.auditedAt ?? b.updatedAt ?? b.createdAt ?? now;
       if (now.difference(ts).inHours >= 48) {
-        result.add((b, 'Create demo'));
+        result.add((b, 'Generate report'));
       }
     }
     for (final b in pipeline[BusinessStatus.reportSent] ?? []) {

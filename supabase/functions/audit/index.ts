@@ -52,7 +52,7 @@ serve(async (req) => {
     const tier = profile?.subscription_tier ?? 'free'
     const auditsThisMonth = profile?.audits_this_month ?? 0
 
-    if (tier === 'free' && auditsThisMonth >= 3) {
+    if (tier === 'free' && auditsThisMonth >= 10) {
       return new Response(JSON.stringify({ error: 'Free tier audit limit reached' }), {
         status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })

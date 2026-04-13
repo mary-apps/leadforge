@@ -163,8 +163,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           label: 'AUDITED',
                         ),
                         StatCell(
-                          value: (stats['demos'] as int).toString(),
-                          label: 'DEMOS',
+                          value: (stats['reports'] as int).toString(),
+                          label: 'REPORTS',
                         ),
                         StatCell(
                           value: (stats['closed'] as int).toString(),
@@ -353,7 +353,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return {
       'total': businesses.length,
       'audited': businesses.where((b) => b.isAudited).length,
-      'demos': businesses.where((b) => b.hasReport).length,
+      'reports': businesses.where((b) => b.hasReport).length,
       'closed': businesses
           .where((b) => b.status == BusinessStatus.closed)
           .length,

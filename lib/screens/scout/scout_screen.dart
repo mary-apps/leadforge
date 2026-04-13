@@ -130,7 +130,7 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
     showPaywallDialog(
       context,
       title: 'Search Limit Reached',
-      message: 'You\'ve used all 5 free searches this month.\n\nUpgrade to Pro for unlimited searches, audits, demos, and AI outreach messages.',
+      message: 'You\'ve used all 10 free searches this month.\n\nUpgrade to Pro for unlimited searches, audits, reports, and territories.',
     );
   }
 

@@ -549,7 +549,7 @@ class _HeroSection extends StatelessWidget {
               children: [
                 _HeroStat(value: '2.4K', label: 'Leads found', color: resolvedText, mutedColor: resolvedMuted),
                 const SizedBox(width: 20),
-                _HeroStat(value: '890', label: 'Demos built', color: resolvedText, mutedColor: resolvedMuted),
+                _HeroStat(value: '890', label: 'Reports sent', color: resolvedText, mutedColor: resolvedMuted),
                 const SizedBox(width: 20),
                 _HeroStat(value: '94%', label: 'Response rate', color: resolvedText, mutedColor: resolvedMuted),
               ],
