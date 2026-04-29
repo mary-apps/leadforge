@@ -8,6 +8,7 @@ import '../../config/theme.dart';
 import '../../models/business.dart';
 import '../../models/message.dart';
 import '../../services/outreach_service.dart';
+import '../../services/scout_service.dart';
 import '../../providers/businesses_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../providers/subscription_provider.dart';
@@ -117,6 +118,61 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
     Clipboard.setData(ClipboardData(text: content));
     Haptics.medium();
     IosToast.show(context, 'Message copied to clipboard');
+    _markCopied();
+  }
+
+  Future<void> _markCopied() async {
+    final msg = _generatedMessage;
+    if (msg == null || msg.copiedAt != null) return;
+    setState(() {
+      _generatedMessage = msg.copyWith(copiedAt: DateTime.now());
+    });
+    try {
+      await OutreachService.markCopied(msg.id);
+    } catch (_) {
+      // Silent — the optimistic UI stays. Sync will retry next time.
+    }
+  }
+
+  /// Optimistically mark the message as sent and move the business to
+  /// "contacted" if it isn't already past that stage. Network errors keep
+  /// the optimistic UI but show a toast.
+  Future<void> _markSentAndAdvance(Business business) async {
+    final msg = _generatedMessage;
+    if (msg == null || msg.markedSentAt != null) return;
+    setState(() {
+      _generatedMessage = msg.copyWith(markedSentAt: DateTime.now());
+    });
+    Haptics.medium();
+
+    final shouldAdvance = business.status == BusinessStatus.audited ||
+        business.status == BusinessStatus.reportSent;
+
+    bool syncFailed = false;
+    try {
+      await OutreachService.markSent(msg.id);
+    } catch (_) {
+      syncFailed = true;
+    }
+
+    if (shouldAdvance) {
+      try {
+        await ScoutService.updateStatus(
+            business.id, BusinessStatus.contacted);
+      } catch (_) {
+        syncFailed = true;
+      }
+    }
+
+    if (!mounted) return;
+
+    // Refresh dependent state regardless — even partial success may have
+    // moved the business in DB.
+    ref.invalidate(businessProvider(business.id));
+    await ref.read(businessesProvider.notifier).load();
+
+    if (!mounted || !syncFailed) return;
+    IosToast.show(context, 'Could not sync — will retry');
   }
 
   void _regenerate(Business business) {
@@ -312,6 +368,7 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
                         business: business,
                         language: _selectedLanguage,
                         onCopy: _copyMessage,
+                        onSent: () => _markSentAndAdvance(business),
                         onRegenerate: () => _regenerate(business),
                       ),
                   ],
@@ -701,6 +758,7 @@ class _MessageResult extends StatelessWidget {
   final Business business;
   final String language;
   final Function(String) onCopy;
+  final VoidCallback onSent;
   final VoidCallback onRegenerate;
 
   const _MessageResult({
@@ -708,6 +766,7 @@ class _MessageResult extends StatelessWidget {
     required this.business,
     required this.language,
     required this.onCopy,
+    required this.onSent,
     required this.onRegenerate,
   });
 
@@ -717,7 +776,11 @@ class _MessageResult extends StatelessWidget {
       phone: business.phone,
       content: message.content,
     );
-    if (!ok && context.mounted) {
+    if (ok) {
+      onSent();
+      return;
+    }
+    if (context.mounted) {
       _copyAndPromptManual(
         context,
         title: 'WhatsApp not available',
@@ -733,7 +796,11 @@ class _MessageResult extends StatelessWidget {
       subject: subject,
       body: message.content,
     );
-    if (!ok && context.mounted) {
+    if (ok) {
+      onSent();
+      return;
+    }
+    if (context.mounted) {
       _copyAndPromptManual(
         context,
         title: 'Mail not available',
@@ -745,6 +812,7 @@ class _MessageResult extends StatelessWidget {
   Future<void> _handleInstagram(BuildContext context) async {
     Haptics.medium();
     onCopy(message.content);
+    onSent();
     if (!context.mounted) return;
     await showCupertinoDialog<void>(
       context: context,
@@ -776,7 +844,11 @@ class _MessageResult extends StatelessWidget {
     if (phone == null) return;
     Haptics.medium();
     final ok = await OutreachLauncher.openPhone(phone);
-    if (!ok && context.mounted) {
+    if (ok) {
+      onSent();
+      return;
+    }
+    if (context.mounted) {
       IosToast.show(context, 'Could not open phone');
     }
   }
@@ -900,36 +972,46 @@ class _MessageResult extends StatelessWidget {
   }
 
   List<Widget> _buildSendActions(BuildContext context) {
+    final wasSent = message.markedSentAt != null;
+
     switch (message.channel) {
       case OutreachChannel.whatsapp:
         return [
-          AppButton(
-            label: 'Open in WhatsApp',
-            onPressed: () => _handleWhatsApp(context),
-          ),
+          wasSent
+              ? const _SentBadge()
+              : AppButton(
+                  label: 'Open in WhatsApp',
+                  onPressed: () => _handleWhatsApp(context),
+                ),
         ];
       case OutreachChannel.email:
         return [
-          AppButton(
-            label: 'Open in Mail',
-            onPressed: () => _handleEmail(context),
-          ),
+          wasSent
+              ? const _SentBadge()
+              : AppButton(
+                  label: 'Open in Mail',
+                  onPressed: () => _handleEmail(context),
+                ),
         ];
       case OutreachChannel.instagram:
         return [
-          AppButton(
-            label: 'Open Instagram',
-            onPressed: () => _handleInstagram(context),
-          ),
+          wasSent
+              ? const _SentBadge()
+              : AppButton(
+                  label: 'Open Instagram',
+                  onPressed: () => _handleInstagram(context),
+                ),
         ];
       case OutreachChannel.phone:
         return [
-          AppButton(
-            label: business.phone == null ? 'No phone available' : 'Call',
-            onPressed: business.phone == null
-                ? null
-                : () => _handlePhoneCall(context),
-          ),
+          wasSent
+              ? const _SentBadge()
+              : AppButton(
+                  label: business.phone == null ? 'No phone available' : 'Call',
+                  onPressed: business.phone == null
+                      ? null
+                      : () => _handlePhoneCall(context),
+                ),
           const SizedBox(height: 10),
           AppButton(
             label: 'Copy script',
@@ -945,5 +1027,37 @@ class _MessageResult extends StatelessWidget {
           ),
         ];
     }
+  }
+}
+
+class _SentBadge extends StatelessWidget {
+  const _SentBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final color = CupertinoDynamicColor.resolve(AppColors.scoreGood, context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppColors.radiusL),
+        border: Border.all(color: color.withValues(alpha: 0.4), width: 0.5),
+      ),
+      child: Center(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(CupertinoIcons.check_mark_circled_solid,
+                color: color, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              'Sent',
+              style: AppTypography.button(context).copyWith(color: color),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
