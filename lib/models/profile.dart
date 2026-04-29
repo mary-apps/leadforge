@@ -1,5 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../config/constants.dart';
+
 part 'profile.freezed.dart';
 part 'profile.g.dart';
 
@@ -27,13 +29,25 @@ extension ProfileX on Profile {
   bool get isPro => subscriptionTier == 'pro';
   bool get isFree => subscriptionTier == 'free';
 
-  bool get canSearch => isPro || searchesThisMonth < 10;
-  bool get canAudit => isPro || auditsThisMonth < 10;
-  bool get canGenerateReport => isPro || reportsThisMonth < 3;
+  bool get canSearch =>
+      isPro || searchesThisMonth < AppConstants.freeSearchesPerMonth;
+  bool get canAudit =>
+      isPro || auditsThisMonth < AppConstants.freeAuditsPerMonth;
+  bool get canGenerateReport =>
+      isPro || reportsThisMonth < AppConstants.freeReportsPerMonth;
   bool get canUseOutreach => isPro; // Pro only
   bool get canCreateTerritory => isPro;
 
-  int get searchesRemaining => isPro ? 999 : (10 - searchesThisMonth).clamp(0, 10);
-  int get auditsRemaining => isPro ? 999 : (10 - auditsThisMonth).clamp(0, 10);
-  int get reportsRemaining => isPro ? 999 : (3 - reportsThisMonth).clamp(0, 3);
+  int get searchesRemaining => isPro
+      ? 999
+      : (AppConstants.freeSearchesPerMonth - searchesThisMonth)
+          .clamp(0, AppConstants.freeSearchesPerMonth);
+  int get auditsRemaining => isPro
+      ? 999
+      : (AppConstants.freeAuditsPerMonth - auditsThisMonth)
+          .clamp(0, AppConstants.freeAuditsPerMonth);
+  int get reportsRemaining => isPro
+      ? 999
+      : (AppConstants.freeReportsPerMonth - reportsThisMonth)
+          .clamp(0, AppConstants.freeReportsPerMonth);
 }
