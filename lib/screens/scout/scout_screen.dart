@@ -375,10 +375,7 @@ class _ScoutScreenState extends ConsumerState<ScoutScreen> {
                         final autoAudit = ref.read(autoAuditProvider);
                         if (autoAudit && !business.isAudited) {
                           final profile = ref.read(profileNotifierProvider).valueOrNull;
-                          final canAudit = profile == null ||
-                              profile.isPro ||
-                              profile.auditsThisMonth < 3;
-                          if (canAudit) {
+                          if (profile == null || profile.canAudit) {
                             triggerAutoAudit(ref, business.id);
                           }
                         }
