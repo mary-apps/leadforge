@@ -69,70 +69,73 @@ class DashboardSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ShimmerWrap(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppConstants.pageHorizontal,
-          60,
-          AppConstants.pageHorizontal,
-          AppConstants.pageHorizontal,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Greeting
-            const _ShimmerBox(width: 140, height: 14),
-            const SizedBox(height: 10),
-            // Hero stat
-            const _ShimmerBox(
-                width: 80, height: 48, borderRadius: AppColors.radiusM),
-            const SizedBox(height: 4),
-            const _ShimmerBox(width: 100, height: 12),
-            const SizedBox(height: 12),
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppConstants.pageHorizontal,
+            60,
+            AppConstants.pageHorizontal,
+            AppConstants.pageHorizontal,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Greeting
+              const _ShimmerBox(width: 140, height: 14),
+              const SizedBox(height: 10),
+              // Hero stat
+              const _ShimmerBox(
+                  width: 80, height: 48, borderRadius: AppColors.radiusM),
+              const SizedBox(height: 4),
+              const _ShimmerBox(width: 100, height: 12),
+              const SizedBox(height: 12),
 
-            // 3-column stat pills
-            const Row(
-              children: [
-                Expanded(
-                  child: _ShimmerBox(
-                      height: 40, borderRadius: AppColors.radiusL),
-                ),
-                SizedBox(width: 8),
-                Expanded(
-                  child: _ShimmerBox(
-                      height: 40, borderRadius: AppColors.radiusL),
-                ),
-                SizedBox(width: 8),
-                Expanded(
-                  child: _ShimmerBox(
-                      height: 40, borderRadius: AppColors.radiusL),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppConstants.itemGap),
+              // 3-column stat pills
+              const Row(
+                children: [
+                  Expanded(
+                    child: _ShimmerBox(
+                        height: 40, borderRadius: AppColors.radiusL),
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: _ShimmerBox(
+                        height: 40, borderRadius: AppColors.radiusL),
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: _ShimmerBox(
+                        height: 40, borderRadius: AppColors.radiusL),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppConstants.itemGap),
 
-            // Weekly activity graph
-            const _ShimmerBox(
-                height: 160, borderRadius: AppColors.radiusXL),
-            const SizedBox(height: 16),
+              // Weekly activity graph
+              const _ShimmerBox(
+                  height: 160, borderRadius: AppColors.radiusXL),
+              const SizedBox(height: 16),
 
-            // Recent header
-            const _ShimmerBox(width: 60, height: 12),
-            const SizedBox(height: 12),
+              // Recent header
+              const _ShimmerBox(width: 60, height: 12),
+              const SizedBox(height: 12),
 
-            // Featured first lead card (taller)
-            const _ShimmerBox(
-                height: 72, borderRadius: AppColors.radiusL),
-            const SizedBox(height: 12),
+              // Featured first lead card (taller)
+              const _ShimmerBox(
+                  height: 72, borderRadius: AppColors.radiusL),
+              const SizedBox(height: 12),
 
-            // Compact remaining lead cards
-            ...List.generate(
-                3,
-                (index) => const Padding(
-                      padding: EdgeInsets.only(bottom: 8),
-                      child: _ShimmerBox(
-                          height: 48, borderRadius: AppColors.radiusL),
-                    )),
-          ],
+              // Compact remaining lead cards
+              ...List.generate(
+                  3,
+                  (index) => const Padding(
+                        padding: EdgeInsets.only(bottom: 8),
+                        child: _ShimmerBox(
+                            height: 48, borderRadius: AppColors.radiusL),
+                      )),
+            ],
+          ),
         ),
       ),
     );
@@ -149,19 +152,22 @@ class ActivitySkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ShimmerWrap(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppConstants.pageHorizontal,
-          vertical: 8,
-        ),
-        child: Column(
-          children: List.generate(
-              8,
-              (index) => const Padding(
-                    padding: EdgeInsets.only(bottom: AppConstants.itemGap),
-                    child: _ShimmerBox(
-                        height: 60, borderRadius: AppColors.radiusL),
-                  )),
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.pageHorizontal,
+            vertical: 8,
+          ),
+          child: Column(
+            children: List.generate(
+                8,
+                (index) => const Padding(
+                      padding: EdgeInsets.only(bottom: AppConstants.itemGap),
+                      child: _ShimmerBox(
+                          height: 60, borderRadius: AppColors.radiusL),
+                    )),
+          ),
         ),
       ),
     );
@@ -272,24 +278,27 @@ class PipelineSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ShimmerWrap(
-      child: Padding(
-        padding: const EdgeInsets.all(AppConstants.pageHorizontal),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: List.generate(
-              3,
-              (index) => Padding(
-                    padding: EdgeInsets.only(bottom: index < 2 ? 16 : 0),
-                    child: const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _ShimmerBox(width: 120, height: 16),
-                        SizedBox(height: 8),
-                        _ShimmerBox(
-                            height: 80, borderRadius: AppColors.radiusL),
-                      ],
-                    ),
-                  )),
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(AppConstants.pageHorizontal),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: List.generate(
+                3,
+                (index) => Padding(
+                      padding: EdgeInsets.only(bottom: index < 2 ? 16 : 0),
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _ShimmerBox(width: 120, height: 16),
+                          SizedBox(height: 8),
+                          _ShimmerBox(
+                              height: 80, borderRadius: AppColors.radiusL),
+                        ],
+                      ),
+                    )),
+          ),
         ),
       ),
     );

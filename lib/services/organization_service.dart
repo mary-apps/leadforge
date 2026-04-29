@@ -21,19 +21,23 @@ class OrganizationService {
     if (userId == null) return null;
 
     // Get org_id from profile
-    final profile = await SupabaseService.client
-        .from('profiles')
-        .select('org_id')
-        .eq('id', userId)
-        .single();
-
-    final orgId = profile['org_id'];
+    String? orgId;
+    try {
+      final profile = await SupabaseService.client
+          .from('profiles')
+          .select('org_id')
+          .eq('id', userId)
+          .maybeSingle();
+      orgId = profile?['org_id'] as String?;
+    } catch (_) {
+      // org_id column may not exist if org migration hasn't run
+    }
     if (orgId == null) return null;
 
     final response = await SupabaseService.client
         .from('organizations')
         .select()
-        .eq('id', '$orgId')
+        .eq('id', orgId)
         .single();
     return Organization.fromJson(response);
   }
