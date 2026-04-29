@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/business.dart';
 import '../models/territory.dart';
-import '../services/supabase_service.dart';
 import '../services/territory_service.dart';
 
 /// All territories for current user
@@ -24,18 +23,7 @@ class TerritoriesNotifier extends StateNotifier<AsyncValue<List<Territory>>> {
     }
 
     try {
-      final userId = SupabaseService.userId;
-      String? orgId;
-      if (userId != null) {
-        final profile = await SupabaseService.client
-            .from('profiles')
-            .select('org_id')
-            .eq('id', userId)
-            .single();
-        orgId = profile['org_id'] as String?;
-      }
-
-      final territories = await TerritoryService.fetchTerritories(orgId: orgId);
+      final territories = await TerritoryService.fetchTerritories();
       if (mounted) state = AsyncValue.data(territories);
     } catch (e, st) {
       if (mounted) {

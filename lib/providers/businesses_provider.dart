@@ -15,8 +15,6 @@ class BusinessesNotifier extends StateNotifier<AsyncValue<List<Business>>> {
   }
 
   /// Reload from DB. Preserves previous data while loading to avoid flicker.
-  /// If the user belongs to an org, fetches all org businesses; otherwise
-  /// fetches only the user's own businesses.
   Future<void> load({BusinessStatus? status}) async {
     final previous = state.valueOrNull;
     if (previous == null) {
@@ -24,21 +22,7 @@ class BusinessesNotifier extends StateNotifier<AsyncValue<List<Business>>> {
     }
 
     try {
-      final userId = SupabaseService.userId;
-      String? orgId;
-      if (userId != null) {
-        final profile = await SupabaseService.client
-            .from('profiles')
-            .select('org_id')
-            .eq('id', userId)
-            .single();
-        orgId = profile['org_id'] as String?;
-      }
-
-      final businesses = await ScoutService.fetchMyBusinesses(
-        status: status,
-        orgId: orgId,
-      );
+      final businesses = await ScoutService.fetchMyBusinesses(status: status);
       state = AsyncValue.data(businesses);
     } catch (e, st) {
       state = previous != null
@@ -107,17 +91,7 @@ final businessProvider = FutureProvider.autoDispose.family<Business?, String>((r
 
 /// Pipeline businesses grouped by status — cached, invalidated via ref.invalidate
 final pipelineProvider = FutureProvider<Map<BusinessStatus, List<Business>>>((ref) async {
-  final userId = SupabaseService.userId;
-  String? orgId;
-  if (userId != null) {
-    final profile = await SupabaseService.client
-        .from('profiles')
-        .select('org_id')
-        .eq('id', userId)
-        .single();
-    orgId = profile['org_id'] as String?;
-  }
-  final businesses = await ScoutService.fetchMyBusinesses(limit: 200, orgId: orgId);
+  final businesses = await ScoutService.fetchMyBusinesses(limit: 200);
 
   final grouped = <BusinessStatus, List<Business>>{};
 

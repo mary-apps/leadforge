@@ -20,24 +20,16 @@ class ScoutService {
         .toList();
   }
 
-  /// Fetch businesses from local database.
-  /// If [orgId] is provided, fetches all businesses belonging to the org;
-  /// otherwise fetches only the current user's businesses.
+  /// Fetch the current user's businesses from local database.
   static Future<List<Business>> fetchMyBusinesses({
     BusinessStatus? status,
     int limit = 50,
-    String? orgId,
   }) async {
     final userId = SupabaseService.userId;
     if (userId == null) throw Exception('Not authenticated');
 
-    var query = SupabaseService.client.from('businesses').select();
-
-    if (orgId != null) {
-      query = query.eq('org_id', orgId);
-    } else {
-      query = query.eq('user_id', userId);
-    }
+    var query =
+        SupabaseService.client.from('businesses').select().eq('user_id', userId);
 
     if (status != null) {
       query = query.eq('status', status.name);

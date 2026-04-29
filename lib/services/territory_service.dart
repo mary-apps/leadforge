@@ -30,22 +30,16 @@ class TerritoryService {
     return Territory.fromJson(response);
   }
 
-  /// Fetch all territories.
-  /// If [orgId] is provided, fetches all territories belonging to the org;
-  /// otherwise fetches only the current user's territories.
-  static Future<List<Territory>> fetchTerritories({String? orgId}) async {
+  /// Fetch the current user's territories.
+  static Future<List<Territory>> fetchTerritories() async {
     final userId = SupabaseService.userId;
     if (userId == null) throw Exception('Not authenticated');
 
-    var query = SupabaseService.client.from('territories').select();
-
-    if (orgId != null) {
-      query = query.eq('org_id', orgId);
-    } else {
-      query = query.eq('user_id', userId);
-    }
-
-    final response = await query.order('created_at', ascending: false);
+    final response = await SupabaseService.client
+        .from('territories')
+        .select()
+        .eq('user_id', userId)
+        .order('created_at', ascending: false);
 
     final list = response as List?;
     if (list == null) return [];

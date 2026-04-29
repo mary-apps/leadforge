@@ -45,9 +45,9 @@ class _PaywallSheetState extends ConsumerState<_PaywallSheet> {
     });
 
     final features = [
+      'Unlimited searches',
       'Unlimited audits & reports',
-      'Unlimited territories',
-      'Team collaboration (up to 5 members)',
+      'AI outreach — all 4 channels',
       'Priority support',
     ];
 

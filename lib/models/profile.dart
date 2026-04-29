@@ -32,7 +32,6 @@ extension ProfileX on Profile {
   bool get canGenerateReport => isPro || reportsThisMonth < 3;
   bool get canUseOutreach => isPro; // Pro only
   bool get canCreateTerritory => isPro;
-  bool get hasTeamAccess => isPro;
 
   int get searchesRemaining => isPro ? 999 : (10 - searchesThisMonth).clamp(0, 10);
   int get auditsRemaining => isPro ? 999 : (10 - auditsThisMonth).clamp(0, 10);

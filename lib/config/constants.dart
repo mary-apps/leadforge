@@ -26,10 +26,6 @@ class AppConstants {
   static const freeSearchesPerMonth = 10;
   static const freeAuditsPerMonth = 10;
   static const freeReportsPerMonth = 3;
-  static const freeTerritoriesLimit = 1;
-
-  // Pro Tier Limits
-  static const proTeamMembersLimit = 5;
 
   // Subscription Tiers
   static const tierFree = 'free';
