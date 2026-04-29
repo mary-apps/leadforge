@@ -8,9 +8,14 @@ import '../config/theme.dart';
 class WeeklyActivityGraph extends StatelessWidget {
   final Map<String, List<int>> data; // {day: [searches, audits, outreach]}
 
+  /// Replaces the default "No activity this week" placeholder when there
+  /// is nothing to chart. Useful for surfacing a CTA from the dashboard.
+  final Widget? emptyState;
+
   const WeeklyActivityGraph({
     super.key,
     required this.data,
+    this.emptyState,
   });
 
   bool get _hasActivity {
@@ -35,51 +40,57 @@ class WeeklyActivityGraph extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: hasData ? 120 : 60,
-          child: hasData
-              ? BarChart(
-            BarChartData(
-              alignment: BarChartAlignment.spaceAround,
-              maxY: _getMaxY(),
-              barTouchData: BarTouchData(enabled: false),
-              gridData: const FlGridData(show: false),
-              borderData: FlBorderData(show: false),
-              titlesData: FlTitlesData(
-                show: true,
-                rightTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-                topTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-                leftTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 24,
-                    getTitlesWidget: (value, meta) =>
-                        _bottomTitle(context, value, today),
+        if (hasData)
+          SizedBox(
+            height: 120,
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: _getMaxY(),
+                barTouchData: BarTouchData(enabled: false),
+                gridData: const FlGridData(show: false),
+                borderData: FlBorderData(show: false),
+                titlesData: FlTitlesData(
+                  show: true,
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
                   ),
-                ),
-              ),
-              barGroups: _buildBarGroups(context, today),
-            ),
-          )
-              : Center(
-                  child: Text(
-                    'No activity this week',
-                    style: AppTypography.labelLarge(context).copyWith(
-                      color: CupertinoDynamicColor.resolve(
-                        AppColors.textTertiary,
-                        context,
-                      ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  leftTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 24,
+                      getTitlesWidget: (value, meta) =>
+                          _bottomTitle(context, value, today),
                     ),
                   ),
                 ),
-        ),
+                barGroups: _buildBarGroups(context, today),
+              ),
+            ),
+          )
+        else if (emptyState != null)
+          emptyState!
+        else
+          SizedBox(
+            height: 60,
+            child: Center(
+              child: Text(
+                'No activity this week',
+                style: AppTypography.labelLarge(context).copyWith(
+                  color: CupertinoDynamicColor.resolve(
+                    AppColors.textTertiary,
+                    context,
+                  ),
+                ),
+              ),
+            ),
+          ),
       ],
     )
         .animate()

@@ -231,6 +231,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     ),
                     child: WeeklyActivityGraph(
                       data: _getWeeklyData(businesses),
+                      emptyState: _firstUnauditedLead(businesses) != null
+                          ? _StartWithLeadCta(
+                              business: _firstUnauditedLead(businesses)!,
+                              onTap: (id) => context.push('/business/$id'),
+                            )
+                          : null,
                     ),
                   ),
                 ),
@@ -358,6 +364,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           .where((b) => b.status == BusinessStatus.closed)
           .length,
     };
+  }
+
+  /// Most recent business in the "found" status that has not been audited
+  /// yet. Used as a CTA when the weekly chart is empty.
+  Business? _firstUnauditedLead(List<Business> businesses) {
+    for (final b in businesses) {
+      if (b.status == BusinessStatus.found && !b.isAudited) return b;
+    }
+    return null;
   }
 
   Map<String, List<int>> _calculateWeeklyData(List<Business> businesses) {
@@ -504,4 +519,81 @@ class _HeroStatState extends State<_HeroStat>
 }
 
 // ---------------------------------------------------------------------------
-// Empty state
+// Start-with-lead CTA used when the weekly chart has no activity yet but
+// there is at least one un-audited "found" lead to push the user toward.
+// ---------------------------------------------------------------------------
+
+class _StartWithLeadCta extends StatelessWidget {
+  final Business business;
+  final void Function(String businessId) onTap;
+
+  const _StartWithLeadCta({
+    required this.business,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = CupertinoDynamicColor.resolve(AppColors.accent, context);
+    final surface = CupertinoDynamicColor.resolve(AppColors.surface, context);
+    final border = CupertinoDynamicColor.resolve(AppColors.border, context);
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => onTap(business.id),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: surface,
+          borderRadius: BorderRadius.circular(AppColors.radiusL),
+          border: Border.all(color: border, width: 0.5),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(CupertinoIcons.bolt_fill, color: accent, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Start with ${business.name}',
+                    style: AppTypography.titleMedium(context),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Run an audit to kick off this week',
+                    style: AppTypography.labelLarge(context).copyWith(
+                      color: CupertinoDynamicColor.resolve(
+                        AppColors.textSecondary,
+                        context,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              CupertinoIcons.chevron_right,
+              size: 16,
+              color: CupertinoDynamicColor.resolve(
+                AppColors.textTertiary,
+                context,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
