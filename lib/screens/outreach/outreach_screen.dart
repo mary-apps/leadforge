@@ -12,6 +12,7 @@ import '../../providers/businesses_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../providers/subscription_provider.dart';
 import '../../utils/network.dart';
+import '../../utils/outreach_launcher.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/error_state.dart';
 import '../../widgets/ios_toast.dart';
@@ -308,6 +309,8 @@ class _OutreachScreenState extends ConsumerState<OutreachScreen> {
                     if (_generatedMessage != null)
                       _MessageResult(
                         message: _generatedMessage!,
+                        business: business,
+                        language: _selectedLanguage,
                         onCopy: _copyMessage,
                         onRegenerate: () => _regenerate(business),
                       ),
@@ -695,14 +698,110 @@ class _GeneratingAnimationState extends State<_GeneratingAnimation> {
 // Message result card
 class _MessageResult extends StatelessWidget {
   final Message message;
+  final Business business;
+  final String language;
   final Function(String) onCopy;
   final VoidCallback onRegenerate;
 
   const _MessageResult({
     required this.message,
+    required this.business,
+    required this.language,
     required this.onCopy,
     required this.onRegenerate,
   });
+
+  Future<void> _handleWhatsApp(BuildContext context) async {
+    Haptics.medium();
+    final ok = await OutreachLauncher.openWhatsApp(
+      phone: business.phone,
+      content: message.content,
+    );
+    if (!ok && context.mounted) {
+      _copyAndPromptManual(
+        context,
+        title: 'WhatsApp not available',
+        body: 'Message copied. Open WhatsApp manually to paste it.',
+      );
+    }
+  }
+
+  Future<void> _handleEmail(BuildContext context) async {
+    Haptics.medium();
+    final subject = OutreachLauncher.emailSubjectFor(business.name, language);
+    final ok = await OutreachLauncher.openEmail(
+      subject: subject,
+      body: message.content,
+    );
+    if (!ok && context.mounted) {
+      _copyAndPromptManual(
+        context,
+        title: 'Mail not available',
+        body: 'Message copied. Open your mail app manually to paste it.',
+      );
+    }
+  }
+
+  Future<void> _handleInstagram(BuildContext context) async {
+    Haptics.medium();
+    onCopy(message.content);
+    if (!context.mounted) return;
+    await showCupertinoDialog<void>(
+      context: context,
+      builder: (ctx) => CupertinoAlertDialog(
+        title: const Text('Message copied'),
+        content: const Text(
+          'Instagram does not allow pre-filled DMs. Open Instagram and paste the message.',
+        ),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await OutreachLauncher.openInstagram();
+            },
+            child: const Text('Open Instagram'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handlePhoneCall(BuildContext context) async {
+    final phone = business.phone;
+    if (phone == null) return;
+    Haptics.medium();
+    final ok = await OutreachLauncher.openPhone(phone);
+    if (!ok && context.mounted) {
+      IosToast.show(context, 'Could not open phone');
+    }
+  }
+
+  void _copyAndPromptManual(
+    BuildContext context, {
+    required String title,
+    required String body,
+  }) {
+    onCopy(message.content);
+    showCupertinoDialog<void>(
+      context: context,
+      builder: (ctx) => CupertinoAlertDialog(
+        title: Text(title),
+        content: Text(body),
+        actions: [
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -784,16 +883,67 @@ class _MessageResult extends StatelessWidget {
               Expanded(
                 child: AppButton(
                   label: 'Copy',
+                  variant: AppButtonVariant.secondary,
                   onPressed: () => onCopy(message.content),
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          ..._buildSendActions(context),
         ],
       ),
     )
         .animate()
         .fadeIn(duration: 400.ms)
         .slideY(begin: 0.08, duration: 400.ms, curve: Curves.easeOut);
+  }
+
+  List<Widget> _buildSendActions(BuildContext context) {
+    switch (message.channel) {
+      case OutreachChannel.whatsapp:
+        return [
+          AppButton(
+            label: 'Open in WhatsApp',
+            onPressed: () => _handleWhatsApp(context),
+          ),
+        ];
+      case OutreachChannel.email:
+        return [
+          AppButton(
+            label: 'Open in Mail',
+            onPressed: () => _handleEmail(context),
+          ),
+        ];
+      case OutreachChannel.instagram:
+        return [
+          AppButton(
+            label: 'Open Instagram',
+            onPressed: () => _handleInstagram(context),
+          ),
+        ];
+      case OutreachChannel.phone:
+        return [
+          AppButton(
+            label: business.phone == null ? 'No phone available' : 'Call',
+            onPressed: business.phone == null
+                ? null
+                : () => _handlePhoneCall(context),
+          ),
+          const SizedBox(height: 10),
+          AppButton(
+            label: 'Copy script',
+            variant: AppButtonVariant.secondary,
+            onPressed: () => onCopy(message.content),
+          ),
+        ];
+      case OutreachChannel.other:
+        return [
+          AppButton(
+            label: 'Copy message',
+            onPressed: () => onCopy(message.content),
+          ),
+        ];
+    }
   }
 }
